@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:id="@+id/verification_nav_controller"
+	app:startDestination="@id/nav_verification_loading">
+
+	<fragment
+		android:id="@+id/nav_verification_message"
+		android:name="dev.kuylar.sakura.ui.fragment.verification.VerificationMessageFragment"
+		tools:layout="@layout/fragment_verification_message" />
+	<fragment
+		android:id="@+id/nav_verification_loading"
+		android:name="dev.kuylar.sakura.ui.fragment.verification.VerificationLoadingFragment"
+		tools:layout="@layout/fragment_verification_loading" />
+	<fragment
+		android:id="@+id/nav_verification_start"
+		android:name="dev.kuylar.sakura.ui.fragment.verification.VerificationStartFragment"
+		tools:layout="@layout/fragment_verification_start" />
+	<fragment
+		android:id="@+id/nav_verification_select_method"
+		android:name="dev.kuylar.sakura.ui.fragment.verification.VerificationSelectMethodFragment"
+		tools:layout="@layout/fragment_verification_select_method" />
+	<fragment
+		android:id="@+id/nav_verification_emoji_select"
+		android:name="dev.kuylar.sakura.ui.fragment.verification.VerificationEmojiSelectFragment"
+		tools:layout="@layout/fragment_verification_emoji_select" />
+</navigation>

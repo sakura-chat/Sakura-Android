@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:id="@+id/login_nav_graph"
+	app:startDestination="@id/nav_login_homeserver">
+
+	<fragment
+		android:id="@+id/nav_login_homeserver"
+		android:name="dev.kuylar.sakura.ui.fragment.login.HomeserverSelectFragment"
+		tools:layout="@layout/fragment_homeserver_select" />
+	<fragment
+		android:id="@+id/nav_login_password"
+		android:name="dev.kuylar.sakura.ui.fragment.login.LoginWithPasswordFragment"
+		tools:layout="@layout/fragment_login_with_password" />
+	<fragment
+		android:id="@+id/nav_login_initial_sync"
+		android:name="dev.kuylar.sakura.ui.fragment.login.InitialSyncFragment"
+		tools:layout="@layout/fragment_initial_sync" />
+</navigation>

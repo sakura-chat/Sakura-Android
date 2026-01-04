@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:orientation="vertical"
+	tools:context=".ui.fragment.verification.VerificationEmojiSelectFragment">
+
+	<ImageView
+		android:id="@+id/shield"
+		android:layout_width="52dp"
+		android:layout_height="52dp"
+		android:layout_gravity="center"
+		android:layout_marginTop="48dp"
+		android:layout_marginBottom="24dp"
+		android:src="@drawable/ic_verification"
+		app:tint="?colorPrimary" />
+
+	<TextView
+		android:id="@+id/emojis"
+		style="?textAppearanceDisplaySmall"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginHorizontal="32dp"
+		android:layout_marginVertical="32dp"
+		android:textAlignment="center"
+		android:visibility="gone"
+		tools:text="🗣️🔥🥀💔🗿💀😭" />
+
+	<com.google.android.material.loadingindicator.LoadingIndicator
+		android:id="@+id/loading"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_gravity="center"
+		android:layout_marginVertical="32dp"
+		android:visibility="visible" />
+
+	<TextView
+		style="?textAppearanceBodyLarge"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginHorizontal="32dp"
+		android:layout_marginVertical="24dp"
+		android:text="@string/verification_emoji_question"
+		android:textAlignment="center" />
+
+	<com.google.android.material.button.MaterialButtonGroup
+		style="@style/Widget.Material3.MaterialButtonGroup.Connected"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginHorizontal="16dp">
+
+		<Button
+			android:id="@+id/reject"
+			style="?materialButtonTonalStyle"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_weight="1"
+			android:text="@string/verification_emoji_not_match" />
+
+		<Button
+			android:id="@+id/accept"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_weight="1"
+			android:text="@string/verification_emoji_match" />
+
+	</com.google.android.material.button.MaterialButtonGroup>
+
+</LinearLayout>

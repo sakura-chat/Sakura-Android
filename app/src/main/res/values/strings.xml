@@ -1,0 +1,27 @@
+<resources>
+	<string name="app_name">Sakura</string>
+	<!-- TODO: Remove or change this placeholder text -->
+	<string name="hello_blank_fragment">Hello blank fragment</string>
+	<string name="verification_start">Verification request from %s</string>
+	<string name="verification_emoji">Verify by comparing emojis</string>
+	<string name="verification_illegal_state_title">Illegal state</string>
+	<string name="verification_illegal_state_body">Please restart verification from other device.</string>
+	<string name="verification_ready">Ready</string>
+	<string name="verification_select_method">Select verification method</string>
+	<string name="verification_cancel_title">Verification cancelled</string>
+	<string name="verification_success_title">Verification complete</string>
+	<string name="verification_emoji_match">They match</string>
+	<string name="verification_emoji_not_match">They don\'t match</string>
+	<string name="verification_emoji_question">Are these emojis the same as shown on the other device?</string>
+	<string name="login_title">Welcome to Sakura!</string>
+	<string name="login_homeserver_select_body">Let\'s get you started. Where is your account located at?</string>
+	<string name="login_homeserver">Homeserver</string>
+	<string name="login_with_password">Log in using password</string>
+	<string name="error_invalid_homeserver_url">Invalid homeserver URL</string>
+	<string name="login_password_title">Logging into %s</string>
+	<string name="login_username">Username</string>
+	<string name="login_password">Password</string>
+	<string name="login_next">Log in</string>
+	<string name="initial_sync">Initial sync ongoing…</string>
+	<string name="initial_sync_body">This may take a few minutes if you\'re in a lot of rooms.</string>
+</resources>
