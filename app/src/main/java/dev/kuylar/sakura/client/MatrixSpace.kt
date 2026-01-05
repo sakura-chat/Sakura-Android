@@ -8,4 +8,7 @@ data class MatrixSpace(
 	val children: List<Room>,
 	val childSpaces: List<MatrixSpace>,
 	val order: Long
-)
+) {
+	val isUnread: Boolean
+		get() = children.any { it.isUnread } || childSpaces.any { it.isUnread }
+}

@@ -17,6 +17,8 @@ recyclerviewbuilder = "1.0.1"
 navigationRuntimeKtx = "2.9.6"
 navigationFragmentKtx = "2.9.6"
 glide = "4.16.0"
+overlappingpanels = "0.1.5"
+mentionsedittext = "1.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -37,6 +39,8 @@ androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navig
 androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
 glide-compiler = { group = "com.github.bumptech.glide", name = "ksp", version.ref = "glide" }
+overlappingpanels = { group = "com.github.discord", name = "OverlappingPanels", version.ref = "overlappingpanels" }
+mentionsedittext = { group = "com.github.kuylar", name = "MentionsEditText", version.ref = "mentionsedittext" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

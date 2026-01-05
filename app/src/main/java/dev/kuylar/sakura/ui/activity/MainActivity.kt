@@ -1,28 +1,28 @@
-package dev.kuylar.sakura
+package dev.kuylar.sakura.ui.activity
 
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
-import com.bumptech.glide.Glide
+import androidx.recyclerview.widget.LinearLayoutManager
 import dev.kuylar.recyclerviewbuilder.ExtensibleRecyclerAdapter
-import dev.kuylar.recyclerviewbuilder.RecyclerViewBuilder
+import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.MatrixSpace
-import dev.kuylar.sakura.ui.activity.LoginActivity
-import dev.kuylar.sakura.ui.fragment.verification.VerificationBottomSheetFragment
 import dev.kuylar.sakura.databinding.ActivityMainBinding
-import dev.kuylar.sakura.databinding.ItemDebugRoomBinding
+import dev.kuylar.sakura.ui.adapter.recyclerview.SpaceListRecyclerAdapter
+import dev.kuylar.sakura.ui.adapter.recyclerview.SpaceTreeRecyclerAdapter
+import dev.kuylar.sakura.ui.fragment.verification.VerificationBottomSheetFragment
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.media
-import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.verification.ActiveDeviceVerification
+import kotlin.math.max
 
 class MainActivity : AppCompatActivity() {
 	private lateinit var binding: ActivityMainBinding
@@ -37,8 +37,14 @@ class MainActivity : AppCompatActivity() {
 		setContentView(binding.root)
 
 		ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-			val systemBars = insets.getInsets(WindowInsetsCompat.Type.ime())
-			v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+			val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+			val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+			v.setPadding(
+				systemBars.left,
+				max(ime.top, systemBars.top),
+				systemBars.right,
+				max(ime.bottom, systemBars.bottom)
+			)
 			insets
 		}
 
@@ -48,6 +54,10 @@ class MainActivity : AppCompatActivity() {
 			return
 		}
 
+		binding.roomsPanel.spacesRecycler.layoutManager = LinearLayoutManager(this)
+		binding.roomsPanel.roomsRecycler.layoutManager = LinearLayoutManager(this)
+
+		/*
 		adapter = RecyclerViewBuilder(this)
 			.addView<MatrixSpace, ItemDebugRoomBinding> { binding, item, context ->
 				binding.title.text = item.parent?.name?.explicitName ?: "null"
@@ -71,6 +81,7 @@ class MainActivity : AppCompatActivity() {
 			}.build(binding.recycler)
 
 		binding.refresh.setOnClickListener { onClientReady() }
+		*/
 
 		suspendThread {
 			client = Matrix.loadClient(this, "main")
@@ -80,7 +91,7 @@ class MainActivity : AppCompatActivity() {
 			client.startSync()
 			lifecycleScope.launch {
 				client.addSyncStateListener {
-					binding.text.text = "Sync state: $it"
+					// TODO: binding.text.text = "Sync state: $it"
 					Log.i("MainActivity", "Sync state: $it")
 				}
 			}
@@ -95,19 +106,15 @@ class MainActivity : AppCompatActivity() {
 		}
 	}
 
-	fun onClientReady() {
-		suspendThread {
-			val startTime = System.currentTimeMillis()
-			client.getSpaceTree().let {
-				runOnUiThread {
-					adapter.clearItems()
-					adapter.addItems(it.sortedBy {
-						it.order
-					}.filterNot { it.parent?.name?.explicitName == "CHP" })
-				}
-			}
-			val endTime = System.currentTimeMillis()
-			Log.i("MainActivity", "Got space tree in ${endTime - startTime}ms")
-		}
+	private fun onClientReady() {
+		binding.roomsPanel.spacesRecycler.adapter = SpaceListRecyclerAdapter(this)
+		binding.roomsPanel.roomsRecycler.adapter = SpaceTreeRecyclerAdapter(this)
+	}
+
+	fun openSpaceTree(space: MatrixSpace) {
+		binding.roomsPanel.title.text = space.parent?.name?.explicitName ?: "Home"
+		binding.roomsPanel.topic.visibility = View.GONE
+		(binding.roomsPanel.roomsRecycler.adapter as? SpaceTreeRecyclerAdapter)
+			?.changeSpace(space.parent?.roomId?.full ?: "!home:SakuraNative")
 	}
 }

@@ -52,6 +52,7 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 import kotlin.io.path.Path
 import kotlin.io.path.absolutePathString
+import kotlin.time.ExperimentalTime
 import androidx.room.Room as AndroidRoom
 
 class Matrix(val context: Context, val client: MatrixClient) {
@@ -63,6 +64,7 @@ class Matrix(val context: Context, val client: MatrixClient) {
 			.toList()
 	}
 
+	@OptIn(ExperimentalTime::class)
 	suspend fun getSpaceTree(): List<MatrixSpace> {
 		val allRooms = getRooms()
 		val unownedRooms = allRooms.associateByTo(HashMap()) { it.roomId }
@@ -73,9 +75,11 @@ class Matrix(val context: Context, val client: MatrixClient) {
 		suspend fun buildSpaceTree(space: Room?): MatrixSpace {
 			if (space == null) return MatrixSpace(
 				null,
-				unownedRooms.values.toList(),
+				unownedRooms.values
+					.sortedByDescending { it.lastRelevantEventTimestamp?.toEpochMilliseconds() }
+					.toList(),
 				emptyList(),
-				-1
+				Long.MIN_VALUE
 			)
 
 			val childrenState = client.room.getAllState<SpaceChildrenEventContent>(space.roomId)
@@ -129,7 +133,7 @@ class Matrix(val context: Context, val client: MatrixClient) {
 		topLevelSpaces.forEach { space -> res.add(buildSpaceTree(space)) }
 		res.add(buildSpaceTree(null))
 
-		return res.toList()
+		return res.sortedBy { it.order }.toList()
 	}
 
 	suspend fun startSync() {

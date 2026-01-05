@@ -9,7 +9,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
-import dev.kuylar.sakura.MainActivity
+import dev.kuylar.sakura.ui.activity.MainActivity
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix

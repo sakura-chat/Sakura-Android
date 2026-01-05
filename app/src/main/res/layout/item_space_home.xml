@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="wrap_content"
+	android:layout_height="wrap_content"
+	android:layout_marginVertical="8dp">
+
+	<View
+		android:id="@+id/unread_indicator"
+		android:layout_width="4dp"
+		android:layout_height="match_parent"
+		android:background="?colorPrimary"
+		android:visibility="invisible"
+		tools:visibility="visible" />
+
+	<com.google.android.material.imageview.ShapeableImageView
+		android:id="@+id/icon"
+		android:layout_width="48dp"
+		android:layout_height="48dp"
+		android:layout_marginStart="8dp"
+		android:background="?colorSecondaryContainer"
+		android:src="@drawable/ic_launcher_foreground" />
+
+</LinearLayout>

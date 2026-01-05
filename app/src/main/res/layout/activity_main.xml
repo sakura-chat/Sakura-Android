@@ -7,26 +7,49 @@
 	android:layout_height="match_parent"
 	android:fitsSystemWindows="true"
 	android:orientation="vertical"
-	tools:context=".MainActivity">
+	tools:context=".ui.activity.MainActivity">
 
-	<TextView
-		android:id="@+id/text"
+	<com.discord.panels.OverlappingPanelsLayout
+		android:id="@+id/overlapping_panels"
 		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:text="Hello World!"
-		android:textAlignment="center" />
+		android:layout_height="match_parent"
+		android:background="?colorSurface">
 
-	<Button
-		android:id="@+id/refresh"
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:text="Refresh" />
 
-	<androidx.recyclerview.widget.RecyclerView
-		android:id="@+id/recycler"
-		android:layout_width="match_parent"
-		android:layout_height="0dp"
-		android:layout_weight="1"
-		tools:listitem="@layout/item_debug_room" />
+		<include
+			android:id="@+id/rooms_panel"
+			layout="@layout/layout_panel_rooms"
+			android:layout_width="wrap_content"
+			android:layout_height="match_parent"
+			android:layout_gravity="start" />
+
+		<FrameLayout
+			android:id="@+id/timeline_panel"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:layout_gravity="center"
+			android:background="?colorSurfaceContainer">
+
+			<TextView
+				android:layout_width="match_parent"
+				android:layout_height="match_parent"
+				android:text="Timeline"
+				android:textAlignment="center" />
+		</FrameLayout>
+
+		<FrameLayout
+			android:id="@+id/users_panel"
+			android:layout_width="wrap_content"
+			android:layout_height="match_parent"
+			android:layout_gravity="end">
+
+			<TextView
+				android:layout_width="match_parent"
+				android:layout_height="match_parent"
+				android:text="Users"
+				android:textAlignment="center" />
+		</FrameLayout>
+
+	</com.discord.panels.OverlappingPanelsLayout>
 
 </LinearLayout>

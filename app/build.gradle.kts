@@ -64,4 +64,6 @@ dependencies {
 	implementation(libs.recyclerviewbuilder)
 	implementation(libs.glide)
 	ksp(libs.glide.compiler)
+	implementation(libs.overlappingpanels)
+	implementation(libs.mentionsedittext)
 }
