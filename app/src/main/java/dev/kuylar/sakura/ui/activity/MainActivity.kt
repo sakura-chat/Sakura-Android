@@ -60,6 +60,7 @@ class MainActivity : AppCompatActivity() {
 		val loggedInAccounts = Matrix.getAvailableAccounts(this)
 		if (loggedInAccounts.isEmpty()) {
 			startActivity(Intent(this, LoginActivity::class.java))
+			finish()
 			return
 		}
 
@@ -67,7 +68,16 @@ class MainActivity : AppCompatActivity() {
 		binding.roomsPanel.roomsRecycler.layoutManager = LinearLayoutManager(this)
 
 		suspendThread {
-			client = Matrix.loadClient(this, "main")
+			try {
+				client = Matrix.loadClient(this, "main")
+			} catch (e: Exception) {
+				// Failed to load client. Give up and send the user to the login screen
+				this@MainActivity.runOnUiThread {
+					startActivity(Intent(this, LoginActivity::class.java))
+					finish()
+				}
+				return@suspendThread
+			}
 			runOnUiThread {
 				onClientReady()
 			}
