@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:id="@+id/main_nav_graph.xml"
+	app:startDestination="@id/nav_empty">
+
+	<fragment
+		android:id="@+id/nav_empty"
+		android:name="dev.kuylar.sakura.ui.fragment.EmptyFragment"
+		tools:layout="@layout/fragment_empty" />
+	<fragment
+		android:id="@+id/nav_room"
+		android:name="dev.kuylar.sakura.ui.fragment.TimelineFragment"
+		tools:layout="@layout/fragment_timeline">
+		<argument
+			android:name="roomId"
+			app:argType="string" />
+	</fragment>
+</navigation>

@@ -10,6 +10,7 @@ import dev.kuylar.sakura.client.customevent.SpaceParentEventContent
 import io.ktor.http.Url
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
@@ -25,9 +26,11 @@ import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.getAccountData
 import net.folivo.trixnity.client.room.getAllState
 import net.folivo.trixnity.client.store.Room
+import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.repository.room.TrixnityRoomDatabase
 import net.folivo.trixnity.client.store.repository.room.createRoomRepositoriesModule
 import net.folivo.trixnity.client.store.type
+import net.folivo.trixnity.client.user
 import net.folivo.trixnity.client.verification
 import net.folivo.trixnity.client.verification.ActiveDeviceVerification
 import net.folivo.trixnity.client.verification.ActiveUserVerification
@@ -40,8 +43,11 @@ import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImp
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.core.model.RoomId
+import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.createEventContentSerializerMappings
@@ -57,6 +63,10 @@ import androidx.room.Room as AndroidRoom
 
 class Matrix(val context: Context, val client: MatrixClient) {
 	private val activeVerifications = HashMap<String, ActiveVerification>()
+
+	suspend fun getRoom(roomId: String): Room? {
+		return client.room.getById(RoomId(roomId)).first()
+	}
 
 	suspend fun getRooms(): List<Room> {
 		return client.room.getAll().flattenValues().first()
@@ -134,6 +144,16 @@ class Matrix(val context: Context, val client: MatrixClient) {
 		res.add(buildSpaceTree(null))
 
 		return res.sortedBy { it.order }.toList()
+	}
+
+	suspend fun getUser(userId: UserId, roomId: RoomId): RoomUser? {
+		return client.user.getById(roomId, userId).first()
+	}
+
+	suspend fun sendMessage(roomId: String, msg: String) {
+		client.room.sendMessage(RoomId(roomId)) {
+			content(RoomMessageEventContent.TextBased.Text(msg))
+		}
 	}
 
 	suspend fun startSync() {

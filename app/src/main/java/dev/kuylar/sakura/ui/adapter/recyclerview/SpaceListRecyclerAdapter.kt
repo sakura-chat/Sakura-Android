@@ -17,12 +17,11 @@ import dev.kuylar.sakura.ui.activity.MainActivity
 import net.folivo.trixnity.client.room
 
 @SuppressLint("NotifyDataSetChanged")
-class SpaceListRecyclerAdapter(val activity: MainActivity) :
+class SpaceListRecyclerAdapter(val activity: MainActivity, var selectedSpaceId: String? = null) :
 	RecyclerView.Adapter<SpaceListRecyclerAdapter.SpaceListViewModel>() {
 	var layoutInflater = activity.layoutInflater
 	var client = Matrix.getClient()
 	var spaceTree: Map<String, MatrixSpace> = emptyMap()
-	private var selectedSpaceId: String? = null
 
 	init {
 		suspendThread {
@@ -31,6 +30,10 @@ class SpaceListRecyclerAdapter(val activity: MainActivity) :
 				spaceTree = client.getSpaceTree()
 					.associateBy { it.parent?.roomId?.full ?: "!home:SakuraNative" }
 				activity.runOnUiThread {
+					if (selectedSpaceId != null)
+						spaceTree[selectedSpaceId]?.let {
+							openSpaceTree(it)
+						}
 					notifyDataSetChanged()
 				}
 			}

@@ -1,11 +1,16 @@
 package dev.kuylar.sakura.ui.adapter.recyclerview
 
 import android.annotation.SuppressLint
+import android.graphics.Color
+import android.os.Handler
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.os.postDelayed
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.bumptech.glide.Glide
+import com.google.android.material.R as MaterialR
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.MatrixSpace
@@ -58,6 +63,11 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity) :
 	}
 
 	fun changeSpace(spaceId: String) {
+		Log.d("SpaceTreeRecyclerAdapter", "changeSpace($spaceId)")
+		if (spaceTree.isEmpty()) {
+			Handler(activity.mainLooper).postDelayed(50) { changeSpace(spaceId) }
+			return
+		}
 		this.spaceId = spaceId
 		currentSpace = spaceTree[spaceId] ?: spaceTree.values.first()
 		expandedRooms.clear()
@@ -94,6 +104,23 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity) :
 				binding.icon.visibility = View.GONE
 			} else {
 				Glide.with(binding.root).load(room.avatarUrl).into(binding.icon)
+			}
+
+			with((bindingAdapter as SpaceTreeRecyclerAdapter)) {
+				binding.root.setOnClickListener {
+					openRoom(room)
+				}
+				if (room.roomId.full != currentRoomId()) {
+					binding.container.setBackgroundColor(Color.TRANSPARENT)
+				} else {
+					val typedValue = android.util.TypedValue()
+					binding.root.context.theme.resolveAttribute(
+						MaterialR.attr.colorSecondaryContainer,
+						typedValue,
+						true
+					)
+					binding.container.setBackgroundColor(typedValue.data)
+				}
 			}
 		}
 	}
@@ -149,4 +176,22 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity) :
 	}
 
 	override fun getItemCount() = items.size
+
+	private fun openRoom(room: Room?) {
+		if (room == null) return
+		val oldRoomId = currentRoomId()
+		activity.openRoomTimeline(room)
+		items.indexOfFirst { (it as? Room)?.roomId?.full == oldRoomId }
+			.takeUnless { it == -1 }
+			?.let {
+				notifyItemChanged(it)
+			}
+		items.indexOfFirst { (it as? Room)?.roomId?.full == room.roomId.full }
+			.takeUnless { it == -1 }
+			?.let {
+				notifyItemChanged(it)
+			}
+	}
+
+	private fun currentRoomId() = activity.getCurrentRoomId()
 }

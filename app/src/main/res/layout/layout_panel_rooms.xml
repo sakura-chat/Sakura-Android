@@ -7,7 +7,7 @@
 
 	<androidx.recyclerview.widget.RecyclerView
 		android:id="@+id/spaces_recycler"
-		android:layout_width="64dp"
+		android:layout_width="68dp"
 		android:layout_height="match_parent"
 		tools:listitem="@layout/item_space" />
 
@@ -15,7 +15,7 @@
 		style="?materialCardViewFilledStyle"
 		android:layout_width="0dp"
 		android:layout_height="match_parent"
-		android:layout_marginStart="8dp"
+		android:layout_marginStart="4dp"
 		android:layout_weight="1">
 
 		<LinearLayout

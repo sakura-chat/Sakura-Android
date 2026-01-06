@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:layout_marginBottom="8dp"
+	android:orientation="vertical">
+
+	<LinearLayout
+		android:id="@+id/replying_event"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="8dp"
+		android:layout_marginBottom="4dp"
+		android:gravity="center_vertical"
+		android:orientation="horizontal"
+		android:visibility="gone"
+		tools:visibility="visible">
+
+		<!-- TODO: Arrow from avatar -->
+		<Space
+			android:layout_width="40dp"
+			android:layout_height="wrap_content" />
+
+		<com.google.android.material.imageview.ShapeableImageView
+			android:id="@+id/replying_avatar"
+			android:layout_width="20dp"
+			android:layout_height="20dp"
+			android:layout_marginStart="8dp"
+			android:background="?colorSecondaryContainer"
+			app:shapeAppearanceOverlay="@style/circleImageView"
+			tools:srcCompat="@tools:sample/avatars" />
+
+		<TextView
+			android:id="@+id/replying_name"
+			style="?textAppearanceBodySmall"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="8dp"
+			android:ellipsize="end"
+			android:maxWidth="100dp"
+			android:maxLines="1"
+			android:textStyle="bold"
+			tools:text="@tools:sample/full_names" />
+
+		<TextView
+			android:id="@+id/replying_body"
+			style="?textAppearanceBodySmall"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="8dp"
+			android:ellipsize="end"
+			android:maxLines="1"
+			tools:text="@tools:sample/lorem/random" />
+	</LinearLayout>
+
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:orientation="horizontal">
+
+		<FrameLayout
+			android:layout_width="40dp"
+			android:layout_height="wrap_content">
+
+			<Space
+				android:layout_width="40dp"
+				android:layout_height="wrap_content" />
+
+			<com.google.android.material.imageview.ShapeableImageView
+				android:id="@+id/avatar"
+				android:layout_width="40dp"
+				android:layout_height="40dp"
+				android:background="?colorSecondaryContainer"
+				app:layout_constraintStart_toStartOf="parent"
+				app:shapeAppearanceOverlay="@style/circleImageView"
+				tools:srcCompat="@tools:sample/avatars" />
+		</FrameLayout>
+
+		<LinearLayout
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="8dp"
+			android:orientation="vertical">
+
+			<LinearLayout
+				android:id="@+id/message_info"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:gravity="center_vertical"
+				android:orientation="horizontal">
+
+				<TextView
+					android:id="@+id/sender_name"
+					style="?textAppearanceBodyMediumEmphasized"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:ellipsize="end"
+					android:maxLines="1"
+					tools:text="@tools:sample/full_names" />
+
+				<TextView
+					android:id="@+id/sender_badge"
+					style="?textAppearanceLabelLarge"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:layout_marginStart="8dp"
+					android:background="@drawable/background_user_badge"
+					android:ellipsize="end"
+					android:maxLines="1"
+					android:paddingHorizontal="4dp"
+					android:paddingVertical="2dp"
+					android:textColor="?colorOnPrimary"
+					android:visibility="gone"
+					tools:text="BOT"
+					tools:visibility="visible" />
+
+				<TextView
+					android:id="@+id/event_timestamp"
+					style="?textAppearanceLabelMedium"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:layout_marginStart="8dp"
+					android:ellipsize="end"
+					android:maxLines="1"
+					tools:text="@tools:sample/date/hhmm" />
+
+				<TextView
+					android:id="@+id/edited"
+					style="?textAppearanceLabelMedium"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:layout_marginStart="8dp"
+					android:ellipsize="end"
+					android:maxLines="1"
+					android:text="@string/message_edited"
+					android:textStyle="italic"
+					android:visibility="gone"
+					tools:visibility="visible" />
+
+			</LinearLayout>
+
+
+			<TextView
+				android:id="@+id/body"
+				style="?textAppearanceBodySmall"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:ellipsize="end"
+				tools:text="@tools:sample/lorem" />
+		</LinearLayout>
+	</LinearLayout>
+
+	<FrameLayout
+		android:id="@+id/attachment"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginStart="48dp"
+		android:visibility="gone"
+		tools:visibility="visible">
+
+		<include layout="@layout/attachment_image" />
+	</FrameLayout>
+
+	<LinearLayout
+		android:id="@+id/embeds"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginStart="48dp"
+		android:visibility="gone"
+		tools:visibility="visible">
+
+		<include layout="@layout/item_embed" />
+	</LinearLayout>
+
+	<com.google.android.material.chip.ChipGroup
+		android:id="@+id/reactions"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginStart="48dp"
+		android:visibility="gone"
+		app:chipSpacingHorizontal="4dp"
+		app:chipSpacingVertical="-12dp"
+		tools:visibility="visible">
+
+		<include layout="@layout/item_reaction" />
+
+		<include
+			android:id="@+id/reaction_add"
+			layout="@layout/item_reaction_add" />
+	</com.google.android.material.chip.ChipGroup>
+</LinearLayout>

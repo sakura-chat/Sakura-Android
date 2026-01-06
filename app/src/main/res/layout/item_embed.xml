@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="wrap_content"
+	android:layout_height="wrap_content">
+
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:orientation="horizontal">
+
+		<View
+			android:id="@+id/colorStrip"
+			android:layout_width="4dp"
+			android:layout_height="match_parent"
+			android:background="?colorPrimary" />
+
+		<LinearLayout
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:orientation="vertical"
+			android:padding="8dp">
+
+			<LinearLayout
+				android:id="@+id/author_panel"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginBottom="4dp"
+				android:gravity="center_vertical">
+
+				<com.google.android.material.imageview.ShapeableImageView
+					android:id="@+id/author_avatar"
+					android:layout_width="20dp"
+					android:layout_height="20dp"
+					android:background="?colorSecondaryContainer"
+					app:shapeAppearanceOverlay="@style/circleImageView"
+					tools:srcCompat="@tools:sample/avatars" />
+
+				<TextView
+					android:id="@+id/author_name"
+					style="?textAppearanceBodySmall"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:layout_marginStart="8dp"
+					android:ellipsize="end"
+					android:maxLines="1"
+					android:textStyle="bold"
+					tools:text="@tools:sample/full_names" />
+			</LinearLayout>
+
+			<TextView
+				android:id="@+id/title"
+				style="?textAppearanceTitleMedium"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginBottom="4dp"
+				android:ellipsize="end"
+				android:textColor="?colorPrimary"
+				tools:text="@tools:sample/cities" />
+
+			<TextView
+				android:id="@+id/body"
+				style="?textAppearanceBodyMedium"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginBottom="4dp"
+				tools:text="@tools:sample/lorem" />
+
+			<com.google.android.material.imageview.ShapeableImageView
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:adjustViewBounds="true"
+				android:maxHeight="200dp"
+				android:scaleType="centerCrop"
+				tools:srcCompat="@tools:sample/backgrounds/scenic" />
+		</LinearLayout>
+	</LinearLayout>
+</com.google.android.material.card.MaterialCardView>

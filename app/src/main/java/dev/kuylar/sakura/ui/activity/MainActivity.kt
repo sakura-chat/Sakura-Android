@@ -1,15 +1,19 @@
 package dev.kuylar.sakura.ui.activity
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
 import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavController
+import androidx.navigation.fragment.NavHostFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import dev.kuylar.recyclerviewbuilder.ExtensibleRecyclerAdapter
 import dev.kuylar.sakura.R
@@ -21,13 +25,14 @@ import dev.kuylar.sakura.ui.adapter.recyclerview.SpaceListRecyclerAdapter
 import dev.kuylar.sakura.ui.adapter.recyclerview.SpaceTreeRecyclerAdapter
 import dev.kuylar.sakura.ui.fragment.verification.VerificationBottomSheetFragment
 import kotlinx.coroutines.launch
+import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.verification.ActiveDeviceVerification
 import kotlin.math.max
 
 class MainActivity : AppCompatActivity() {
 	private lateinit var binding: ActivityMainBinding
 	private lateinit var client: Matrix
-	private lateinit var adapter: ExtensibleRecyclerAdapter
+	private lateinit var navController: NavController
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -48,6 +53,10 @@ class MainActivity : AppCompatActivity() {
 			insets
 		}
 
+		val navHostFragment =
+			supportFragmentManager.findFragmentById(binding.navHostFragment.id) as NavHostFragment
+		navController = navHostFragment.navController
+
 		val loggedInAccounts = Matrix.getAvailableAccounts(this)
 		if (loggedInAccounts.isEmpty()) {
 			startActivity(Intent(this, LoginActivity::class.java))
@@ -56,32 +65,6 @@ class MainActivity : AppCompatActivity() {
 
 		binding.roomsPanel.spacesRecycler.layoutManager = LinearLayoutManager(this)
 		binding.roomsPanel.roomsRecycler.layoutManager = LinearLayoutManager(this)
-
-		/*
-		adapter = RecyclerViewBuilder(this)
-			.addView<MatrixSpace, ItemDebugRoomBinding> { binding, item, context ->
-				binding.title.text = item.parent?.name?.explicitName ?: "null"
-				binding.subtitle.text =
-					"[${item.order}] ${item.children.size} children (${item.childSpaces.size} spaces)"
-				binding.root.setOnClickListener {
-					adapter.clearItems()
-					adapter.addItems(item.children)
-					adapter.addItems(item.childSpaces)
-				}
-				Glide.with(this)
-					.load(item.parent?.avatarUrl)
-					.into(binding.icon)
-			}
-			.addView<Room, ItemDebugRoomBinding> { binding, item, context ->
-				binding.title.text = item.name?.explicitName ?: "null"
-				binding.subtitle.text = item.roomId.full
-				Glide.with(this)
-					.load(item.avatarUrl)
-					.into(binding.icon)
-			}.build(binding.recycler)
-
-		binding.refresh.setOnClickListener { onClientReady() }
-		*/
 
 		suspendThread {
 			client = Matrix.loadClient(this, "main")
@@ -107,14 +90,36 @@ class MainActivity : AppCompatActivity() {
 	}
 
 	private fun onClientReady() {
-		binding.roomsPanel.spacesRecycler.adapter = SpaceListRecyclerAdapter(this)
+		binding.roomsPanel.spacesRecycler.adapter = SpaceListRecyclerAdapter(
+			this,
+			getSharedPreferences("main", MODE_PRIVATE).getString("selectedSpaceId", null)
+		)
 		binding.roomsPanel.roomsRecycler.adapter = SpaceTreeRecyclerAdapter(this)
+		getSharedPreferences("main", MODE_PRIVATE).getString("selectedRoomId", null)?.let {
+			openRoomTimeline(it)
+		}
 	}
 
 	fun openSpaceTree(space: MatrixSpace) {
+		getSharedPreferences("main", MODE_PRIVATE).edit {
+			putString("selectedSpaceId", space.parent?.roomId?.full ?: "!home:SakuraNative")
+		}
 		binding.roomsPanel.title.text = space.parent?.name?.explicitName ?: "Home"
 		binding.roomsPanel.topic.visibility = View.GONE
 		(binding.roomsPanel.roomsRecycler.adapter as? SpaceTreeRecyclerAdapter)
 			?.changeSpace(space.parent?.roomId?.full ?: "!home:SakuraNative")
+	}
+
+	fun openRoomTimeline(room: Room) = openRoomTimeline(room.roomId.full)
+	fun openRoomTimeline(roomId: String) {
+		getSharedPreferences("main", MODE_PRIVATE).edit {
+			putString("selectedRoomId", roomId)
+		}
+		binding.overlappingPanels.closePanels()
+		navController.navigate(R.id.nav_room, bundleOf("roomId" to roomId))
+	}
+
+	fun getCurrentRoomId(): String? {
+		return navController.currentBackStackEntry?.savedStateHandle?.get<String>("roomId")
 	}
 }

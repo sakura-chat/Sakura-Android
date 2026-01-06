@@ -23,19 +23,20 @@
 			android:layout_height="match_parent"
 			android:layout_gravity="start" />
 
-		<FrameLayout
+		<androidx.coordinatorlayout.widget.CoordinatorLayout
 			android:id="@+id/timeline_panel"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
 			android:layout_gravity="center"
 			android:background="?colorSurfaceContainer">
 
-			<TextView
+			<androidx.fragment.app.FragmentContainerView
+				android:id="@+id/nav_host_fragment"
+				android:name="androidx.navigation.fragment.NavHostFragment"
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
-				android:text="Timeline"
-				android:textAlignment="center" />
-		</FrameLayout>
+				app:navGraph="@navigation/main_nav_graph" />
+		</androidx.coordinatorlayout.widget.CoordinatorLayout>
 
 		<FrameLayout
 			android:id="@+id/users_panel"
@@ -46,7 +47,7 @@
 			<TextView
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
-				android:text="Users"
+				android:text="Timeline"
 				android:textAlignment="center" />
 		</FrameLayout>
 
