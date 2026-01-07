@@ -3,6 +3,7 @@ package dev.kuylar.sakura
 import android.content.Context
 import android.text.format.DateUtils
 import kotlinx.coroutines.runBlocking
+import net.folivo.trixnity.core.model.events.m.Presence
 import java.time.Instant
 import java.time.ZoneId
 import kotlin.concurrent.thread
@@ -37,4 +38,12 @@ object Utils {
 		return Instant.ofEpochMilli(this).atZone(zoneId).toLocalDate() ==
 				Instant.ofEpochMilli(other).atZone(zoneId).toLocalDate()
 	}
+
+	fun Presence.toLocalized(): Int = when (this) {
+		Presence.ONLINE -> R.string.user_status_online
+		Presence.OFFLINE -> R.string.user_status_offline
+		Presence.UNAVAILABLE -> R.string.user_status_unavailable
+	}
+
+	fun Presence.toLocalized(context: Context): String = context.getString(toLocalized())
 }

@@ -38,4 +38,7 @@
 	<string name="action_pins">Pins</string>
 	<string name="action_notifications">Notifications</string>
 	<string name="action_settings">Settings</string>
+	<string name="user_status_online">Online</string>
+	<string name="user_status_offline">Offline</string>
+	<string name="user_status_unavailable">Unavailable</string>
 </resources>
