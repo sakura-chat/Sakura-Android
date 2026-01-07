@@ -16,13 +16,12 @@ import dev.kuylar.sakura.Utils.toTimestamp
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.AttachmentImageBinding
 import dev.kuylar.sakura.databinding.ItemMessageBinding
+import dev.kuylar.sakura.databinding.ItemReactionBinding
 import dev.kuylar.sakura.databinding.ItemSpaceListDividerBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.room
@@ -35,23 +34,22 @@ import net.folivo.trixnity.client.store.originTimestamp
 import net.folivo.trixnity.client.store.relatesTo
 import net.folivo.trixnity.client.store.roomId
 import net.folivo.trixnity.client.store.sender
+import net.folivo.trixnity.client.user
 import net.folivo.trixnity.clientserverapi.model.rooms.GetEvents
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.RedactedEventContent
+import net.folivo.trixnity.core.model.events.m.ReactionEventContent
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 
-// TODO: always collect all events
-//       because otherwise the ui jumps around a lot
-//       we can just use notifyItemChanged
 class TimelineRecyclerAdapter(val fragment: Fragment, val roomId: String) :
 	RecyclerView.Adapter<TimelineRecyclerAdapter.TimelineViewHolder>() {
 	private val client = Matrix.getClient()
 	private val layoutInflater = fragment.layoutInflater
 	private lateinit var room: Room
-	private var events = mutableListOf<Flow<TimelineEvent>>()
+	private var eventModels = mutableListOf<EventModel>()
 
 	init {
 		suspendThread {
@@ -69,7 +67,8 @@ class TimelineRecyclerAdapter(val fragment: Fragment, val roomId: String) :
 					val e = event.first()
 					if (e.relatesTo?.relationType == RelationType.Replace) return@forEach
 					if (e.content?.getOrNull() is RedactionEventContent ||
-						e.content?.getOrNull() is RedactedEventContent
+						e.content?.getOrNull() is RedactedEventContent ||
+						e.content?.getOrNull() is ReactionEventContent
 					) return@forEach
 
 					if (lastEventTimestamp < e.originTimestamp) {
@@ -77,8 +76,10 @@ class TimelineRecyclerAdapter(val fragment: Fragment, val roomId: String) :
 						lastEventTimestamp = e.originTimestamp
 					}
 					fragment.activity?.runOnUiThread {
-						events.add(event)
-						notifyItemInserted(events.size - 1)
+						eventModels.add(EventModel(e.roomId, e.eventId, event, e) {
+							updateEventById(e.eventId)
+						})
+						notifyItemInserted(eventModels.size - 1)
 					}
 				}
 				client.client.room.getTimelineEvents(
@@ -90,11 +91,14 @@ class TimelineRecyclerAdapter(val fragment: Fragment, val roomId: String) :
 					if (e.eventId == lastEventId) return@collect
 					if (e.relatesTo?.relationType == RelationType.Replace) return@collect
 					if (e.content?.getOrNull() is RedactionEventContent ||
-						e.content?.getOrNull() is RedactedEventContent
+						e.content?.getOrNull() is RedactedEventContent ||
+						e.content?.getOrNull() is ReactionEventContent
 					) return@collect
 
 					fragment.activity?.runOnUiThread {
-						events.add(0, newEvent)
+						eventModels.add(0, EventModel(e.roomId, e.eventId, newEvent, e) {
+							updateEventById(e.eventId)
+						})
 						notifyItemInserted(0)
 					}
 				}
@@ -128,166 +132,172 @@ class TimelineRecyclerAdapter(val fragment: Fragment, val roomId: String) :
 	) {
 		if (holder is EventViewHolder) {
 			holder.bind(
-				events[position],
-				events.getOrNull(position + 1),
-				events.getOrNull(position - 1)
+				eventModels[position],
+				eventModels.getOrNull(position + 1),
+				eventModels.getOrNull(position - 1)
 			)
 		}
 	}
 
-	override fun getItemCount() = events.size
+	override fun getItemCount() = eventModels.size
 
-	override fun onViewRecycled(holder: TimelineViewHolder) {
-		if (holder is EventViewHolder) {
-			holder.onRecycled()
-		}
-		super.onViewRecycled(holder)
+	private fun updateEventById(eventId: EventId) {
+		eventModels
+			.indexOfFirst { it.eventId == eventId }
+			.takeIf { it >= 0 }
+			?.let { index ->
+				notifyItemChanged(index)
+			}
 	}
 
 	open class TimelineViewHolder(binding: ViewBinding) : RecyclerView.ViewHolder(binding.root)
 	open class EventViewHolder(val binding: ItemMessageBinding) : TimelineViewHolder(binding) {
-		private var job: Job? = null
-		private var replyJob: Job? = null
 		private val client = Matrix.getClient()
 		private val layoutInflater =
 			binding.root.context.getSystemService<LayoutInflater>() as LayoutInflater
 
 		fun bind(
-			eventFlow: Flow<TimelineEvent>,
-			prevEventFlow: Flow<TimelineEvent>? = null,
-			nextEventFlow: Flow<TimelineEvent>? = null
+			eventModel: EventModel,
+			lastEventModel: EventModel? = null,
+			nextEventModel: EventModel? = null
 		) {
-			job?.cancel()
-			job = CoroutineScope(Dispatchers.Main).launch {
-				val lastEvent = prevEventFlow?.firstOrNull()
-				val nextEvent = nextEventFlow?.firstOrNull()
-				eventFlow.collect { event ->
-					val user = client.getUser(event.sender, event.roomId)
-					Handler(binding.root.context.mainLooper).post {
-						resetBindingState()
+			val event = eventModel.snapshot ?: return
+			val lastEvent = lastEventModel?.snapshot
+			val nextEvent = nextEventModel?.snapshot
+			val repliedEvent = eventModel.repliedSnapshot
 
-						if (lastEvent?.sender == event.sender && lastEvent.originTimestamp - event.originTimestamp < 5 * 60 * 1000) {
-							binding.avatar.visibility = View.GONE
-							binding.messageInfo.visibility = View.GONE
-						}
-						binding.eventTimestamp.text =
-							event.originTimestamp.toTimestamp(binding.eventTimestamp.context)
-						user?.let {
-							binding.senderName.text = it.name
-							Glide.with(binding.root)
-								.load(it.avatarUrl)
-								.into(binding.avatar)
-						}
-						val content =
-							event.content?.getOrNull() as? RoomMessageEventContent ?: return@post
-						content.relatesTo?.replyTo?.eventId?.let {
-							handleReply(event.roomId, it)
-						}
-						if (event.isReplaced) binding.edited.visibility = View.VISIBLE
-						when (content) {
-							is RoomMessageEventContent.TextBased.Text -> {
-								if (content.formattedBody != null) {
-									// Extremely hacky way!! No one likes this!!!
-									// Make this better!!!!!
-									val split =
-										content.formattedBody?.split("</mx-reply>", limit = 2)
-											?: emptyList()
-									binding.body.text = Html.fromHtml(
-										split.last(),
-										Html.FROM_HTML_MODE_COMPACT
-									)
-								} else {
-									binding.body.text = content.body
-								}
-							}
-
-							is RoomMessageEventContent.FileBased.Image -> {
-								if (content.fileName != null && content.body != content.fileName) {
-									binding.body.text = content.body
-								} else {
-									binding.body.visibility = View.GONE
-								}
-
-								val attachmentBinding = AttachmentImageBinding.inflate(
-									layoutInflater,
-									binding.attachment,
-									false
-								)
-								binding.attachment.addView(attachmentBinding.root)
-								Glide.with(attachmentBinding.root)
-									.load(content.url)
-									.into(attachmentBinding.imageAttachment)
-							}
-
-							else -> {
-								binding.body.text = content.javaClass.name
-							}
-						}
+			suspendThread {
+				val user = client.getUser(event.sender, event.roomId)
+				Handler(binding.root.context.mainLooper).post {
+					user?.let {
+						binding.senderName.text = it.name
+						Glide.with(binding.root)
+							.load(it.avatarUrl)
+							.into(binding.avatar)
 					}
+				}
+			}
+			resetBindingState()
+
+			if (lastEvent?.sender == event.sender && lastEvent.originTimestamp - event.originTimestamp < 5 * 60 * 1000) {
+				binding.avatar.visibility = View.GONE
+				binding.messageInfo.visibility = View.GONE
+			}
+			binding.eventTimestamp.text =
+				event.originTimestamp.toTimestamp(binding.eventTimestamp.context)
+			if (eventModel.replaces?.history?.isNotEmpty() == true)
+				binding.edited.visibility = View.VISIBLE
+			if (eventModel.reactions?.reactions?.isNotEmpty() == true) {
+				binding.reactions.visibility = View.VISIBLE
+				handleReactions(eventModel.reactions!!.reactions)
+			} else
+				binding.reactions.visibility = View.GONE
+			val content =
+				event.content?.getOrNull() as? RoomMessageEventContent ?: return
+			repliedEvent?.let {
+				handleReply(it)
+			}
+			when (content) {
+				is RoomMessageEventContent.TextBased.Text -> {
+					if (content.formattedBody != null) {
+						// Extremely hacky way!! No one likes this!!!
+						// Make this better!!!!!
+						val split =
+							content.formattedBody?.split("</mx-reply>", limit = 2)
+								?: emptyList()
+						binding.body.text = Html.fromHtml(
+							split.last(),
+							Html.FROM_HTML_MODE_COMPACT
+						)
+					} else {
+						binding.body.text = content.body
+					}
+				}
+
+				is RoomMessageEventContent.FileBased.Image -> {
+					if (content.fileName != null && content.body != content.fileName) {
+						binding.body.text = content.body
+					} else {
+						binding.body.visibility = View.GONE
+					}
+
+					val attachmentBinding = AttachmentImageBinding.inflate(
+						layoutInflater,
+						binding.attachment,
+						false
+					)
+					binding.attachment.addView(attachmentBinding.root)
+					Glide.with(attachmentBinding.root)
+						.load(content.url)
+						.into(attachmentBinding.imageAttachment)
+				}
+
+				else -> {
+					binding.body.text = content.javaClass.name
 				}
 			}
 		}
 
-		private fun handleReply(roomId: RoomId, replyingEventId: EventId) {
+		private fun handleReactions(reactions: Map<String, Set<TimelineEvent>>) {
+			if (binding.reactions.childCount > 1)
+				binding.reactions.removeViews(0, binding.reactions.childCount - 1)
+			reactions.entries
+				.sortedBy { it.value.minBy { e -> e.originTimestamp }.originTimestamp }
+				.forEach { (key, list) ->
+					val weReacted = list.any { it.sender == client.client.userId }
+					val reactionBinding =
+						ItemReactionBinding.inflate(layoutInflater, binding.reactions, false)
+					reactionBinding.root.text = key + " " + list.size
+					reactionBinding.root.isSelected = weReacted
+					binding.reactions.addView(reactionBinding.root, 0)
+				}
+		}
+
+		private fun handleReply(event: TimelineEvent) {
 			binding.avatar.visibility = View.VISIBLE
 			binding.messageInfo.visibility = View.VISIBLE
 
-			binding.replyingName.text = ""
-			binding.replyingBody.setText(R.string.loading_reply)
-			replyJob?.cancel()
-			replyJob = CoroutineScope(Dispatchers.Main).launch {
-				client.client.room.getTimelineEvent(roomId, replyingEventId)
-					.collect { event ->
-						if (event == null) return@collect
-						val user = client.getUser(event.sender, event.roomId)
-						Handler(binding.root.context.mainLooper).post {
-							user?.let {
-								binding.replyingName.text = it.name
-								Glide.with(binding.root)
-									.load(it.avatarUrl)
-									.into(binding.replyingAvatar)
-							}
-							binding.replyingEvent.visibility = View.VISIBLE
-							binding.replyingBody.setText(R.string.empty_message)
-							val content =
-								event.content?.getOrNull() as? RoomMessageEventContent
-									?: return@post
-
-							when (content) {
-								is RoomMessageEventContent.TextBased.Text -> {
-									if (content.formattedBody != null) {
-										// Extremely hacky way!! No one likes this!!!
-										// Make this better!!!!!
-										val split =
-											content.formattedBody?.split("</mx-reply>", limit = 2)
-												?: emptyList()
-										binding.replyingBody.text = Html.fromHtml(
-											split.last(),
-											Html.FROM_HTML_MODE_COMPACT
-										)
-									} else {
-										binding.replyingBody.text = content.body
-									}
-								}
-
-								is RoomMessageEventContent.FileBased.Image -> {
-									binding.replyingBody.text = content.body
-								}
-
-								else -> {
-									binding.replyingBody.text = content.javaClass.name
-								}
-							}
-						}
+			suspendThread {
+				val user = client.getUser(event.sender, event.roomId)
+				Handler(binding.root.context.mainLooper).post {
+					user?.let {
+						binding.replyingName.text = it.name
+						Glide.with(binding.root)
+							.load(it.avatarUrl)
+							.into(binding.replyingAvatar)
 					}
+				}
 			}
-		}
+			binding.replyingEvent.visibility = View.VISIBLE
+			binding.replyingBody.setText(R.string.empty_message)
+			val content =
+				event.content?.getOrNull() as? RoomMessageEventContent ?: return
 
-		fun onRecycled() {
-			replyJob?.cancel()
-			job?.cancel()
-			replyJob = null
-			job = null
+			when (content) {
+				is RoomMessageEventContent.TextBased.Text -> {
+					if (content.formattedBody != null) {
+						// Extremely hacky way!! No one likes this!!!
+						// Make this better!!!!!
+						val split =
+							content.formattedBody?.split("</mx-reply>", limit = 2)
+								?: emptyList()
+						binding.replyingBody.text = Html.fromHtml(
+							split.last(),
+							Html.FROM_HTML_MODE_COMPACT
+						)
+					} else {
+						binding.replyingBody.text = content.body
+					}
+				}
+
+				is RoomMessageEventContent.FileBased.Image -> {
+					binding.replyingBody.text = content.body
+				}
+
+				else -> {
+					binding.replyingBody.text = content.javaClass.name
+				}
+			}
 		}
 
 		private fun resetBindingState() {
@@ -299,7 +309,7 @@ class TimelineRecyclerAdapter(val fragment: Fragment, val roomId: String) :
 			binding.body.visibility = View.VISIBLE
 			binding.embeds.removeAllViews()
 			binding.attachment.removeAllViews()
-			if (binding.reactions.childCount > 0)
+			if (binding.reactions.childCount > 1)
 				binding.reactions.removeViews(0, binding.reactions.childCount - 1)
 			binding.senderName.text = ""
 			binding.body.text = ""
