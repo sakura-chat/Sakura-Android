@@ -16,22 +16,48 @@
 		android:padding="16dp"
 		tools:listitem="@layout/item_message" />
 
-	<View
-		android:layout_width="match_parent"
-		android:layout_height="1dp"
-		android:layout_marginBottom="8dp"
-		android:background="?android:attr/listDivider" />
-
 	<LinearLayout
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
+		android:layout_marginVertical="8dp"
+		android:gravity="center_vertical"
 		android:orientation="horizontal">
 
-		<dev.kuylar.mentionsedittext.MentionsEditText
-			android:id="@+id/input"
+		<Button
+			android:id="@+id/button_attachment"
+			style="?materialIconButtonFilledTonalStyle"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			app:icon="@drawable/ic_add" />
+
+		<LinearLayout
 			android:layout_width="0dp"
 			android:layout_height="wrap_content"
-			android:layout_weight="1" />
+			android:layout_marginHorizontal="8dp"
+			android:layout_weight="1"
+			android:background="@drawable/text_input_background"
+			android:gravity="center_vertical">
+
+			<dev.kuylar.mentionsedittext.MentionsEditText
+				android:id="@+id/input"
+				android:layout_width="0dp"
+				android:layout_height="match_parent"
+				android:layout_weight="1"
+				android:background="#00000000"
+				android:maxLines="5"
+				android:paddingHorizontal="12dp"
+				android:paddingVertical="8dp"
+				tools:ignore="NestedWeights" />
+
+			<Button
+				android:id="@+id/button_emoji"
+				style="?materialIconButtonOutlinedStyle"
+				android:layout_width="wrap_content"
+				android:layout_height="match_parent"
+				android:background="#00000000"
+				android:padding="8dp"
+				app:icon="@drawable/ic_emoji" />
+		</LinearLayout>
 
 		<Button
 			android:id="@+id/button_send"
