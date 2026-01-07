@@ -4,8 +4,15 @@ import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import dev.kuylar.sakura.R
@@ -14,7 +21,7 @@ import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentTimelineBinding
 import dev.kuylar.sakura.ui.adapter.recyclerview.TimelineRecyclerAdapter
 
-class TimelineFragment : Fragment() {
+class TimelineFragment : Fragment(), MenuProvider {
 	private lateinit var binding: FragmentTimelineBinding
 	private lateinit var roomId: String
 	private lateinit var client: Matrix
@@ -43,6 +50,23 @@ class TimelineFragment : Fragment() {
 			return
 		}
 
+		suspendThread {
+			client.getRoom(roomId)?.let { room ->
+				(activity as? AppCompatActivity)?.let {
+					it.runOnUiThread {
+						it.supportActionBar?.title = room.name?.explicitName ?: room.roomId.full
+					}
+				}
+			}
+		}
+
+		val menuHost: MenuHost = requireActivity()
+		menuHost.addMenuProvider(
+			this,
+			viewLifecycleOwner,
+			Lifecycle.State.RESUMED
+		)
+
 		binding.timelineRecycler.layoutManager =
 			LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, true)
 		binding.timelineRecycler.adapter = TimelineRecyclerAdapter(this, roomId)
@@ -64,5 +88,13 @@ class TimelineFragment : Fragment() {
 				}
 			}
 		}
+	}
+
+	override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+		menuInflater.inflate(R.menu.top_app_bar, menu)
+	}
+
+	override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+		return false
 	}
 }

@@ -60,6 +60,20 @@ class MainActivity : AppCompatActivity() {
 			supportFragmentManager.findFragmentById(binding.navHostFragment.id) as NavHostFragment
 		navController = navHostFragment.navController
 
+		setSupportActionBar(binding.toolbar)
+		binding.toolbar.setNavigationOnClickListener {
+			binding.overlappingPanels.openStartPanel()
+		}
+		binding.toolbar.setOnMenuItemClickListener {
+			return@setOnMenuItemClickListener when (it.itemId) {
+				R.id.menu_users -> {
+					binding.overlappingPanels.openEndPanel()
+					true
+				}
+				else -> false
+			}
+		}
+
 		val loggedInAccounts = Matrix.getAvailableAccounts(this)
 		if (loggedInAccounts.isEmpty()) {
 			startActivity(Intent(this, LoginActivity::class.java))

@@ -33,4 +33,5 @@
 	<string name="sync_status_error">Connection error</string>
 	<string name="sync_status_timeout">Timed out</string>
 	<string name="sync_status_stopped">Syncing stopped</string>
+	<string name="action_users">Users</string>
 </resources>
