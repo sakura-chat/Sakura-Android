@@ -71,18 +71,11 @@
 				tools:layout="@layout/fragment_timeline" />
 		</androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-		<FrameLayout
+		<androidx.fragment.app.FragmentContainerView
 			android:id="@+id/users_panel"
 			android:layout_width="wrap_content"
 			android:layout_height="match_parent"
-			android:layout_gravity="end">
-
-			<TextView
-				android:layout_width="match_parent"
-				android:layout_height="match_parent"
-				android:text="Timeline"
-				android:textAlignment="center" />
-		</FrameLayout>
+			android:layout_gravity="end" />
 
 	</com.discord.panels.OverlappingPanelsLayout>
 

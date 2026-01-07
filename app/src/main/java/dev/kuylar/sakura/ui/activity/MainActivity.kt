@@ -24,6 +24,7 @@ import dev.kuylar.sakura.client.MatrixSpace
 import dev.kuylar.sakura.databinding.ActivityMainBinding
 import dev.kuylar.sakura.ui.adapter.recyclerview.SpaceListRecyclerAdapter
 import dev.kuylar.sakura.ui.adapter.recyclerview.SpaceTreeRecyclerAdapter
+import dev.kuylar.sakura.ui.fragment.RoomInfoPanelFragment
 import dev.kuylar.sakura.ui.fragment.verification.VerificationBottomSheetFragment
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.store.Room
@@ -70,6 +71,7 @@ class MainActivity : AppCompatActivity() {
 					binding.overlappingPanels.openEndPanel()
 					true
 				}
+
 				else -> false
 			}
 		}
@@ -147,6 +149,11 @@ class MainActivity : AppCompatActivity() {
 		}
 		binding.overlappingPanels.closePanels()
 		navController.navigate(R.id.nav_room, bundleOf("roomId" to roomId))
+		supportFragmentManager.beginTransaction()
+			.replace(binding.usersPanel.id, RoomInfoPanelFragment().apply {
+				arguments = bundleOf("roomId" to roomId)
+			})
+			.commit()
 	}
 
 	fun getCurrentRoomId(): String? {

@@ -34,4 +34,8 @@
 	<string name="sync_status_timeout">Timed out</string>
 	<string name="sync_status_stopped">Syncing stopped</string>
 	<string name="action_users">Users</string>
+	<string name="action_search">Search</string>
+	<string name="action_pins">Pins</string>
+	<string name="action_notifications">Notifications</string>
+	<string name="action_settings">Settings</string>
 </resources>

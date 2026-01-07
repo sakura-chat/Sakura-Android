@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:paddingHorizontal="16dp"
+	android:paddingVertical="8dp">
+
+	<com.google.android.material.imageview.ShapeableImageView
+		android:id="@+id/avatar"
+		android:layout_width="40dp"
+		android:layout_height="40dp"
+		android:background="?colorSecondaryContainer"
+		android:scaleType="centerCrop"
+		app:shapeAppearanceOverlay="@style/circleImageView"
+		tools:src="@tools:sample/avatars" />
+
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:layout_marginStart="8dp"
+		android:gravity="center_vertical"
+		android:orientation="vertical">
+
+		<TextView
+			android:id="@+id/name"
+			style="?textAppearanceTitleSmall"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:ellipsize="end"
+			android:maxLines="1"
+			tools:text="@tools:sample/full_names" />
+
+		<TextView
+			android:id="@+id/status"
+			style="?textAppearanceLabelMedium"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:ellipsize="end"
+			android:maxLines="1"
+			tools:text="Offline" />
+	</LinearLayout>
+</LinearLayout>
