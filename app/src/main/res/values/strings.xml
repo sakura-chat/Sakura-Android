@@ -24,7 +24,13 @@
 	<string name="login_next">Log in</string>
 	<string name="initial_sync">Initial sync ongoing…</string>
 	<string name="initial_sync_body">This may take a few minutes if you\'re in a lot of rooms.</string>
-	<string name="loading_reply">Loading replied to event...</string>
+	<string name="loading_reply">Loading replied to event…</string>
 	<string name="empty_message">Empty message</string>
 	<string name="message_edited">(edited)</string>
+	<string name="sync_status_running">Connected</string>
+	<string name="sync_status_initial">Initial sync ongoing…</string>
+	<string name="sync_status_start">Connecting…</string>
+	<string name="sync_status_error">Connection error</string>
+	<string name="sync_status_timeout">Timed out</string>
+	<string name="sync_status_stopped">Syncing stopped</string>
 </resources>

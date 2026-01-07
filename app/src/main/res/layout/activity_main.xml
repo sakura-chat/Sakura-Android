@@ -5,9 +5,30 @@
 	android:id="@+id/main"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
+	android:animateLayoutChanges="true"
 	android:fitsSystemWindows="true"
 	android:orientation="vertical"
 	tools:context=".ui.activity.MainActivity">
+
+	<View
+		android:id="@+id/statusBarBg"
+		android:layout_width="match_parent"
+		android:layout_height="0dp" />
+
+	<FrameLayout
+		android:id="@+id/sync_indicator"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content">
+
+		<TextView
+			android:id="@+id/sync_indicator_text"
+			style="?textAppearanceLabelMedium"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:paddingVertical="4dp"
+			android:text="@string/sync_status_running"
+			android:textAlignment="center" />
+	</FrameLayout>
 
 	<com.discord.panels.OverlappingPanelsLayout
 		android:id="@+id/overlapping_panels"
@@ -35,7 +56,8 @@
 				android:name="androidx.navigation.fragment.NavHostFragment"
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
-				app:navGraph="@navigation/main_nav_graph" />
+				app:navGraph="@navigation/main_nav_graph"
+				tools:layout="@layout/fragment_timeline" />
 		</androidx.coordinatorlayout.widget.CoordinatorLayout>
 
 		<FrameLayout

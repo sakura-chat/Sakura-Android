@@ -1,9 +1,9 @@
 package dev.kuylar.sakura.ui.activity
 
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
+import android.util.TypedValue
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -11,11 +11,12 @@ import androidx.core.content.edit
 import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.postDelayed
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import dev.kuylar.recyclerviewbuilder.ExtensibleRecyclerAdapter
+import com.google.android.material.R as MaterialR
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
@@ -27,6 +28,7 @@ import dev.kuylar.sakura.ui.fragment.verification.VerificationBottomSheetFragmen
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.verification.ActiveDeviceVerification
+import net.folivo.trixnity.clientserverapi.client.SyncState
 import kotlin.math.max
 
 class MainActivity : AppCompatActivity() {
@@ -44,9 +46,10 @@ class MainActivity : AppCompatActivity() {
 		ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
 			val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
 			val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+			binding.statusBarBg.layoutParams.height = systemBars.top
 			v.setPadding(
 				systemBars.left,
-				max(ime.top, systemBars.top),
+				ime.top,
 				systemBars.right,
 				max(ime.bottom, systemBars.bottom)
 			)
@@ -67,6 +70,7 @@ class MainActivity : AppCompatActivity() {
 		binding.roomsPanel.spacesRecycler.layoutManager = LinearLayoutManager(this)
 		binding.roomsPanel.roomsRecycler.layoutManager = LinearLayoutManager(this)
 
+		handleStateChange(SyncState.STOPPED)
 		suspendThread {
 			try {
 				client = Matrix.loadClient(this, "main")
@@ -84,8 +88,10 @@ class MainActivity : AppCompatActivity() {
 			client.startSync()
 			lifecycleScope.launch {
 				client.addSyncStateListener {
-					// TODO: binding.text.text = "Sync state: $it"
 					Log.i("MainActivity", "Sync state: $it")
+					runOnUiThread {
+						handleStateChange(it)
+					}
 				}
 			}
 			lifecycleScope.launch {
@@ -131,5 +137,66 @@ class MainActivity : AppCompatActivity() {
 
 	fun getCurrentRoomId(): String? {
 		return navController.currentBackStackEntry?.savedStateHandle?.get<String>("roomId")
+	}
+
+	private fun handleStateChange(state: SyncState) {
+		val resId = when (state) {
+			SyncState.INITIAL_SYNC -> R.string.sync_status_initial
+			SyncState.STARTED -> R.string.sync_status_start
+			SyncState.RUNNING -> R.string.sync_status_running
+			SyncState.ERROR -> R.string.sync_status_error
+			SyncState.TIMEOUT -> R.string.sync_status_timeout
+			SyncState.STOPPED -> R.string.sync_status_stopped
+		}
+		val (backgroundColor, textColor) = when (state) {
+			SyncState.INITIAL_SYNC -> Pair(
+				MaterialR.attr.colorPrimaryFixed,
+				MaterialR.attr.colorOnPrimary
+			)
+
+			SyncState.STARTED -> Pair(
+				MaterialR.attr.colorTertiary,
+				MaterialR.attr.colorOnTertiary
+			)
+
+			SyncState.RUNNING -> Pair(
+				MaterialR.attr.colorSurface,
+				MaterialR.attr.colorOnSurface
+			)
+
+			SyncState.ERROR -> Pair(
+				MaterialR.attr.colorTertiary,
+				MaterialR.attr.colorOnTertiary
+			)
+
+			SyncState.TIMEOUT -> Pair(
+				MaterialR.attr.colorTertiary,
+				MaterialR.attr.colorOnTertiary
+			)
+
+			SyncState.STOPPED -> Pair(
+				MaterialR.attr.colorTertiary,
+				MaterialR.attr.colorOnTertiary
+			)
+		}
+		if (state == SyncState.RUNNING) {
+			binding.syncIndicator.postDelayed(1000) {
+				binding.syncIndicator.visibility = View.GONE
+			}
+		} else {
+			binding.syncIndicator.post {
+				binding.syncIndicator.visibility = View.VISIBLE
+			}
+		}
+		binding.syncIndicatorText.setText(resId)
+		binding.syncIndicatorText.setTextColor(getColorFromAttr(textColor))
+		binding.syncIndicator.setBackgroundColor(getColorFromAttr(backgroundColor))
+		binding.statusBarBg.setBackgroundColor(getColorFromAttr(backgroundColor))
+	}
+
+	private fun getColorFromAttr(attr: Int): Int {
+		val typedValue = TypedValue()
+		theme.resolveAttribute(attr, typedValue, true)
+		return typedValue.data
 	}
 }
