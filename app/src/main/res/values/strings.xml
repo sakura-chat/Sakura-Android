@@ -41,4 +41,15 @@
 	<string name="user_status_online">Online</string>
 	<string name="user_status_offline">Offline</string>
 	<string name="user_status_unavailable">Unavailable</string>
+	<string name="action_edit">Edit</string>
+	<string name="action_reply">Reply</string>
+	<string name="action_copy">Copy Text</string>
+	<string name="action_delete">Delete</string>
+	<string name="action_edit_history">Edit History</string>
+	<string name="action_profile">Profile</string>
+	<string name="action_share">Share</string>
+	<string name="action_unread">Mark as Unread</string>
+	<string name="action_view_source">View Source</string>
+	<string name="action_report">Report</string>
+	<string name="action_reactions">Reactions</string>
 </resources>

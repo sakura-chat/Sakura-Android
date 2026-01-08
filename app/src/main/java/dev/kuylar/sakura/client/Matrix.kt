@@ -62,6 +62,8 @@ import kotlin.time.ExperimentalTime
 import androidx.room.Room as AndroidRoom
 
 class Matrix(val context: Context, val client: MatrixClient) {
+	val userId: UserId
+		get() = client.userId
 	private val activeVerifications = HashMap<String, ActiveVerification>()
 
 	suspend fun getRoom(roomId: String): Room? {

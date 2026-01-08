@@ -1,12 +1,16 @@
 package dev.kuylar.sakura.ui.adapter.recyclerview
 
+import android.R.attr.fragment
+import android.app.Activity
 import android.os.Handler
 import android.text.Html
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.getSystemService
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
@@ -22,6 +26,7 @@ import dev.kuylar.sakura.databinding.ItemLoadingSpinnerBinding
 import dev.kuylar.sakura.databinding.ItemMessageBinding
 import dev.kuylar.sakura.databinding.ItemReactionBinding
 import dev.kuylar.sakura.databinding.ItemSpaceListDividerBinding
+import dev.kuylar.sakura.ui.fragment.bottomsheet.EventBottomSheetFragment
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -345,6 +350,17 @@ class TimelineRecyclerAdapter(
 			}
 			resetBindingState()
 
+			binding.root.setOnLongClickListener {
+				(binding.root.context as? AppCompatActivity)?.let {
+					val f = EventBottomSheetFragment()
+					f.arguments = bundleOf(
+						"eventId" to event.eventId.full,
+						"roomId" to event.roomId.full,
+					)
+					f.show(it.supportFragmentManager, "eventBottomSheet")
+				}
+				true
+			}
 			if (lastEvent?.sender == event.sender && lastEvent.originTimestamp - event.originTimestamp < 5 * 60 * 1000) {
 				binding.avatar.visibility = View.GONE
 				binding.messageInfo.visibility = View.GONE

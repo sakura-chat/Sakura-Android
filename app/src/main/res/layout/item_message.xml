@@ -14,6 +14,7 @@
 		android:layout_marginVertical="8dp"
 		android:gravity="center_vertical"
 		android:orientation="horizontal"
+		android:paddingHorizontal="16dp"
 		android:visibility="gone"
 		tools:visibility="visible">
 
@@ -44,8 +45,10 @@
 		android:layout_height="wrap_content"
 		android:layout_marginTop="8dp"
 		android:layout_marginBottom="4dp"
+		android:background="?selectableItemBackground"
 		android:gravity="center_vertical"
 		android:orientation="horizontal"
+		android:paddingHorizontal="16dp"
 		android:visibility="gone"
 		tools:visibility="visible">
 
@@ -89,7 +92,9 @@
 	<LinearLayout
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:orientation="horizontal">
+		android:background="?selectableItemBackground"
+		android:orientation="horizontal"
+		android:paddingHorizontal="16dp">
 
 		<FrameLayout
 			android:layout_width="40dp"
@@ -187,7 +192,8 @@
 		android:id="@+id/attachment"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-		android:layout_marginStart="48dp"
+		android:layout_marginStart="64dp"
+		android:layout_marginEnd="16dp"
 		android:visibility="gone"
 		tools:visibility="visible">
 
@@ -198,7 +204,8 @@
 		android:id="@+id/embeds"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:layout_marginStart="48dp"
+		android:layout_marginStart="64dp"
+		android:layout_marginEnd="16dp"
 		android:visibility="gone"
 		tools:visibility="visible">
 
@@ -209,7 +216,8 @@
 		android:id="@+id/reactions"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:layout_marginStart="48dp"
+		android:layout_marginStart="64dp"
+		android:layout_marginEnd="16dp"
 		android:visibility="gone"
 		app:chipSpacingHorizontal="4dp"
 		app:chipSpacingVertical="-12dp"
