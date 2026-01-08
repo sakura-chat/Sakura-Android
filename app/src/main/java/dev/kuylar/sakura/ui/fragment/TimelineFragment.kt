@@ -25,6 +25,8 @@ class TimelineFragment : Fragment(), MenuProvider {
 	private lateinit var binding: FragmentTimelineBinding
 	private lateinit var roomId: String
 	private lateinit var client: Matrix
+	private lateinit var timelineAdapter: TimelineRecyclerAdapter
+	private var isLoadingMore = false
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -67,9 +69,47 @@ class TimelineFragment : Fragment(), MenuProvider {
 			Lifecycle.State.RESUMED
 		)
 
+		timelineAdapter = TimelineRecyclerAdapter(this, roomId, binding.timelineRecycler)
 		binding.timelineRecycler.layoutManager =
 			LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, true)
-		binding.timelineRecycler.adapter = TimelineRecyclerAdapter(this, roomId)
+		binding.timelineRecycler.addOnScrollListener(object :
+			androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
+			override fun onScrolled(
+				recyclerView: androidx.recyclerview.widget.RecyclerView,
+				dx: Int,
+				dy: Int
+			) {
+				super.onScrolled(recyclerView, dx, dy)
+				val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+				val firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
+				val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
+				val totalItemCount = layoutManager.itemCount
+
+				if (dy == 0 || totalItemCount == 0) return
+				if (!isLoadingMore && timelineAdapter.isReady) {
+					if (firstVisibleItem == 0) {
+						Log.d("TimelineFragment", "Loading more messages (forward)")
+						isLoadingMore = true
+						suspendThread {
+							timelineAdapter.loadMoreForwards()
+							Log.d("TimelineFragment", "Loading complete")
+							isLoadingMore = false
+						}
+					} else if (lastVisibleItem == totalItemCount - 1) {
+						Log.d("TimelineFragment", "Loading more messages (backward)")
+						isLoadingMore = true
+						suspendThread {
+							timelineAdapter.loadMoreBackwards()
+							Log.d("TimelineFragment", "Loading complete")
+							isLoadingMore = false
+						}
+					}
+				}
+			}
+		})
+
+
+
 		binding.buttonSend.setOnClickListener {
 			it.isEnabled = false
 			val msg = binding.input.getValue()
