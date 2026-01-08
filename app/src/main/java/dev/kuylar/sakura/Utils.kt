@@ -1,6 +1,7 @@
 package dev.kuylar.sakura
 
 import android.content.Context
+import android.text.format.DateFormat
 import android.text.format.DateUtils
 import kotlinx.coroutines.runBlocking
 import net.folivo.trixnity.core.model.events.m.Presence
@@ -32,6 +33,10 @@ object Utils {
 			).toString()
 		}
 	}
+
+	fun Long.toTimestampDate(context: Context) =
+		DateFormat.getMediumDateFormat(context).format(this)
+
 
 	fun Long.withinSameDay(other: Long): Boolean {
 		val zoneId = ZoneId.systemDefault()

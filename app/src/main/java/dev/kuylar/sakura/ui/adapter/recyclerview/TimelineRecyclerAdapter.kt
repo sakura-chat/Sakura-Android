@@ -14,6 +14,8 @@ import com.bumptech.glide.Glide
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.Utils.toTimestamp
+import dev.kuylar.sakura.Utils.toTimestampDate
+import dev.kuylar.sakura.Utils.withinSameDay
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.AttachmentImageBinding
 import dev.kuylar.sakura.databinding.ItemLoadingSpinnerBinding
@@ -228,7 +230,10 @@ class TimelineRecyclerAdapter(
 		// loading the most recent message, and this method shouldn't
 		// be called
 		if (getRecentJob != null) return
-		Log.i("TimelineRecyclerAdapter", "Loading more messages from ${lastEventId?.full} OR ${eventModels.firstOrNull()?.eventId?.full}")
+		Log.i(
+			"TimelineRecyclerAdapter",
+			"Loading more messages from ${lastEventId?.full} OR ${eventModels.firstOrNull()?.eventId?.full}"
+		)
 		val events = client.client.room.getTimelineEvents(
 			room.roomId,
 			eventModels.firstOrNull()?.eventId ?: EventId(""),
@@ -343,6 +348,13 @@ class TimelineRecyclerAdapter(
 			if (lastEvent?.sender == event.sender && lastEvent.originTimestamp - event.originTimestamp < 5 * 60 * 1000) {
 				binding.avatar.visibility = View.GONE
 				binding.messageInfo.visibility = View.GONE
+			}
+			if (!event.originTimestamp.withinSameDay(lastEvent?.originTimestamp ?: 0)) {
+				binding.dateSeparator.visibility = View.VISIBLE
+				binding.dateSeparatorText.text =
+					event.originTimestamp.toTimestampDate(binding.root.context)
+				binding.avatar.visibility = View.VISIBLE
+				binding.messageInfo.visibility = View.VISIBLE
 			}
 			binding.eventTimestamp.text =
 				event.originTimestamp.toTimestamp(binding.eventTimestamp.context)
@@ -465,6 +477,7 @@ class TimelineRecyclerAdapter(
 		}
 
 		private fun resetBindingState() {
+			binding.dateSeparator.visibility = View.GONE
 			binding.replyingEvent.visibility = View.GONE
 			binding.senderBadge.visibility = View.GONE
 			binding.avatar.visibility = View.VISIBLE
