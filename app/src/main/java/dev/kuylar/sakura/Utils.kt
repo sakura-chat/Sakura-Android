@@ -4,7 +4,9 @@ import android.content.Context
 import android.text.format.DateFormat
 import android.text.format.DateUtils
 import kotlinx.coroutines.runBlocking
+import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.events.m.Presence
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import java.time.Instant
 import java.time.ZoneId
 import kotlin.concurrent.thread
@@ -51,4 +53,13 @@ object Utils {
 	}
 
 	fun Presence.toLocalized(context: Context): String = context.getString(toLocalized())
+	fun getEventBodyText(event: TimelineEvent): CharSequence {
+		val content = event.content?.getOrNull() ?: return event.javaClass.name
+		when (content) {
+			// TODO: Fill every single one of these
+			is RoomMessageEventContent.TextBased.Text -> return content.body
+
+			else -> return content.javaClass.name
+		}
+	}
 }

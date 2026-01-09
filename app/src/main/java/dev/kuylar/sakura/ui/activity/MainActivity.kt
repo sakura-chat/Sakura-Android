@@ -1,5 +1,6 @@
 package dev.kuylar.sakura.ui.activity
 
+import android.app.ComponentCaller
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -14,9 +15,9 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.postDelayed
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
-import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.android.material.R as MaterialR
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.suspendThread
@@ -37,6 +38,7 @@ class MainActivity : AppCompatActivity() {
 	private lateinit var binding: ActivityMainBinding
 	private lateinit var client: Matrix
 	private lateinit var navController: NavController
+	private var autoNavigate = true
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -123,14 +125,24 @@ class MainActivity : AppCompatActivity() {
 	}
 
 	private fun onClientReady() {
+		FirebaseMessaging.getInstance().token.addOnCompleteListener {
+			if (!it.isSuccessful) {
+				Log.e("MainActivity", "Failed to get FCM token", it.exception)
+				return@addOnCompleteListener
+			}
+			suspendThread {
+				client.registerFcmPusher(it.result)
+			}
+		}
 		binding.roomsPanel.spacesRecycler.adapter = SpaceListRecyclerAdapter(
 			this,
 			getSharedPreferences("main", MODE_PRIVATE).getString("selectedSpaceId", null)
 		)
 		binding.roomsPanel.roomsRecycler.adapter = SpaceTreeRecyclerAdapter(this)
-		getSharedPreferences("main", MODE_PRIVATE).getString("selectedRoomId", null)?.let {
-			openRoomTimeline(it)
-		}
+		if (autoNavigate)
+			getSharedPreferences("main", MODE_PRIVATE).getString("selectedRoomId", null)?.let {
+				openRoomTimeline(it)
+			}
 	}
 
 	fun openSpaceTree(space: MatrixSpace) {
@@ -220,5 +232,20 @@ class MainActivity : AppCompatActivity() {
 		val typedValue = TypedValue()
 		theme.resolveAttribute(attr, typedValue, true)
 		return typedValue.data
+	}
+
+	override fun onNewIntent(intent: Intent, caller: ComponentCaller) {
+		super.onNewIntent(intent, caller)
+
+		intent.getStringExtra("roomId")?.let {
+			autoNavigate = false
+			suspendThread {
+				// Ensure that client is created
+				Matrix.loadClient(this)
+				runOnUiThread {
+					openRoomTimeline(it)
+				}
+			}
+		}
 	}
 }

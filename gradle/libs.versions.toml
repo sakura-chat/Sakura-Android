@@ -19,6 +19,8 @@ navigationFragmentKtx = "2.9.6"
 glide = "4.16.0"
 overlappingpanels = "0.1.5"
 mentionsedittext = "1.0.0"
+google-services = "4.4.4"
+firebase-bom = "34.7.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -41,8 +43,11 @@ glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "gl
 glide-compiler = { group = "com.github.bumptech.glide", name = "ksp", version.ref = "glide" }
 overlappingpanels = { group = "com.github.discord", name = "OverlappingPanels", version.ref = "overlappingpanels" }
 mentionsedittext = { group = "com.github.kuylar", name = "MentionsEditText", version.ref = "mentionsedittext" }
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase-bom" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }

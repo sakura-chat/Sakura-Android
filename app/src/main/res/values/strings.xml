@@ -52,4 +52,11 @@
 	<string name="action_view_source">View Source</string>
 	<string name="action_report">Report</string>
 	<string name="action_reactions">Reactions</string>
+	<string name="notification_unread">You have %d unread messages</string>
+	<string name="notification_new_message">New message</string>
+	<string name="notification_channel_other_name">Other notifications</string>
+	<string name="notification_channel_other_description">Notifications that don\'t belong to any rooms</string>
+	<string name="notification_channel_room_name">Room messages</string>
+	<string name="notification_channel_room_description">Messages sent to a room</string>
+	<string name="notification_reply_label">Reply</string>
 </resources>

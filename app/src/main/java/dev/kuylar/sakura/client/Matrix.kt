@@ -3,6 +3,7 @@ package dev.kuylar.sakura.client
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import dev.kuylar.sakura.client.customevent.SpaceChildrenEventContent
 import dev.kuylar.sakura.client.customevent.SpaceOrderEventContent
@@ -10,17 +11,18 @@ import dev.kuylar.sakura.client.customevent.SpaceParentEventContent
 import io.ktor.http.Url
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonObjectBuilder
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.flattenValues
 import net.folivo.trixnity.client.fromStore
 import net.folivo.trixnity.client.login
-import net.folivo.trixnity.client.loginWith
 import net.folivo.trixnity.client.media.okio.createOkioMediaStoreModule
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.getAccountData
@@ -36,15 +38,13 @@ import net.folivo.trixnity.client.verification.ActiveDeviceVerification
 import net.folivo.trixnity.client.verification.ActiveUserVerification
 import net.folivo.trixnity.client.verification.ActiveVerification
 import net.folivo.trixnity.client.verification.ActiveVerificationState
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiBaseClient
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientFactory
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
+import net.folivo.trixnity.clientserverapi.model.push.PusherData
+import net.folivo.trixnity.clientserverapi.model.push.SetPushers
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.MessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
@@ -168,6 +168,23 @@ class Matrix(val context: Context, val client: MatrixClient) {
 				listener.invoke(it)
 			}
 		}
+	}
+
+	suspend fun registerFcmPusher(token: String) {
+		client.api.push.setPushers(SetPushers.Request.Set(
+			"dev.kuylar.sakura.android",
+			token,
+			"http",
+			"Sakura",
+			Build.MANUFACTURER + " " + Build.MODEL,
+			"en", // TODO: Get from context or smth
+			PusherData(
+				// TODO: Make sure event_id_only doesn't break everything
+				//format = "event_id_only",
+				url = "https://sakurapush.kuylar.dev/_matrix/push/v1/notify"
+			)
+			// TODO: Look into append and profileTag
+		)).getOrThrow()
 	}
 
 	fun getVerification(id: String): ActiveVerification? {

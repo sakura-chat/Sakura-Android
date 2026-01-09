@@ -2,6 +2,7 @@ plugins {
 	alias(libs.plugins.android.application)
 	alias(libs.plugins.kotlin.android)
 	alias(libs.plugins.google.devtools.ksp)
+	alias(libs.plugins.google.services)
 	kotlin("plugin.serialization") version "2.2.0"
 }
 
@@ -66,4 +67,6 @@ dependencies {
 	ksp(libs.glide.compiler)
 	implementation(libs.overlappingpanels)
 	implementation(libs.mentionsedittext)
+	implementation(platform(libs.firebase.bom))
+	implementation(libs.firebase.messaging)
 }
