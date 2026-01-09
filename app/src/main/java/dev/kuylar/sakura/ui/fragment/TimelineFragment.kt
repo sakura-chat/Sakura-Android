@@ -9,17 +9,25 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
+import androidx.fragment.app.setFragmentResultListener
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import dev.kuylar.sakura.R
+import dev.kuylar.sakura.Utils
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentTimelineBinding
 import dev.kuylar.sakura.ui.adapter.recyclerview.TimelineRecyclerAdapter
+import net.folivo.trixnity.client.store.eventId
+import net.folivo.trixnity.client.store.roomId
+import net.folivo.trixnity.client.store.sender
+import net.folivo.trixnity.core.model.EventId
+import net.folivo.trixnity.core.model.RoomId
 
 class TimelineFragment : Fragment(), MenuProvider {
 	private lateinit var binding: FragmentTimelineBinding
@@ -27,6 +35,8 @@ class TimelineFragment : Fragment(), MenuProvider {
 	private lateinit var client: Matrix
 	private lateinit var timelineAdapter: TimelineRecyclerAdapter
 	private var isLoadingMore = false
+	private var editingEvent: EventId? = null
+	private var replyingEvent: EventId? = null
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -108,22 +118,118 @@ class TimelineFragment : Fragment(), MenuProvider {
 			}
 		})
 
-
-
 		binding.buttonSend.setOnClickListener {
-			it.isEnabled = false
-			val msg = binding.input.getValue()
+			sendMessage()
+		}
+
+		setFragmentResultListener("timeline_action") { key, bundle ->
+			val action = bundle.getString("action")
+			val eventId = bundle.getString("eventId")?.let { EventId(it) }
+
+			if (eventId == null) return@setFragmentResultListener
+
+			when (action) {
+				"edit" -> handleEdit(eventId)
+				"reply" -> handleReply(eventId)
+				else -> {
+					Toast.makeText(
+						requireContext(),
+						"Action $action for event ${eventId.full}",
+						Toast.LENGTH_LONG
+					).show()
+				}
+			}
+		}
+	}
+
+	fun sendMessage() {
+		val msg = binding.input.getValue()
+		if (msg.isBlank()) return
+		if (editingEvent != null) {
 			suspendThread {
-				try {
-					client.sendMessage(roomId, msg)
+				client.editEvent(roomId, editingEvent!!, msg)
+				activity?.runOnUiThread {
+					handleEdit(null)
+					binding.input.editableText.clear()
+					binding.buttonSend.isEnabled = true
+				}
+			}
+			return
+		}
+		if (replyingEvent != null) {
+			suspendThread {
+				client.sendMessage(roomId, msg, replyTo = replyingEvent)
+				activity?.runOnUiThread {
+					handleReply(null)
+					binding.input.editableText.clear()
+					binding.buttonSend.isEnabled = true
+				}
+			}
+			return
+		}
+		binding.buttonSend.isEnabled = false
+		suspendThread {
+			try {
+				client.sendMessage(roomId, msg)
+				activity?.runOnUiThread {
+					binding.buttonSend.isEnabled = true
+					binding.input.editableText.clear()
+				}
+			} catch (e: Exception) {
+				Log.e("TimelineFragment", "Error sending message", e)
+				activity?.runOnUiThread {
+					binding.buttonSend.isEnabled = true
+				}
+			}
+		}
+	}
+
+	fun handleEdit(eventId: EventId?) {
+		if (replyingEvent != null) replyingEvent = null
+		if (eventId == null) {
+			editingEvent = null
+			binding.editIndicator.visibility = View.GONE
+			return
+		}
+		binding.buttonCancelEdit.setOnClickListener {
+			editingEvent = null
+			binding.editIndicator.visibility = View.GONE
+			binding.input.editableText?.clear()
+		}
+		suspendThread {
+			client.getEvent(RoomId(roomId), eventId)?.let { event ->
+				activity?.runOnUiThread {
+					editingEvent = event.eventId
+					binding.editIndicator.visibility = View.VISIBLE
+					binding.input.editableText?.clear()
+					// TODO: Handle spans for this
+					binding.input.editableText?.insert(0, Utils.getEventBodyText(event))
+				}
+			}
+		}
+	}
+
+	fun handleReply(eventId: EventId?) {
+		if (editingEvent != null) editingEvent = null
+		if (eventId == null) {
+			replyingEvent = null
+			binding.replyIndicator.visibility = View.GONE
+			return
+		}
+		binding.buttonCancelReply.setOnClickListener {
+			replyingEvent = null
+			binding.replyIndicator.visibility = View.GONE
+			binding.input.editableText?.clear()
+		}
+		suspendThread {
+			client.getEvent(RoomId(roomId), eventId)?.let { event ->
+				activity?.runOnUiThread {
+					replyingEvent = event.eventId
+					binding.replyIndicator.visibility = View.VISIBLE
+				}
+				client.getUser(event.sender, event.roomId)?.let { user ->
 					activity?.runOnUiThread {
-						it.isEnabled = true
-						binding.input.editableText.clear()
-					}
-				} catch (e: Exception) {
-					Log.e("TimelineFragment", "Error sending message", e)
-					activity?.runOnUiThread {
-						it.isEnabled = true
+						binding.replyIndicatorText.text = getString(R.string.replying_to, user.name)
 					}
 				}
 			}

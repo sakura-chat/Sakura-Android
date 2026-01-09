@@ -28,7 +28,6 @@ import net.folivo.trixnity.client.store.sender
 import net.folivo.trixnity.client.user
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.RoomAccountDataEventContent
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 
@@ -103,14 +102,22 @@ class EventBottomSheetFragment : BottomSheetDialogFragment() {
 			if (event.content?.getOrNull() is RoomMessageEventContent.TextBased) View.VISIBLE else View.GONE
 
 		binding.edit.setOnClickListener {
-			// TODO: Tell the TimelineFragment to edit the event
-			Toast.makeText(requireContext(), "not yet implemented", Toast.LENGTH_LONG).show()
-			binding.root.postDelayed(50) { dismiss() }
+			binding.root.postDelayed(50) {
+				parentFragmentManager.setFragmentResult("timeline_action", Bundle().apply {
+					putString("action", "edit")
+					putString("eventId", eventId!!.full)
+				})
+				dismiss()
+			}
 		}
 		binding.reply.setOnClickListener {
-			// TODO: Tell the TimelineFragment to reply to the event
-			Toast.makeText(requireContext(), "not yet implemented", Toast.LENGTH_LONG).show()
-			binding.root.postDelayed(50) { dismiss() }
+			binding.root.postDelayed(50) {
+				parentFragmentManager.setFragmentResult("timeline_action", Bundle().apply {
+					putString("action", "reply")
+					putString("eventId", eventId!!.full)
+				})
+				dismiss()
+			}
 		}
 		binding.copy.setOnClickListener {
 			(event.content?.getOrNull() as? RoomMessageEventContent.TextBased)?.body?.let {

@@ -1,14 +1,12 @@
 package dev.kuylar.sakura.ui.adapter.recyclerview
 
-import android.R.attr.fragment
-import android.app.Activity
 import android.os.Handler
 import android.text.Html
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.ViewGroup
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.getSystemService
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
@@ -26,6 +24,7 @@ import dev.kuylar.sakura.databinding.ItemLoadingSpinnerBinding
 import dev.kuylar.sakura.databinding.ItemMessageBinding
 import dev.kuylar.sakura.databinding.ItemReactionBinding
 import dev.kuylar.sakura.databinding.ItemSpaceListDividerBinding
+import dev.kuylar.sakura.ui.fragment.TimelineFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.EventBottomSheetFragment
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,7 +52,6 @@ import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.collections.forEach
 
 class TimelineRecyclerAdapter(
 	val fragment: Fragment,
@@ -336,6 +334,7 @@ class TimelineRecyclerAdapter(
 			val lastEvent = lastEventModel?.snapshot
 			val nextEvent = nextEventModel?.snapshot
 			val repliedEvent = eventModel.repliedSnapshot
+			var lastClick = 0L
 
 			suspendThread {
 				val user = client.getUser(event.sender, event.roomId)
@@ -350,16 +349,23 @@ class TimelineRecyclerAdapter(
 			}
 			resetBindingState()
 
-			binding.root.setOnLongClickListener {
-				(binding.root.context as? AppCompatActivity)?.let {
+			(bindingAdapter as? TimelineRecyclerAdapter)?.let { adapter ->
+				binding.root.setOnLongClickListener {
 					val f = EventBottomSheetFragment()
 					f.arguments = bundleOf(
 						"eventId" to event.eventId.full,
 						"roomId" to event.roomId.full,
 					)
-					f.show(it.supportFragmentManager, "eventBottomSheet")
+					f.show(adapter.fragment.parentFragmentManager, "eventBottomSheet")
+					true
 				}
-				true
+				binding.root.setOnClickListener {
+					val now = System.currentTimeMillis()
+					if (now - lastClick < ViewConfiguration.getDoubleTapTimeout()) {
+						(adapter.fragment as? TimelineFragment)?.handleReply(event.eventId)
+					}
+					lastClick = now
+				}
 			}
 			if (lastEvent?.sender == event.sender && lastEvent.originTimestamp - event.originTimestamp < 5 * 60 * 1000) {
 				binding.avatar.visibility = View.GONE

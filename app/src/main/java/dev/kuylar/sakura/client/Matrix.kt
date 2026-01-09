@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
+import dev.kuylar.sakura.Utils
 import dev.kuylar.sakura.client.customevent.SpaceChildrenEventContent
 import dev.kuylar.sakura.client.customevent.SpaceOrderEventContent
 import dev.kuylar.sakura.client.customevent.SpaceParentEventContent
@@ -29,6 +30,7 @@ import net.folivo.trixnity.client.room.getAccountData
 import net.folivo.trixnity.client.room.getAllState
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomUser
+import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.client.store.repository.room.TrixnityRoomDatabase
 import net.folivo.trixnity.client.store.repository.room.createRoomRepositoriesModule
 import net.folivo.trixnity.client.store.type
@@ -43,8 +45,10 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.push.PusherData
 import net.folivo.trixnity.clientserverapi.model.push.SetPushers
+import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
@@ -152,9 +156,43 @@ class Matrix(val context: Context, val client: MatrixClient) {
 		return client.user.getById(roomId, userId).first()
 	}
 
-	suspend fun sendMessage(roomId: String, msg: String) {
+	suspend fun getEvent(roomId: RoomId, eventId: EventId): TimelineEvent? {
+		return client.room.getTimelineEvent(roomId, eventId).firstOrNull()
+	}
+
+	suspend fun getEvent(roomId: String, eventId: String) =
+		getEvent(RoomId(roomId), EventId(eventId))
+
+	suspend fun sendMessage(roomId: String, msg: String, replyTo: EventId? = null) {
 		client.room.sendMessage(RoomId(roomId)) {
-			content(RoomMessageEventContent.TextBased.Text(msg))
+			val relatesTo = replyTo?.let {
+				RelatesTo.Reply(RelatesTo.ReplyTo(it))
+			}
+			content(
+				RoomMessageEventContent.TextBased.Text(
+					msg,
+					formattedBody = Utils.parseMarkdown(msg),
+					relatesTo = relatesTo
+				)
+			)
+		}
+	}
+
+	suspend fun editEvent(roomId: String, eventId: EventId, msg: String) {
+		client.room.sendMessage(RoomId(roomId)) {
+			content(
+				RoomMessageEventContent.TextBased.Text(
+					"* $msg",
+					formattedBody = Utils.parseMarkdown(msg),
+					relatesTo = RelatesTo.Replace(
+						eventId,
+						newContent = RoomMessageEventContent.TextBased.Text(
+							msg,
+							formattedBody = Utils.parseMarkdown(msg)
+						)
+					)
+				)
+			)
 		}
 	}
 
@@ -171,20 +209,22 @@ class Matrix(val context: Context, val client: MatrixClient) {
 	}
 
 	suspend fun registerFcmPusher(token: String) {
-		client.api.push.setPushers(SetPushers.Request.Set(
-			"dev.kuylar.sakura.android",
-			token,
-			"http",
-			"Sakura",
-			Build.MANUFACTURER + " " + Build.MODEL,
-			"en", // TODO: Get from context or smth
-			PusherData(
-				// TODO: Make sure event_id_only doesn't break everything
-				//format = "event_id_only",
-				url = "https://sakurapush.kuylar.dev/_matrix/push/v1/notify"
+		client.api.push.setPushers(
+			SetPushers.Request.Set(
+				"dev.kuylar.sakura.android",
+				token,
+				"http",
+				"Sakura",
+				Build.MANUFACTURER + " " + Build.MODEL,
+				"en", // TODO: Get from context or smth
+				PusherData(
+					// TODO: Make sure event_id_only doesn't break everything
+					//format = "event_id_only",
+					url = "https://sakurapush.kuylar.dev/_matrix/push/v1/notify"
+				)
+				// TODO: Look into append and profileTag
 			)
-			// TODO: Look into append and profileTag
-		)).getOrThrow()
+		).getOrThrow()
 	}
 
 	fun getVerification(id: String): ActiveVerification? {
