@@ -44,12 +44,16 @@ class SpaceListRecyclerAdapter(val activity: MainActivity, var selectedSpaceId: 
 	class DividerViewModel(binding: ItemSpaceListDividerBinding) : SpaceListViewModel(binding)
 	class HomeViewModel(val binding: ItemSpaceHomeBinding) : SpaceListViewModel(binding) {
 		fun bind(space: MatrixSpace) {
-			binding.icon.shapeAppearanceModel =
-				if ((bindingAdapter as SpaceListRecyclerAdapter).selectedSpaceId == space.parent?.roomId?.full) {
-					ShapeAppearanceModel.builder().setAllCornerSizes(32f).build()
-				} else {
-					ShapeAppearanceModel.builder().setAllCornerSizes(64f).build()
-				}
+			binding.icon.post {
+				binding.icon.shapeAppearanceModel =
+					if ((bindingAdapter as SpaceListRecyclerAdapter).selectedSpaceId == space.parent?.roomId?.full) {
+						ShapeAppearanceModel.builder().setAllCornerSizes(binding.icon.height / 4f)
+							.build()
+					} else {
+						ShapeAppearanceModel.builder().setAllCornerSizes(binding.icon.height / 2f)
+							.build()
+					}
+			}
 			binding.unreadIndicator.visibility =
 				if (!space.isUnread) View.VISIBLE else View.INVISIBLE
 			binding.root.setOnClickListener {
@@ -60,12 +64,16 @@ class SpaceListRecyclerAdapter(val activity: MainActivity, var selectedSpaceId: 
 
 	class SpaceViewModel(val binding: ItemSpaceBinding) : SpaceListViewModel(binding) {
 		fun bind(space: MatrixSpace) {
-			binding.icon.shapeAppearanceModel =
-				if ((bindingAdapter as SpaceListRecyclerAdapter).selectedSpaceId == space.parent?.roomId?.full) {
-					ShapeAppearanceModel.builder().setAllCornerSizes(32f).build()
-				} else {
-					ShapeAppearanceModel.builder().setAllCornerSizes(64f).build()
-				}
+			binding.icon.post {
+				binding.icon.shapeAppearanceModel =
+					if ((bindingAdapter as SpaceListRecyclerAdapter).selectedSpaceId == space.parent?.roomId?.full) {
+						ShapeAppearanceModel.builder().setAllCornerSizes(binding.icon.height / 4f)
+							.build()
+					} else {
+						ShapeAppearanceModel.builder().setAllCornerSizes(binding.icon.height / 2f)
+							.build()
+					}
+			}
 			binding.unreadIndicator.visibility =
 				if (!space.isUnread) View.VISIBLE else View.INVISIBLE
 
