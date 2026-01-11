@@ -12,11 +12,11 @@ import androidx.core.view.postDelayed
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
+import dev.kuylar.sakura.client.customevent.RecentEmoji
 import dev.kuylar.sakura.databinding.FragmentEventBottomSheetBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.room
@@ -33,7 +33,6 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 
 class EventBottomSheetFragment : BottomSheetDialogFragment() {
 	private lateinit var binding: FragmentEventBottomSheetBinding
-	private lateinit var eventFlow: Flow<TimelineEvent>
 	private lateinit var event: TimelineEvent
 	private val client = Matrix.getClient()
 	private var eventType: String? = null
@@ -73,6 +72,7 @@ class EventBottomSheetFragment : BottomSheetDialogFragment() {
 				client.client.room.getTimelineEventReactionAggregation(roomId!!, eventId!!)
 					.firstOrNull()?.reactions?.isNotEmpty() ?: false
 			client.client.room.getTimelineEvent(roomId!!, eventId!!).collect {
+				val recentEmojis = client.getRecentEmojis().take(5)
 				if (it == null) {
 					activity?.runOnUiThread {
 						binding.root.postDelayed(50) { dismiss() }
@@ -80,7 +80,7 @@ class EventBottomSheetFragment : BottomSheetDialogFragment() {
 				} else {
 					activity?.runOnUiThread {
 						event = it
-						loadData(isEdited, hasReactions)
+						loadData(isEdited, hasReactions, recentEmojis.toMutableList())
 					}
 				}
 			}
@@ -94,7 +94,12 @@ class EventBottomSheetFragment : BottomSheetDialogFragment() {
 		}
 	}
 
-	private fun loadData(isEdited: Boolean, hasReactions: Boolean) {
+	private fun loadData(
+		isEdited: Boolean,
+		hasReactions: Boolean,
+		recentEmojis: MutableList<RecentEmoji>
+	) {
+		while (recentEmojis.size < 5) recentEmojis.add(RecentEmoji(" ", 0))
 		binding.edit.visibility = if (event.sender == client.userId) View.VISIBLE else View.GONE
 		binding.editHistory.visibility = if (isEdited) View.VISIBLE else View.GONE
 		binding.reactions.visibility = if (hasReactions) View.VISIBLE else View.GONE
@@ -175,6 +180,52 @@ class EventBottomSheetFragment : BottomSheetDialogFragment() {
 			// TODO: A whole ass report dialog
 			Toast.makeText(requireContext(), "not yet implemented", Toast.LENGTH_LONG).show()
 			binding.root.postDelayed(50) { dismiss() }
+		}
+
+		binding.quickReaction1Text.text = recentEmojis[0].emoji
+		binding.quickReaction2Text.text = recentEmojis[1].emoji
+		binding.quickReaction3Text.text = recentEmojis[2].emoji
+		binding.quickReaction4Text.text = recentEmojis[3].emoji
+		binding.quickReaction5Text.text = recentEmojis[4].emoji
+		binding.quickReaction1.setOnClickListener {
+			suspendThread {
+				client.reactToEvent(roomId!!, eventId!!, recentEmojis[0].emoji)
+			}
+			binding.root.postDelayed(50) {
+				dismiss()
+			}
+		}
+		binding.quickReaction2.setOnClickListener {
+			suspendThread {
+				client.reactToEvent(roomId!!, eventId!!, recentEmojis[1].emoji)
+			}
+			binding.root.postDelayed(50) {
+				dismiss()
+			}
+		}
+		binding.quickReaction3.setOnClickListener {
+			suspendThread {
+				client.reactToEvent(roomId!!, eventId!!, recentEmojis[2].emoji)
+			}
+			binding.root.postDelayed(50) {
+				dismiss()
+			}
+		}
+		binding.quickReaction4.setOnClickListener {
+			suspendThread {
+				client.reactToEvent(roomId!!, eventId!!, recentEmojis[3].emoji)
+			}
+			binding.root.postDelayed(50) {
+				dismiss()
+			}
+		}
+		binding.quickReaction5.setOnClickListener {
+			suspendThread {
+				client.reactToEvent(roomId!!, eventId!!, recentEmojis[4].emoji)
+			}
+			binding.root.postDelayed(50) {
+				dismiss()
+			}
 		}
 	}
 }

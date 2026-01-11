@@ -61,6 +61,7 @@
 	<string name="notification_reply_label">Reply</string>
 	<string name="replying_to">Replying to %s</string>
 	<string name="editing_message">Editing message</string>
+	<string name="emoji_category_recent">Recently Used</string>
 	<string name="emoji_category_people">People</string>
 	<string name="emoji_category_nature">Nature</string>
 	<string name="emoji_category_food">Food</string>

@@ -26,6 +26,7 @@
 			android:background="@drawable/quick_reaction_background">
 
 			<TextView
+				android:id="@+id/quick_reaction_1_text"
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
 				android:gravity="center"
@@ -45,6 +46,7 @@
 			android:background="@drawable/quick_reaction_background">
 
 			<TextView
+				android:id="@+id/quick_reaction_2_text"
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
 				android:gravity="center"
@@ -64,6 +66,7 @@
 			android:background="@drawable/quick_reaction_background">
 
 			<TextView
+				android:id="@+id/quick_reaction_3_text"
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
 				android:gravity="center"
@@ -83,6 +86,7 @@
 			android:background="@drawable/quick_reaction_background">
 
 			<TextView
+				android:id="@+id/quick_reaction_4_text"
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
 				android:gravity="center"
@@ -102,6 +106,7 @@
 			android:background="@drawable/quick_reaction_background">
 
 			<TextView
+				android:id="@+id/quick_reaction_5_text"
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
 				android:gravity="center"

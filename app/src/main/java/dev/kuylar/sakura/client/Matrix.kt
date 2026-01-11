@@ -5,22 +5,16 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
+import android.util.Log
 import dev.kuylar.sakura.Utils
-import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
-import dev.kuylar.sakura.client.customevent.SpaceChildrenEventContent
-import dev.kuylar.sakura.client.customevent.SpaceOrderEventContent
-import dev.kuylar.sakura.client.customevent.SpaceParentEventContent
+import dev.kuylar.sakura.Utils.suspendThread
+import dev.kuylar.sakura.client.customevent.*
 import io.ktor.http.Url
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonObjectBuilder
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.flattenValues
 import net.folivo.trixnity.client.fromStore
@@ -36,6 +30,7 @@ import net.folivo.trixnity.client.store.repository.room.TrixnityRoomDatabase
 import net.folivo.trixnity.client.store.repository.room.createRoomRepositoriesModule
 import net.folivo.trixnity.client.store.type
 import net.folivo.trixnity.client.user
+import net.folivo.trixnity.client.user.getAccountData
 import net.folivo.trixnity.client.verification
 import net.folivo.trixnity.client.verification.ActiveDeviceVerification
 import net.folivo.trixnity.client.verification.ActiveUserVerification
@@ -49,7 +44,6 @@ import net.folivo.trixnity.clientserverapi.model.push.SetPushers
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.m.ReactionEventContent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -57,6 +51,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.globalAccountDataOf
 import net.folivo.trixnity.core.serialization.events.messageOf
 import net.folivo.trixnity.core.serialization.events.roomAccountDataOf
 import net.folivo.trixnity.core.serialization.events.stateOf
@@ -72,6 +67,8 @@ class Matrix(val context: Context, val client: MatrixClient) {
 	val userId: UserId
 		get() = client.userId
 	private val activeVerifications = HashMap<String, ActiveVerification>()
+	private var recentEmojiCache: List<RecentEmoji> = emptyList()
+	private var loadedRecentEmoji = false
 
 	suspend fun getRoom(roomId: String): Room? {
 		return client.room.getById(RoomId(roomId)).first()
@@ -200,17 +197,19 @@ class Matrix(val context: Context, val client: MatrixClient) {
 	}
 
 	suspend fun reactToEvent(
-		roomId: String,
+		roomId: RoomId,
 		eventId: EventId,
 		reaction: String,
 		shortcode: String? = null
 	) {
 		val sc = shortcode?.trim(':')
-		client.room.sendMessage(RoomId(roomId)) {
-			ShortcodeReactionEventContent(
-				relatesTo = RelatesTo.Annotation(eventId, key = reaction),
-				shortcode = sc,
-				beeperShortcode = sc?.let { ":$it:" }
+		client.room.sendMessage(roomId) {
+			content(
+				ShortcodeReactionEventContent(
+					relatesTo = RelatesTo.Annotation(eventId, key = reaction),
+					shortcode = sc,
+					beeperShortcode = sc?.let { ":$it:" }
+				)
 			)
 		}
 	}
@@ -296,6 +295,48 @@ class Matrix(val context: Context, val client: MatrixClient) {
 		Handler(context.mainLooper).post(block)
 	}
 
+	suspend fun getRecentEmojis(): List<RecentEmoji> {
+		if (!loadedRecentEmoji) {
+			updateRecentEmojiCache()
+		} else {
+			suspendThread {
+				updateRecentEmojiCache()
+			}
+		}
+		return recentEmojiCache.sortedByDescending { it.count }
+	}
+
+	suspend fun appendRecentEmoji(emoji: String) {
+		updateRecentEmojiCache()
+		val recentEmojis = recentEmojiCache.toMutableList()
+		val index = recentEmojis.indexOfFirst { it.emoji == emoji }
+		if (index >= 0) {
+			recentEmojis[index].count++
+		} else {
+			recentEmojis += RecentEmoji(emoji, 1)
+		}
+		recentEmojiCache = recentEmojis.toList()
+		client.api.user.setAccountData(ElementRecentEmojiEventContent().apply {
+			this.recentEmoji = recentEmojis.sortedByDescending { it.count }
+		}, userId)
+	}
+
+	private suspend fun updateRecentEmojiCache() {
+		try {
+			val data = client.user.getAccountData<ElementRecentEmojiEventContent>().first()
+				?: ElementRecentEmojiEventContent()
+			synchronized(recentEmojiCache) {
+				data.let {
+					recentEmojiCache = it.recentEmoji ?: emptyList()
+				}
+				loadedRecentEmoji = true
+			}
+		} catch (e: Exception) {
+			Log.e("MatrixClient", "Failed to update recent emoji cache", e)
+			loadedRecentEmoji = false
+		}
+	}
+
 	companion object {
 		@SuppressLint("StaticFieldLeak")
 		private lateinit var instance: Matrix
@@ -328,6 +369,7 @@ class Matrix(val context: Context, val client: MatrixClient) {
 				stateOf<SpaceChildrenEventContent>("m.space.child")
 				roomAccountDataOf<SpaceOrderEventContent>("org.matrix.msc3230.space_order")
 				messageOf<ShortcodeReactionEventContent>("m.reaction")
+				globalAccountDataOf<ElementRecentEmojiEventContent>("io.element.recent_emoji")
 			}
 
 			return module {

@@ -10,6 +10,7 @@ import dev.kuylar.sakura.emojipicker.model.CategoryModel
 class CustomEmojiCategoryModel(name: String): CategoryModel(name) {
 	override fun bind(view: View) {
 		val titleRes = when (name) {
+			"recent" -> R.string.emoji_category_recent
 			"unicode:people" -> R.string.emoji_category_people
 			"unicode:nature" -> R.string.emoji_category_nature
 			"unicode:food" -> R.string.emoji_category_food
@@ -28,6 +29,7 @@ class CustomEmojiCategoryModel(name: String): CategoryModel(name) {
 
 	override fun buildTab(tab: TabLayout.Tab) {
 		tab.setIcon(when (name) {
+			"recent" -> R.drawable.ic_emoji_category_recent
 			"unicode:people" -> R.drawable.ic_emoji_category_people
 			"unicode:nature" -> R.drawable.ic_emoji_category_nature
 			"unicode:food" -> R.drawable.ic_emoji_category_food

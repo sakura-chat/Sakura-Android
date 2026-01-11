@@ -1,6 +1,5 @@
 package dev.kuylar.sakura.ui.fragment
 
-import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -38,6 +37,7 @@ import net.folivo.trixnity.client.store.roomId
 import net.folivo.trixnity.client.store.sender
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
+import java.util.Map.entry
 import kotlin.math.max
 
 class TimelineFragment : Fragment(), MenuProvider {
@@ -162,16 +162,35 @@ class TimelineFragment : Fragment(), MenuProvider {
 			}
 		}
 
-		EmojiManager.getInstance(requireContext()).getEmojiByCategory().let { map ->
-			binding.emojiPicker.loadItems(map.mapKeys { CustomEmojiCategoryModel(it.key) }
-				.mapValues { it.value.map { e -> EmojiModel(e.surrogates) } })
+		suspendThread {
+			val recent = client.getRecentEmojis().take(24)
+			EmojiManager.getInstance(requireContext()).getEmojiByCategory().let { map ->
+				activity?.runOnUiThread {
+					val items =
+						emptyMap<CustomEmojiCategoryModel, List<EmojiModel>>().toMutableMap()
+					map.mapKeys { CustomEmojiCategoryModel(it.key) }
+						.mapValues { it.value.map { e -> EmojiModel(e.surrogates) } }
+						.entries.toMutableList().apply {
+							add(
+								0,
+								entry(
+									CustomEmojiCategoryModel("recent"),
+									recent.map { EmojiModel(it.emoji) })
+							)
+						}
+						.associateByTo(items, { it.key }, { it.value })
+
+					@Suppress("UNCHECKED_CAST")
+					binding.emojiPicker.loadItems(items as Map<CategoryModel, List<EmojiModel>>)
+				}
+			}
 		}
 		val ignoreView =
 			binding.emojiPicker.findViewById<TabLayout>(dev.kuylar.sakura.emojipicker.R.id.tabLayout)
 		PanelsChildGestureRegionObserver.Provider.get().register(ignoreView)
 	}
 
-	fun sendMessage() {
+	private fun sendMessage() {
 		val msg = binding.input.getValue()
 		if (msg.isBlank()) return
 		if (editingEvent != null) {
