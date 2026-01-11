@@ -17,6 +17,30 @@
 		tools:listitem="@layout/item_message" />
 
 	<LinearLayout
+		android:id="@+id/typing_indicator"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:background="?colorSurfaceContainerHigh"
+		android:gravity="center_vertical"
+		android:orientation="horizontal"
+		android:visibility="gone"
+		tools:visibility="visible">
+
+		<TextView
+			android:id="@+id/typing_indicator_text"
+			style="?textAppearanceLabelLarge"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_weight="1"
+			android:ellipsize="end"
+			android:maxLines="1"
+			android:paddingHorizontal="16dp"
+			android:paddingVertical="4dp"
+			android:text="@string/typing_indicator_more"
+			android:textColor="?colorOnPrimaryContainer" />
+	</LinearLayout>
+
+	<LinearLayout
 		android:id="@+id/edit_indicator"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"

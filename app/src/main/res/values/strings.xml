@@ -70,4 +70,8 @@
 	<string name="emoji_category_objects">Objects</string>
 	<string name="emoji_category_symbols">Symbols</string>
 	<string name="emoji_category_flags">Flags</string>
+	<string name="typing_indicator_1">%s is typing…</string>
+	<string name="typing_indicator_2">%s and %s are typing…</string>
+	<string name="typing_indicator_3">%s, %s and %s are typing…</string>
+	<string name="typing_indicator_more">Several people are typing…</string>
 </resources>

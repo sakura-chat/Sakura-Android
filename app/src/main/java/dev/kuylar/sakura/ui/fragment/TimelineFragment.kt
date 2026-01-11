@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.getSystemService
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
+import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.setFragmentResultListener
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
@@ -32,6 +33,11 @@ import dev.kuylar.sakura.emoji.EmojiManager
 import dev.kuylar.sakura.emojipicker.model.CategoryModel
 import dev.kuylar.sakura.emojipicker.model.EmojiModel
 import dev.kuylar.sakura.ui.adapter.recyclerview.TimelineRecyclerAdapter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.store.eventId
 import net.folivo.trixnity.client.store.roomId
 import net.folivo.trixnity.client.store.sender
@@ -48,6 +54,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 	private var isLoadingMore = false
 	private var editingEvent: EventId? = null
 	private var replyingEvent: EventId? = null
+	private var typingUsersJob: Job? = null
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -185,6 +192,28 @@ class TimelineFragment : Fragment(), MenuProvider {
 				}
 			}
 		}
+
+		binding.input.addTextChangedListener {
+			suspendThread {
+				client.client.api.room.setTyping(RoomId(roomId), client.userId, !it.isNullOrBlank())
+			}
+		}
+		typingUsersJob = CoroutineScope(Dispatchers.Main).launch {
+			client.client.room.usersTyping.collect {
+				val thisRoom = it[RoomId(roomId)] ?: return@collect
+				val users = thisRoom.users.mapNotNull { client.getUser(it, RoomId(roomId)) }
+				val text = when (users.size) {
+					1 -> getString(R.string.typing_indicator_1, users[0].name)
+					2 -> getString(R.string.typing_indicator_2, users[0].name, users[1].name)
+					3 -> getString(R.string.typing_indicator_3, users[0].name, users[1].name, users[2].name)
+					else -> getString(R.string.typing_indicator_more)
+				}
+				activity?.runOnUiThread {
+					binding.typingIndicator.visibility = if (users.isEmpty()) View.GONE else View.VISIBLE
+					binding.typingIndicatorText.text = text
+				}
+			}
+		}
 		val ignoreView =
 			binding.emojiPicker.findViewById<TabLayout>(dev.kuylar.sakura.emojipicker.R.id.tabLayout)
 		PanelsChildGestureRegionObserver.Provider.get().register(ignoreView)
@@ -308,5 +337,10 @@ class TimelineFragment : Fragment(), MenuProvider {
 
 	private fun onKeyboardOpened() {
 		binding.emojiPicker.visibility = View.GONE
+	}
+
+	override fun onDestroy() {
+		typingUsersJob?.cancel()
+		super.onDestroy()
 	}
 }
