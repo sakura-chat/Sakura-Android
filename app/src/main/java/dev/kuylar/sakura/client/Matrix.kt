@@ -203,6 +203,7 @@ class Matrix(val context: Context, val client: MatrixClient) {
 		shortcode: String? = null
 	) {
 		val sc = shortcode?.trim(':')
+		appendRecentEmoji(reaction)
 		client.room.sendMessage(roomId) {
 			content(
 				ShortcodeReactionEventContent(
@@ -212,6 +213,10 @@ class Matrix(val context: Context, val client: MatrixClient) {
 				)
 			)
 		}
+	}
+
+	suspend fun redactEvent(roomId: RoomId, eventId: EventId, reason: String? = null) {
+		client.api.room.redactEvent(roomId, eventId, reason).getOrThrow()
 	}
 
 	suspend fun startSync() {

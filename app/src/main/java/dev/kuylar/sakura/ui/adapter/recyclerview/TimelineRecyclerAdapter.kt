@@ -386,7 +386,7 @@ class TimelineRecyclerAdapter(
 				binding.edited.visibility = View.VISIBLE
 			if (eventModel.reactions?.reactions?.isNotEmpty() == true) {
 				binding.reactions.visibility = View.VISIBLE
-				handleReactions(eventModel.reactions!!.reactions)
+				handleReactions(event, eventModel.reactions!!.reactions)
 			} else
 				binding.reactions.visibility = View.GONE
 			val content = event.content?.getOrNull() ?: return
@@ -437,13 +437,13 @@ class TimelineRecyclerAdapter(
 			}
 		}
 
-		private fun handleReactions(reactions: Map<String, Set<TimelineEvent>>) {
+		private fun handleReactions(event: TimelineEvent, reactions: Map<String, Set<TimelineEvent>>) {
 			if (binding.reactions.childCount > 1)
 				binding.reactions.removeViews(0, binding.reactions.childCount - 1)
 			reactions.entries
 				.sortedBy { -it.value.minBy { e -> e.originTimestamp }.originTimestamp }
 				.forEach { (key, list) ->
-					val weReacted = list.any { it.sender == client.userId }
+					val weReacted = list.firstOrNull { it.sender == client.userId }
 					val reactionBinding =
 						ItemReactionBinding.inflate(layoutInflater, binding.reactions, false)
 					val shortcode = list
@@ -451,7 +451,23 @@ class TimelineRecyclerAdapter(
 						.groupBy { (it.shortcode ?: it.beeperShortcode)?.trim(':') }
 						.entries.maxByOrNull { it.value.size }?.key
 					reactionBinding.root.text = "${shortcode ?: key} ${list.size}"
-					reactionBinding.root.isSelected = weReacted
+					reactionBinding.root.isSelected = weReacted != null
+					if (weReacted == null) {
+						reactionBinding.root.setOnClickListener {
+							reactionBinding.root.setOnClickListener(null)
+							suspendThread {
+								client.reactToEvent(event.roomId, event.eventId, key, shortcode)
+							}
+						}
+					} else {
+						reactionBinding.root.setOnClickListener {
+							reactionBinding.root.setOnClickListener(null)
+							suspendThread {
+								client.redactEvent(weReacted.roomId, weReacted.eventId)
+							}
+						}
+					}
+
 					binding.reactions.addView(reactionBinding.root, 0)
 				}
 		}
