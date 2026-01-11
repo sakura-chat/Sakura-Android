@@ -1,5 +1,6 @@
 package dev.kuylar.sakura.ui.adapter.recyclerview
 
+import android.graphics.drawable.Drawable
 import android.os.Handler
 import android.text.Html
 import android.util.Log
@@ -13,6 +14,10 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.Utils.toTimestamp
@@ -422,22 +427,70 @@ class TimelineRecyclerAdapter(
 						binding.attachment,
 						false
 					)
-					binding.attachment.addView(attachmentBinding.root)
+					val displayMetrics = attachmentBinding.root.context.resources.displayMetrics
+					val maxWidth = minOf(
+						displayMetrics.widthPixels * 0.7f,
+						400f * displayMetrics.density
+					).toInt()
+					val maxHeight = minOf(
+						displayMetrics.heightPixels * 0.5f,
+						300f * displayMetrics.density
+					).toInt()
+
 					Glide.with(attachmentBinding.root)
 						.load(content.url)
+						.listener(object : RequestListener<Drawable> {
+							override fun onLoadFailed(
+								e: GlideException?,
+								model: Any?,
+								target: Target<Drawable?>,
+								isFirstResource: Boolean
+							) = false
+
+							override fun onResourceReady(
+								resource: Drawable,
+								model: Any,
+								target: Target<Drawable?>?,
+								dataSource: DataSource,
+								isFirstResource: Boolean
+							): Boolean {
+								val imageWidth = resource.intrinsicWidth
+								val imageHeight = resource.intrinsicHeight
+
+								val widthRatio = maxWidth.toFloat() / imageWidth
+								val heightRatio = maxHeight.toFloat() / imageHeight
+								val ratio = minOf(widthRatio, heightRatio, 1f)
+
+								val newWidth = (imageWidth * ratio).toInt()
+								val newHeight = (imageHeight * ratio).toInt()
+
+								val params = attachmentBinding.root.layoutParams
+								params.width = newWidth
+								params.height = newHeight
+								attachmentBinding.root.layoutParams = params
+								return false
+							}
+						})
 						.into(attachmentBinding.imageAttachment)
+					binding.attachment.visibility = View.VISIBLE
+					binding.attachment.addView(attachmentBinding.root)
 				}
 
 				else -> {
 					binding.body.text = Html.fromHtml(
-						"${content.javaClass.name.split("core.model.events.").last()}\n<code>${event.eventId.full}</code>",
+						"${
+							content.javaClass.name.split("core.model.events.").last()
+						}\n<code>${event.eventId.full}</code>",
 						Html.FROM_HTML_MODE_COMPACT
 					)
 				}
 			}
 		}
 
-		private fun handleReactions(event: TimelineEvent, reactions: Map<String, Set<TimelineEvent>>) {
+		private fun handleReactions(
+			event: TimelineEvent,
+			reactions: Map<String, Set<TimelineEvent>>
+		) {
 			if (binding.reactions.childCount > 1)
 				binding.reactions.removeViews(0, binding.reactions.childCount - 1)
 			reactions.entries
@@ -532,6 +585,7 @@ class TimelineRecyclerAdapter(
 			binding.body.visibility = View.VISIBLE
 			binding.embeds.removeAllViews()
 			binding.attachment.removeAllViews()
+			binding.attachment.visibility = View.GONE
 			if (binding.reactions.childCount > 1)
 				binding.reactions.removeViews(0, binding.reactions.childCount - 1)
 			binding.senderName.text = ""
