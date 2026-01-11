@@ -441,7 +441,7 @@ class TimelineRecyclerAdapter(
 			if (binding.reactions.childCount > 1)
 				binding.reactions.removeViews(0, binding.reactions.childCount - 1)
 			reactions.entries
-				.sortedBy { it.value.minBy { e -> e.originTimestamp }.originTimestamp }
+				.sortedBy { -it.value.minBy { e -> e.originTimestamp }.originTimestamp }
 				.forEach { (key, list) ->
 					val weReacted = list.any { it.sender == client.userId }
 					val reactionBinding =
