@@ -2,10 +2,12 @@ package dev.kuylar.sakura.ui.activity
 
 import android.app.ComponentCaller
 import android.content.Intent
+import android.graphics.Rect
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
 import android.view.View
+import dev.kuylar.sakura.ui.fragment.TimelineFragment
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
@@ -17,6 +19,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.discord.panels.PanelsChildGestureRegionObserver
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.android.material.R as MaterialR
 import dev.kuylar.sakura.R
@@ -34,7 +37,7 @@ import net.folivo.trixnity.client.verification.ActiveDeviceVerification
 import net.folivo.trixnity.clientserverapi.client.SyncState
 import kotlin.math.max
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.GestureRegionsListener {
 	private lateinit var binding: ActivityMainBinding
 	private lateinit var client: Matrix
 	private lateinit var navController: NavController
@@ -50,6 +53,15 @@ class MainActivity : AppCompatActivity() {
 		ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
 			val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
 			val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+
+			val navHostFragment =
+				supportFragmentManager.findFragmentById(binding.navHostFragment.id) as NavHostFragment
+			navHostFragment.childFragmentManager.fragments.forEach { fragment ->
+				if (fragment is TimelineFragment) {
+					fragment.onImeHeightChanged(ime.bottom)
+				}
+			}
+
 			binding.statusBarBg.layoutParams.height = systemBars.top
 			v.setPadding(
 				systemBars.left,
@@ -78,6 +90,8 @@ class MainActivity : AppCompatActivity() {
 				else -> false
 			}
 		}
+
+		PanelsChildGestureRegionObserver.Provider.get().addGestureRegionsUpdateListener(this)
 
 		val loggedInAccounts = Matrix.getAvailableAccounts(this)
 		if (loggedInAccounts.isEmpty()) {
@@ -247,5 +261,9 @@ class MainActivity : AppCompatActivity() {
 				}
 			}
 		}
+	}
+
+	override fun onGestureRegionsUpdate(gestureRegions: List<Rect>) {
+		binding.overlappingPanels.setChildGestureRegions(gestureRegions)
 	}
 }

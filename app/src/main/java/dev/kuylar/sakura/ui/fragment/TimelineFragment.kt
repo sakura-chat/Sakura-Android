@@ -1,5 +1,6 @@
 package dev.kuylar.sakura.ui.fragment
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -9,25 +10,35 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.getSystemService
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.setFragmentResultListener
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.discord.panels.PanelsChildGestureRegionObserver
+import com.google.android.material.tabs.TabLayout
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentTimelineBinding
+import dev.kuylar.sakura.emoji.CustomEmojiCategoryModel
+import dev.kuylar.sakura.emoji.EmojiManager
+import dev.kuylar.sakura.emojipicker.model.CategoryModel
+import dev.kuylar.sakura.emojipicker.model.EmojiModel
 import dev.kuylar.sakura.ui.adapter.recyclerview.TimelineRecyclerAdapter
 import net.folivo.trixnity.client.store.eventId
 import net.folivo.trixnity.client.store.roomId
 import net.folivo.trixnity.client.store.sender
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
+import kotlin.math.max
 
 class TimelineFragment : Fragment(), MenuProvider {
 	private lateinit var binding: FragmentTimelineBinding
@@ -122,6 +133,16 @@ class TimelineFragment : Fragment(), MenuProvider {
 			sendMessage()
 		}
 
+		binding.buttonEmoji.setOnClickListener {
+			requireContext().getSystemService<InputMethodManager>()
+				?.hideSoftInputFromWindow(binding.input.windowToken, 0)
+			binding.emojiPicker.visibility =
+				if (binding.emojiPicker.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+		}
+		binding.emojiPicker.setOnEmojiSelectedCallback { emoji ->
+			binding.input.editableText.insert(binding.input.selectionStart, emoji.name)
+		}
+
 		setFragmentResultListener("timeline_action") { key, bundle ->
 			val action = bundle.getString("action")
 			val eventId = bundle.getString("eventId")?.let { EventId(it) }
@@ -140,6 +161,14 @@ class TimelineFragment : Fragment(), MenuProvider {
 				}
 			}
 		}
+
+		EmojiManager.getInstance(requireContext()).getEmojiByCategory().let { map ->
+			binding.emojiPicker.loadItems(map.mapKeys { CustomEmojiCategoryModel(it.key) }
+				.mapValues { it.value.map { e -> EmojiModel(e.surrogates) } })
+		}
+		val ignoreView =
+			binding.emojiPicker.findViewById<TabLayout>(dev.kuylar.sakura.emojipicker.R.id.tabLayout)
+		PanelsChildGestureRegionObserver.Provider.get().register(ignoreView)
 	}
 
 	fun sendMessage() {
@@ -242,5 +271,23 @@ class TimelineFragment : Fragment(), MenuProvider {
 
 	override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
 		return false
+	}
+
+	fun onImeHeightChanged(bottom: Int) {
+		if (bottom == 0) {
+			onKeyboardClosed()
+		} else {
+			onKeyboardOpened()
+			(binding.emojiPicker.layoutParams as LinearLayout.LayoutParams).height =
+				max(resources.displayMetrics.density.toInt() * 300, bottom)
+		}
+	}
+
+	private fun onKeyboardClosed() {
+
+	}
+
+	private fun onKeyboardOpened() {
+		binding.emojiPicker.visibility = View.GONE
 	}
 }

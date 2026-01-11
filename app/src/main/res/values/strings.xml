@@ -61,4 +61,12 @@
 	<string name="notification_reply_label">Reply</string>
 	<string name="replying_to">Replying to %s</string>
 	<string name="editing_message">Editing message</string>
+	<string name="emoji_category_people">People</string>
+	<string name="emoji_category_nature">Nature</string>
+	<string name="emoji_category_food">Food</string>
+	<string name="emoji_category_activities">Activities</string>
+	<string name="emoji_category_travel">Travel</string>
+	<string name="emoji_category_objects">Objects</string>
+	<string name="emoji_category_symbols">Symbols</string>
+	<string name="emoji_category_flags">Flags</string>
 </resources>

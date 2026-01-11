@@ -19,6 +19,7 @@ import dev.kuylar.sakura.Utils.toTimestamp
 import dev.kuylar.sakura.Utils.toTimestampDate
 import dev.kuylar.sakura.Utils.withinSameDay
 import dev.kuylar.sakura.client.Matrix
+import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
 import dev.kuylar.sakura.databinding.AttachmentImageBinding
 import dev.kuylar.sakura.databinding.ItemLoadingSpinnerBinding
 import dev.kuylar.sakura.databinding.ItemMessageBinding
@@ -175,7 +176,8 @@ class TimelineRecyclerAdapter(
 		if (snapshot.relatesTo?.relationType == RelationType.Replace) return snapshot
 		if (snapshot.content?.getOrNull() is RedactionEventContent ||
 			snapshot.content?.getOrNull() is RedactedEventContent ||
-			snapshot.content?.getOrNull() is ReactionEventContent
+			snapshot.content?.getOrNull() is ReactionEventContent ||
+			snapshot.content?.getOrNull() is ShortcodeReactionEventContent
 		) return snapshot
 		if (eventModels.any { snapshot.eventId == it.eventId }) return snapshot
 		fragment.activity?.runOnUiThread {
@@ -387,7 +389,7 @@ class TimelineRecyclerAdapter(
 				handleReactions(eventModel.reactions!!.reactions)
 			} else
 				binding.reactions.visibility = View.GONE
-			val content = event.content?.getOrNull() as? RoomMessageEventContent ?: return
+			val content = event.content?.getOrNull() ?: return
 			repliedEvent?.let {
 				handleReply(it)
 			}
@@ -427,8 +429,10 @@ class TimelineRecyclerAdapter(
 				}
 
 				else -> {
-					binding.body.text = content.javaClass.name
-					binding.body.text = event.eventId.full
+					binding.body.text = Html.fromHtml(
+						"${content.javaClass.name.split("core.model.events.").last()}\n<code>${event.eventId.full}</code>",
+						Html.FROM_HTML_MODE_COMPACT
+					)
 				}
 			}
 		}
@@ -439,10 +443,14 @@ class TimelineRecyclerAdapter(
 			reactions.entries
 				.sortedBy { it.value.minBy { e -> e.originTimestamp }.originTimestamp }
 				.forEach { (key, list) ->
-					val weReacted = list.any { it.sender == client.client.userId }
+					val weReacted = list.any { it.sender == client.userId }
 					val reactionBinding =
 						ItemReactionBinding.inflate(layoutInflater, binding.reactions, false)
-					reactionBinding.root.text = key + " " + list.size
+					val shortcode = list
+						.mapNotNull { it.content?.getOrNull() as? ShortcodeReactionEventContent }
+						.groupBy { (it.shortcode ?: it.beeperShortcode)?.trim(':') }
+						.entries.maxByOrNull { it.value.size }?.key
+					reactionBinding.root.text = "${shortcode ?: key} ${list.size}"
 					reactionBinding.root.isSelected = weReacted
 					binding.reactions.addView(reactionBinding.root, 0)
 				}

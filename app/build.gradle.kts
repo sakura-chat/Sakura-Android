@@ -69,4 +69,6 @@ dependencies {
 	implementation(libs.mentionsedittext)
 	implementation(platform(libs.firebase.bom))
 	implementation(libs.firebase.messaging)
+	implementation(libs.emoji2)
+	implementation(project(":emojipicker"))
 }

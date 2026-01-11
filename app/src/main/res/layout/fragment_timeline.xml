@@ -11,7 +11,6 @@
 		android:id="@+id/timeline_recycler"
 		android:layout_width="match_parent"
 		android:layout_height="0dp"
-		android:layout_marginBottom="8dp"
 		android:layout_weight="1"
 		android:clipToPadding="false"
 		android:paddingVertical="16dp"
@@ -21,7 +20,6 @@
 		android:id="@+id/edit_indicator"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:layout_marginBottom="8dp"
 		android:background="?colorSecondaryContainer"
 		android:gravity="center_vertical"
 		android:orientation="horizontal"
@@ -50,7 +48,6 @@
 		android:id="@+id/reply_indicator"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:layout_marginBottom="8dp"
 		android:background="?colorPrimaryContainer"
 		android:gravity="center_vertical"
 		android:orientation="horizontal"
@@ -81,7 +78,7 @@
 	<LinearLayout
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:layout_marginBottom="8dp"
+		android:layout_marginVertical="8dp"
 		android:gravity="center_vertical"
 		android:orientation="horizontal">
 
@@ -103,11 +100,11 @@
 			<dev.kuylar.mentionsedittext.MentionsEditText
 				android:id="@+id/input"
 				android:layout_width="0dp"
-				android:layout_height="match_parent"
+				android:layout_height="wrap_content"
 				android:layout_weight="1"
 				android:background="#00000000"
 				android:maxLines="5"
-				android:paddingHorizontal="12dp"
+				android:paddingHorizontal="16dp"
 				android:paddingVertical="8dp"
 				tools:ignore="NestedWeights" />
 
@@ -128,4 +125,10 @@
 			android:layout_height="wrap_content"
 			app:icon="@drawable/ic_send" />
 	</LinearLayout>
+
+	<dev.kuylar.sakura.emojipicker.EmojiPicker
+		android:id="@+id/emoji_picker"
+		android:layout_width="match_parent"
+		android:layout_height="300dp"
+		android:visibility="gone" />
 </LinearLayout>

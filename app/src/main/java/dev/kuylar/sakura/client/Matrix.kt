@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import dev.kuylar.sakura.Utils
+import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
 import dev.kuylar.sakura.client.customevent.SpaceChildrenEventContent
 import dev.kuylar.sakura.client.customevent.SpaceOrderEventContent
 import dev.kuylar.sakura.client.customevent.SpaceParentEventContent
@@ -48,6 +49,7 @@ import net.folivo.trixnity.clientserverapi.model.push.SetPushers
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.m.ReactionEventContent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -55,6 +57,7 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
 import net.folivo.trixnity.core.serialization.events.createEventContentSerializerMappings
+import net.folivo.trixnity.core.serialization.events.messageOf
 import net.folivo.trixnity.core.serialization.events.roomAccountDataOf
 import net.folivo.trixnity.core.serialization.events.stateOf
 import okio.Path.Companion.toPath
@@ -196,6 +199,22 @@ class Matrix(val context: Context, val client: MatrixClient) {
 		}
 	}
 
+	suspend fun reactToEvent(
+		roomId: String,
+		eventId: EventId,
+		reaction: String,
+		shortcode: String? = null
+	) {
+		val sc = shortcode?.trim(':')
+		client.room.sendMessage(RoomId(roomId)) {
+			ShortcodeReactionEventContent(
+				relatesTo = RelatesTo.Annotation(eventId, key = reaction),
+				shortcode = sc,
+				beeperShortcode = sc?.let { ":$it:" }
+			)
+		}
+	}
+
 	suspend fun startSync() {
 		client.startSync()
 	}
@@ -308,6 +327,7 @@ class Matrix(val context: Context, val client: MatrixClient) {
 				stateOf<SpaceParentEventContent>("m.space.parent")
 				stateOf<SpaceChildrenEventContent>("m.space.child")
 				roomAccountDataOf<SpaceOrderEventContent>("org.matrix.msc3230.space_order")
+				messageOf<ShortcodeReactionEventContent>("m.reaction")
 			}
 
 			return module {
