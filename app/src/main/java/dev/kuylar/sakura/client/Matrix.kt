@@ -300,10 +300,8 @@ class Matrix(val context: Context, val client: MatrixClient) {
 		Handler(context.mainLooper).post(block)
 	}
 
-	suspend fun getRecentEmojis(): List<RecentEmoji> {
+	fun getRecentEmojis(): List<RecentEmoji> {
 		if (!loadedRecentEmoji) {
-			updateRecentEmojiCache()
-		} else {
 			suspendThread {
 				updateRecentEmojiCache()
 			}
@@ -328,13 +326,13 @@ class Matrix(val context: Context, val client: MatrixClient) {
 
 	private suspend fun updateRecentEmojiCache() {
 		try {
-			val data = client.user.getAccountData<ElementRecentEmojiEventContent>().first()
-				?: ElementRecentEmojiEventContent()
-			synchronized(recentEmojiCache) {
-				data.let {
-					recentEmojiCache = it.recentEmoji ?: emptyList()
-				}
+			client.user.getAccountData<ElementRecentEmojiEventContent>().collect { data ->
 				loadedRecentEmoji = true
+				data?.let {
+					synchronized(recentEmojiCache) {
+						recentEmojiCache = it.recentEmoji ?: emptyList()
+					}
+				}
 			}
 		} catch (e: Exception) {
 			Log.e("MatrixClient", "Failed to update recent emoji cache", e)

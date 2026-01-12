@@ -169,27 +169,25 @@ class TimelineFragment : Fragment(), MenuProvider {
 			}
 		}
 
-		suspendThread {
-			val recent = client.getRecentEmojis().take(24)
-			EmojiManager.getInstance(requireContext()).getEmojiByCategory().let { map ->
-				activity?.runOnUiThread {
-					val items =
-						emptyMap<CustomEmojiCategoryModel, List<EmojiModel>>().toMutableMap()
-					map.mapKeys { CustomEmojiCategoryModel(it.key) }
-						.mapValues { it.value.map { e -> EmojiModel(e.surrogates) } }
-						.entries.toMutableList().apply {
-							add(
-								0,
-								entry(
-									CustomEmojiCategoryModel("recent"),
-									recent.map { EmojiModel(it.emoji) })
-							)
-						}
-						.associateByTo(items, { it.key }, { it.value })
+		val recent = client.getRecentEmojis().take(24)
+		EmojiManager.getInstance(requireContext()).getEmojiByCategory().let { map ->
+			activity?.runOnUiThread {
+				val items =
+					emptyMap<CustomEmojiCategoryModel, List<EmojiModel>>().toMutableMap()
+				map.mapKeys { CustomEmojiCategoryModel(it.key) }
+					.mapValues { it.value.map { e -> EmojiModel(e.surrogates) } }
+					.entries.toMutableList().apply {
+						add(
+							0,
+							entry(
+								CustomEmojiCategoryModel("recent"),
+								recent.map { EmojiModel(it.emoji) })
+						)
+					}
+					.associateByTo(items, { it.key }, { it.value })
 
-					@Suppress("UNCHECKED_CAST")
-					binding.emojiPicker.loadItems(items as Map<CategoryModel, List<EmojiModel>>)
-				}
+				@Suppress("UNCHECKED_CAST")
+				binding.emojiPicker.loadItems(items as Map<CategoryModel, List<EmojiModel>>)
 			}
 		}
 
@@ -205,11 +203,18 @@ class TimelineFragment : Fragment(), MenuProvider {
 				val text = when (users.size) {
 					1 -> getString(R.string.typing_indicator_1, users[0].name)
 					2 -> getString(R.string.typing_indicator_2, users[0].name, users[1].name)
-					3 -> getString(R.string.typing_indicator_3, users[0].name, users[1].name, users[2].name)
+					3 -> getString(
+						R.string.typing_indicator_3,
+						users[0].name,
+						users[1].name,
+						users[2].name
+					)
+
 					else -> getString(R.string.typing_indicator_more)
 				}
 				activity?.runOnUiThread {
-					binding.typingIndicator.visibility = if (users.isEmpty()) View.GONE else View.VISIBLE
+					binding.typingIndicator.visibility =
+						if (users.isEmpty()) View.GONE else View.VISIBLE
 					binding.typingIndicatorText.text = text
 				}
 			}
