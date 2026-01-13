@@ -17,6 +17,10 @@ import dev.kuylar.sakura.client.MatrixSpace
 import dev.kuylar.sakura.databinding.ItemRoomBinding
 import dev.kuylar.sakura.databinding.ItemRoomCategoryBinding
 import dev.kuylar.sakura.ui.activity.MainActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.store.Room
 
@@ -89,9 +93,19 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity) :
 	}
 
 	class RoomViewModel(val binding: ItemRoomBinding) : RoomListViewModel(binding) {
+		private var client = Matrix.getClient()
+		private var unreadJob: Job? = null
+
 		fun bind(room: Room) {
-			binding.unreadIndicator.visibility =
-				if (!room.isUnread) View.VISIBLE else View.INVISIBLE
+			unreadJob?.cancel()
+			unreadJob = CoroutineScope(Dispatchers.Main).launch {
+				client.client.room.getById(room.roomId).collect { newRoom ->
+					Handler(binding.root.context.mainLooper).post {
+						binding.unreadIndicator.visibility =
+							if (newRoom?.isUnread == true) View.VISIBLE else View.INVISIBLE
+					}
+				}
+			}
 
 			binding.title.text = room.name?.explicitName ?: "null"
 			if (room.isDirect) {
