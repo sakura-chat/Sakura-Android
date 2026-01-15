@@ -10,5 +10,5 @@ data class MatrixSpace(
 	val order: Long
 ) {
 	val isUnread: Boolean
-		get() = children.any { it.isUnread } || childSpaces.any { it.isUnread }
+		get() = children.any { it.unreadMessageCount > 0 } || childSpaces.any { it.isUnread }
 }

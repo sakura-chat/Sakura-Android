@@ -41,6 +41,7 @@ import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.store.eventId
 import net.folivo.trixnity.client.store.roomId
 import net.folivo.trixnity.client.store.sender
+import net.folivo.trixnity.client.user
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import java.util.Map.entry
@@ -55,6 +56,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 	private var editingEvent: EventId? = null
 	private var replyingEvent: EventId? = null
 	private var typingUsersJob: Job? = null
+	private var lastReadEvent: EventId? = null
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -116,12 +118,23 @@ class TimelineFragment : Fragment(), MenuProvider {
 				if (dy == 0 || totalItemCount == 0) return
 				if (!isLoadingMore && timelineAdapter.isReady) {
 					if (firstVisibleItem == 0) {
-						Log.d("TimelineFragment", "Loading more messages (forward)")
-						isLoadingMore = true
-						suspendThread {
-							timelineAdapter.loadMoreForwards()
-							Log.d("TimelineFragment", "Loading complete")
-							isLoadingMore = false
+						if (timelineAdapter.canLoadMoreForward()) {
+							Log.d("TimelineFragment", "Loading more messages (forward)")
+							isLoadingMore = true
+							suspendThread {
+								timelineAdapter.loadMoreForwards()
+								Log.d("TimelineFragment", "Loading complete")
+								isLoadingMore = false
+							}
+						} else {
+							Log.d("TimelineFragment", "Marking room as read")
+							timelineAdapter.lastEventId?.let {
+								if (it == lastReadEvent) return@let
+								lastReadEvent = it
+								suspendThread {
+									client.client.api.room.setReceipt(RoomId(roomId), it)
+								}
+							}
 						}
 					} else if (lastVisibleItem == totalItemCount - 1) {
 						Log.d("TimelineFragment", "Loading more messages (backward)")

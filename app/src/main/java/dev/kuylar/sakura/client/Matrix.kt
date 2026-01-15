@@ -12,8 +12,10 @@ import dev.kuylar.sakura.client.customevent.*
 import io.ktor.http.Url
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.MatrixClient
 import net.folivo.trixnity.client.flattenValues
@@ -78,6 +80,15 @@ class Matrix(val context: Context, val client: MatrixClient) {
 		return client.room.getAll().flattenValues().first()
 			.filter { it.membership != Membership.LEAVE && it.membership != Membership.BAN }
 			.toList()
+	}
+
+	fun getRoomsFlow(): Flow<List<Room>> {
+		return flow {
+			client.room.getAll().flattenValues().collect {
+				emit(it.filter { it.membership != Membership.LEAVE && it.membership != Membership.BAN }
+					.toList())
+			}
+		}
 	}
 
 	@OptIn(ExperimentalTime::class)
@@ -150,6 +161,85 @@ class Matrix(val context: Context, val client: MatrixClient) {
 		res.add(buildSpaceTree(null))
 
 		return res.sortedBy { it.order }.toList()
+	}
+
+	@OptIn(ExperimentalTime::class)
+	fun getSpaceTreeFlow(): Flow<List<MatrixSpace>> {
+		return flow {
+			getRoomsFlow().collect { allRooms ->
+				val unownedRooms = allRooms.associateByTo(HashMap()) { it.roomId }
+				val parentToChildren = HashMap<String, MutableList<RoomId>>()
+				val roomOrderMap = HashMap<String, Long>()
+				val topLevelSpaces = mutableListOf<Room>()
+
+				suspend fun buildSpaceTree(space: Room?): MatrixSpace {
+					if (space == null) return MatrixSpace(
+						null,
+						unownedRooms.values
+							.sortedByDescending { it.lastRelevantEventTimestamp?.toEpochMilliseconds() }
+							.toList(),
+						emptyList(),
+						Long.MIN_VALUE
+					)
+
+					val childrenState =
+						client.room.getAllState<SpaceChildrenEventContent>(space.roomId)
+							.firstOrNull()?.values?.mapNotNull { it.first() }
+					val childCreationDates =
+						childrenState?.associateByTo(
+							HashMap(),
+							{ it.stateKey }) { it.originTimestamp }
+							?: emptyMap()
+					val childrenIds = childrenState?.map { RoomId(it.stateKey) }
+						?: parentToChildren[space.roomId.toString()]
+						?: emptyList()
+					val children = mutableListOf<Room>()
+					val childSpaces = mutableListOf<MatrixSpace>()
+
+					childrenIds.forEach { childId ->
+						unownedRooms.remove(childId)?.let { child ->
+							if (child.type == CreateEventContent.RoomType.Space)
+								childSpaces.add(buildSpaceTree(child))
+							else children.add(child)
+						}
+					}
+
+					return MatrixSpace(
+						space,
+						children,
+						childSpaces,
+						roomOrderMap[space.roomId.toString()]
+							?: childCreationDates[space.roomId.toString()]
+							?: Long.MAX_VALUE
+					)
+				}
+
+				allRooms.forEach { room ->
+					val parentData =
+						client.room.getAllState<SpaceParentEventContent>(room.roomId).firstOrNull()
+					val parentId = parentData?.values?.firstOrNull()?.firstOrNull()?.stateKey
+
+					if (parentId != null) parentToChildren.getOrPut(parentId) { mutableListOf() }
+						.add(room.roomId)
+
+					val order = if (room.type == CreateEventContent.RoomType.Space)
+						client.room.getAccountData<SpaceOrderEventContent>(room.roomId)
+							.first()?.order?.firstOrNull()?.code?.toLong()
+					else null
+					order?.let { roomOrderMap[room.roomId.toString()] = it }
+
+					if (room.type == CreateEventContent.RoomType.Space && parentId == null) topLevelSpaces.add(
+						room
+					)
+				}
+
+				val res = ArrayList<MatrixSpace>()
+				topLevelSpaces.forEach { space -> res.add(buildSpaceTree(space)) }
+				res.add(buildSpaceTree(null))
+
+				emit(res.sortedBy { it.order }.toList())
+			}
+		}
 	}
 
 	suspend fun getUser(userId: UserId, roomId: RoomId): RoomUser? {

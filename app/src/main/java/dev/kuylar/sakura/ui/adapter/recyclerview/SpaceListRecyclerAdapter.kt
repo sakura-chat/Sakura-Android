@@ -55,7 +55,7 @@ class SpaceListRecyclerAdapter(val activity: MainActivity, var selectedSpaceId: 
 					}
 			}
 			binding.unreadIndicator.visibility =
-				if (!space.isUnread) View.VISIBLE else View.INVISIBLE
+				if (space.isUnread) View.VISIBLE else View.INVISIBLE
 			binding.root.setOnClickListener {
 				(bindingAdapter as SpaceListRecyclerAdapter).openSpaceTree(space)
 			}
@@ -74,8 +74,9 @@ class SpaceListRecyclerAdapter(val activity: MainActivity, var selectedSpaceId: 
 							.build()
 					}
 			}
+			// TODO: Doesn't update
 			binding.unreadIndicator.visibility =
-				if (!space.isUnread) View.VISIBLE else View.INVISIBLE
+				if (space.isUnread) View.VISIBLE else View.INVISIBLE
 
 			Glide.with(binding.root).load(space.parent?.avatarUrl).into(binding.icon)
 			binding.root.setOnClickListener {

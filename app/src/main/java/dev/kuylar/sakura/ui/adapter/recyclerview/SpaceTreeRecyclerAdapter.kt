@@ -10,19 +10,15 @@ import androidx.core.os.postDelayed
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.bumptech.glide.Glide
-import com.google.android.material.R as MaterialR
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.MatrixSpace
 import dev.kuylar.sakura.databinding.ItemRoomBinding
 import dev.kuylar.sakura.databinding.ItemRoomCategoryBinding
 import dev.kuylar.sakura.ui.activity.MainActivity
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.store.Room
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import com.google.android.material.R as MaterialR
 
 @SuppressLint("NotifyDataSetChanged")
 class SpaceTreeRecyclerAdapter(val activity: MainActivity) :
@@ -31,6 +27,7 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity) :
 	private var client = Matrix.getClient()
 	private var spaceTree: Map<String, MatrixSpace> = emptyMap()
 	private var spaceId = "!home:SakuraNative"
+	private var firstLoadComplete = false
 	private var currentSpace = MatrixSpace(null, emptyList(), emptyList(), 0)
 	private var expandedRooms = HashMap<String, Boolean>()
 	private var items = mutableListOf<Any>()
@@ -38,10 +35,13 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity) :
 	init {
 		suspendThread {
 			// Will be called every room change (hopefully)
-			client.client.room.getAll().collect {
-				spaceTree = client.getSpaceTree()
-					.associateBy { it.parent?.roomId?.full ?: "!home:SakuraNative" }
-				currentSpace = spaceTree.values.first()
+			client.getSpaceTreeFlow().collect {
+				Log.i("SpaceTreeRecyclerAdapter", "Space tree updated.")
+				spaceTree = it.associateBy { it.parent?.roomId?.full ?: "!home:SakuraNative" }
+				if (!firstLoadComplete) {
+					currentSpace = spaceTree.values.first()
+					firstLoadComplete = true
+				}
 				activity.runOnUiThread {
 					rebuildItemsList()
 					notifyDataSetChanged()
@@ -51,17 +51,42 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity) :
 	}
 
 	private fun rebuildItemsList() {
+		items.forEach {
+			when (it) {
+				is RoomModel -> it.dispose()
+				is SpaceModel -> {}//it.dispose()
+			}
+		}
 		items.clear()
 
 		// Add all children first
-		items.addAll(currentSpace.children)
+		items.addAll(currentSpace.children.map {
+			RoomModel(it.roomId, it) {
+				activity.runOnUiThread {
+					val index = items.indexOfFirst { e -> (e as? RoomModel)?.id == it.roomId }
+					if (index >= 0) {
+						notifyItemChanged(index)
+					}
+				}
+			}
+		})
 
 		// Add childSpaces and their expanded children
 		currentSpace.childSpaces.forEach { childSpace ->
-			items.add(childSpace)
+			items.add(SpaceModel(childSpace))
 			val childSpaceId = childSpace.parent?.roomId?.full
 			if (childSpaceId != null && (expandedRooms[childSpaceId] ?: true)) {
-				items.addAll(childSpace.children)
+				items.addAll(childSpace.children.map {
+					RoomModel(it.roomId, it) {
+						activity.runOnUiThread {
+							val index =
+								items.indexOfFirst { e -> (e as? RoomModel)?.id == it.roomId }
+							if (index >= 0) {
+								notifyItemChanged(index)
+							}
+						}
+					}
+				})
 			}
 		}
 	}
@@ -81,7 +106,8 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity) :
 
 	open class RoomListViewModel(binding: ViewBinding) : RecyclerView.ViewHolder(binding.root)
 	class CategoryViewModel(val binding: ItemRoomCategoryBinding) : RoomListViewModel(binding) {
-		fun bind(space: MatrixSpace) {
+		fun bind(model: SpaceModel) {
+			val space = model.snapshot
 			val url = space.parent?.avatarUrl
 			if (url != null) Glide.with(binding.root).load(url).into(binding.icon)
 			else binding.icon.visibility = View.GONE
@@ -93,27 +119,18 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity) :
 	}
 
 	class RoomViewModel(val binding: ItemRoomBinding) : RoomListViewModel(binding) {
-		private var client = Matrix.getClient()
-		private var unreadJob: Job? = null
-
-		fun bind(room: Room) {
-			unreadJob?.cancel()
-			unreadJob = CoroutineScope(Dispatchers.Main).launch {
-				client.client.room.getById(room.roomId).collect { newRoom ->
-					Handler(binding.root.context.mainLooper).post {
-						binding.unreadIndicator.visibility =
-							if (newRoom?.isUnread == true) View.VISIBLE else View.INVISIBLE
-					}
-				}
-			}
+		fun bind(model: RoomModel) {
+			val room = model.snapshot
+			val lastMessage = model.lastMessage
 
 			binding.title.text = room.name?.explicitName ?: "null"
 			if (room.isDirect) {
-				// TODO: Show last message
-				binding.subtitle.text = room.roomId.full
+				binding.subtitle.text = (lastMessage?.content?.getOrNull() as? RoomMessageEventContent.TextBased)?.body
 			} else {
 				binding.subtitle.visibility = View.GONE
 			}
+			val isUnread = room.unreadMessageCount > 0
+			binding.unreadIndicator.visibility = if (isUnread) View.VISIBLE else View.INVISIBLE
 			if (room.avatarUrl == null) {
 				binding.icon.visibility = View.GONE
 			} else {
@@ -168,8 +185,8 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity) :
 
 	override fun getItemViewType(position: Int): Int {
 		return when (items[position]) {
-			is Room -> 0
-			is MatrixSpace -> 1
+			is RoomModel -> 0
+			is SpaceModel -> 1
 			else -> -1 // Will never happen
 		}
 	}
@@ -184,8 +201,8 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity) :
 
 	override fun onBindViewHolder(holder: RoomListViewModel, position: Int) {
 		when (holder) {
-			is RoomViewModel -> (items[position] as? Room)?.let { holder.bind(it) }
-			is CategoryViewModel -> (items[position] as? MatrixSpace)?.let { holder.bind(it) }
+			is RoomViewModel -> (items[position] as? RoomModel)?.let { holder.bind(it) }
+			is CategoryViewModel -> (items[position] as? SpaceModel)?.let { holder.bind(it) }
 		}
 	}
 
@@ -195,12 +212,12 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity) :
 		if (room == null) return
 		val oldRoomId = currentRoomId()
 		activity.openRoomTimeline(room)
-		items.indexOfFirst { (it as? Room)?.roomId?.full == oldRoomId }
+		items.indexOfFirst { (it as? RoomModel)?.id?.full == oldRoomId }
 			.takeUnless { it == -1 }
 			?.let {
 				notifyItemChanged(it)
 			}
-		items.indexOfFirst { (it as? Room)?.roomId?.full == room.roomId.full }
+		items.indexOfFirst { (it as? RoomModel)?.id == room.roomId }
 			.takeUnless { it == -1 }
 			?.let {
 				notifyItemChanged(it)

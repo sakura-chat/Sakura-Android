@@ -233,6 +233,10 @@ class TimelineRecyclerAdapter(
 		}
 	}
 
+	fun canLoadMoreForward(): Boolean {
+		return hasNewerMessages && getRecentJob == null
+	}
+
 	suspend fun loadMoreForwards() {
 		if (!this::room.isInitialized) return
 		if (!hasNewerMessages) return
