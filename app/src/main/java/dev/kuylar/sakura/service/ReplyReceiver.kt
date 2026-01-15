@@ -47,15 +47,13 @@ class ReplyReceiver : BroadcastReceiver() {
 				RoomMessageEventContent.TextBased.Text(replyMessage)
 			).getOrNull() ?: return@suspendThread
 			Log.i("ReplyReceiver", "Getting required items to build a notification update")
-			val ogEvent = matrix.client.room.getTimelineEvent(roomId, eventId).firstOrNull()
-			val ogUser = ogEvent?.sender?.let { matrix.getUser(it, roomId) }
 			val replyUser = matrix.getUser(matrix.userId, roomId)
 			Log.i(
 				"ReplyReceiver",
-				"Got everything? ogEvent:${ogEvent?.eventId?.full}, ogUser: ${ogUser?.userId?.full}, replyUser: ${replyUser?.userId?.full}"
+				"Got everything? replyUser: ${replyUser?.userId?.full}"
 			)
 
-			if (room == null || ogEvent == null || ogUser == null || replyUser == null) return@suspendThread
+			if (room == null || replyUser == null) return@suspendThread
 
 			val channel = "dev.kuylar.sakura.room.${roomId.full}"
 			val notification =
@@ -70,12 +68,6 @@ class ReplyReceiver : BroadcastReceiver() {
 					intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
 					setContentTitle(room.name?.explicitName)
 					setContentText(replyMessage)
-					val ogPerson = ogUser.let {
-						Person.Builder().apply {
-							setName(it.name)
-							setKey(it.userId.full)
-						}.build()
-					}
 					val replyPerson = replyUser.let {
 						Person.Builder().apply {
 							setName(it.name)
@@ -83,11 +75,20 @@ class ReplyReceiver : BroadcastReceiver() {
 						}.build()
 					}
 					val style = NotificationCompat.MessagingStyle(replyPerson)
-					style.addMessage(
-						Utils.getEventBodyText(ogEvent),
-						ogEvent.originTimestamp,
-						ogPerson
-					)
+
+					// Append to existing notifications messages
+					val notificationManager = NotificationManagerCompat.from(context)
+					val existingNotification = notificationManager.activeNotifications
+						.find { it.id == channel.hashCode() }
+					existingNotification?.notification?.let { existing ->
+						NotificationCompat.MessagingStyle
+							.extractMessagingStyleFromNotification(existing)
+							?.messages
+							?.forEach { msg ->
+								style.addMessage(msg)
+							}
+					}
+
 					style.addMessage(
 						replyMessage,
 						System.currentTimeMillis(),
@@ -111,7 +112,7 @@ class ReplyReceiver : BroadcastReceiver() {
 					)
 					setCategory(NotificationCompat.CATEGORY_MESSAGE)
 					intent.putExtra("roomId", roomId.full)
-					intent.putExtra("eventId", ogEvent.eventId.full)
+					intent.putExtra("eventId", eventId.full)
 					val remoteInput: RemoteInput =
 						RemoteInput.Builder("dev.kuylar.sakura.notification.reply")
 							.run { setLabel(context.getString(R.string.notification_reply_label)) }

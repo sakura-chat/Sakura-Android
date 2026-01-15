@@ -69,7 +69,7 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 				Log.d("SakuraFirebaseMessagingService", "Loading client")
 				val matrix = Matrix.loadClient(applicationContext)
 				Log.d("SakuraFirebaseMessagingService", "Loading event")
-				val notificationEvent = matrix.getEvent(roomId, eventId, retryCount = 5)
+				val notificationEvent = matrix.getEvent(roomId, eventId, retryCount = 3)
 				Log.d("SakuraFirebaseMessagingService", "Loading user")
 				val senderUser = (senderUserId ?: notificationEvent?.sender)?.let {
 					matrix.client.user.getById(roomId, it).first()
@@ -122,6 +122,20 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 					setKey(sender.userId.full)
 				}.build()
 				val style = NotificationCompat.MessagingStyle(person)
+
+				// Append to existing notifications messages
+				val notificationManager = NotificationManagerCompat.from(applicationContext)
+				val existingNotification = notificationManager.activeNotifications
+					.find { it.id == channel.hashCode() }
+				existingNotification?.notification?.let { existing ->
+					NotificationCompat.MessagingStyle
+						.extractMessagingStyleFromNotification(existing)
+						?.messages
+						?.forEach { msg ->
+							style.addMessage(msg)
+						}
+				}
+
 				style.addMessage(Utils.getEventBodyText(event), event.originTimestamp, person)
 				setStyle(style)
 				setShortcutId(event.roomId.full)
