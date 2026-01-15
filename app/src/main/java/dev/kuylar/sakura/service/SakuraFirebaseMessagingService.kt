@@ -69,8 +69,7 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 				Log.d("SakuraFirebaseMessagingService", "Loading client")
 				val matrix = Matrix.loadClient(applicationContext)
 				Log.d("SakuraFirebaseMessagingService", "Loading event")
-				val notificationEvent = matrix.client.room
-					.getTimelineEvent(roomId, eventId).first()
+				val notificationEvent = matrix.getEvent(roomId, eventId, retryCount = 5)
 				Log.d("SakuraFirebaseMessagingService", "Loading user")
 				val senderUser = (senderUserId ?: notificationEvent?.sender)?.let {
 					matrix.client.user.getById(roomId, it).first()

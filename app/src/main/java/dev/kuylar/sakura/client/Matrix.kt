@@ -12,6 +12,7 @@ import dev.kuylar.sakura.client.customevent.*
 import io.ktor.http.Url
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
@@ -62,6 +63,8 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 import kotlin.io.path.Path
 import kotlin.io.path.absolutePathString
+import kotlin.time.Duration
+import kotlin.time.DurationUnit
 import kotlin.time.ExperimentalTime
 import androidx.room.Room as AndroidRoom
 
@@ -246,8 +249,13 @@ class Matrix(val context: Context, val client: MatrixClient) {
 		return client.user.getById(roomId, userId).first()
 	}
 
-	suspend fun getEvent(roomId: RoomId, eventId: EventId): TimelineEvent? {
-		return client.room.getTimelineEvent(roomId, eventId).firstOrNull()
+	suspend fun getEvent(roomId: RoomId, eventId: EventId, retryCount: Int = 0): TimelineEvent? {
+		val res = client.room.getTimelineEvent(roomId, eventId).firstOrNull()
+		if (res == null && retryCount > 0) {
+			client.syncOnce()
+			return getEvent(roomId, eventId, retryCount - 1)
+		}
+		return res
 	}
 
 	suspend fun getEvent(roomId: String, eventId: String) =
