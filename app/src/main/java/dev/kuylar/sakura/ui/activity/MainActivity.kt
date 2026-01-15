@@ -9,6 +9,7 @@ import android.util.TypedValue
 import android.view.View
 import dev.kuylar.sakura.ui.fragment.TimelineFragment
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
 import androidx.core.os.bundleOf
@@ -19,6 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.discord.panels.OverlappingPanelsLayout
 import com.discord.panels.PanelsChildGestureRegionObserver
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.android.material.R as MaterialR
@@ -92,6 +94,16 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		}
 
 		PanelsChildGestureRegionObserver.Provider.get().addGestureRegionsUpdateListener(this)
+
+		onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+			override fun handleOnBackPressed() {
+				when (binding.overlappingPanels.getSelectedPanel()) {
+					OverlappingPanelsLayout.Panel.START -> finish()
+					OverlappingPanelsLayout.Panel.CENTER -> binding.overlappingPanels.openStartPanel()
+					OverlappingPanelsLayout.Panel.END -> binding.overlappingPanels.closePanels()
+				}
+			}
+		})
 
 		val loggedInAccounts = Matrix.getAvailableAccounts(this)
 		if (loggedInAccounts.isEmpty()) {
