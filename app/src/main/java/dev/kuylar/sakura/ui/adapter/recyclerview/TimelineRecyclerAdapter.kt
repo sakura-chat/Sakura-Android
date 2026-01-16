@@ -330,6 +330,13 @@ class TimelineRecyclerAdapter(
 		}
 	}
 
+	fun dispose() {
+		eventModels.forEach {
+			it.dispose()
+		}
+		eventModels.clear()
+	}
+
 	open class TimelineViewHolder(binding: ViewBinding) : RecyclerView.ViewHolder(binding.root)
 	open class EventViewHolder(val binding: ItemMessageBinding) : TimelineViewHolder(binding) {
 		private val client = Matrix.getClient()

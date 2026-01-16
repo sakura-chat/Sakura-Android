@@ -1,5 +1,6 @@
 package dev.kuylar.sakura.ui.fragment
 
+import android.app.NotificationManager
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -240,6 +241,10 @@ class TimelineFragment : Fragment(), MenuProvider {
 	private fun sendMessage() {
 		val msg = binding.input.getValue()
 		if (msg.isBlank()) return
+		if (msg.startsWith('/')) {
+			val commandExecuted = tryExecuteCommand(msg)
+			if (commandExecuted) return
+		}
 		if (editingEvent != null) {
 			suspendThread {
 				client.editEvent(roomId, editingEvent!!, msg)
@@ -276,6 +281,34 @@ class TimelineFragment : Fragment(), MenuProvider {
 					binding.buttonSend.isEnabled = true
 				}
 			}
+		}
+	}
+
+	private fun tryExecuteCommand(command: String): Boolean {
+		return when (command) {
+			"/notification channels" -> {
+				Log.i("TimelineFragment", "Notification channels:")
+				context?.getSystemService<NotificationManager>()?.notificationChannels?.forEach {
+					Log.i("TimelineFragment", "- [${it.id}] ${it.name} [${it.importance}]")
+				}
+				true
+			}
+			"/notification deletechannels" -> {
+				Log.i("TimelineFragment", "Deleting notification channels:")
+				val nm = context?.getSystemService<NotificationManager>() ?: return true
+				nm.notificationChannels?.forEach {
+					nm.deleteNotificationChannel(it.id)
+					Log.i("TimelineFragment", "- [${it.id}] ${it.name} [${it.importance}]")
+				}
+				true
+			}
+			"/reinit" -> {
+				Log.i("TimelineFragment", "Reinitializing the recycler adapter")
+				timelineAdapter.dispose()
+				timelineAdapter = TimelineRecyclerAdapter(this, roomId, binding.timelineRecycler)
+				true
+			}
+			else -> false
 		}
 	}
 

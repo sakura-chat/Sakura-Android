@@ -74,4 +74,5 @@
 	<string name="typing_indicator_2">%s and %s are typing…</string>
 	<string name="typing_indicator_3">%s, %s and %s are typing…</string>
 	<string name="typing_indicator_more">Several people are typing…</string>
+	<string name="title_activity_bubble">Bubble Activity</string>
 </resources>

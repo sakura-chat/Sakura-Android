@@ -5,12 +5,11 @@
 	android:layout_height="match_parent"
 	tools:context=".ui.fragment.EmptyFragment">
 
-	<TextView
-		style="?textAppearanceDisplayMedium"
-		android:layout_width="match_parent"
+	<com.google.android.material.loadingindicator.LoadingIndicator
+		style="@style/Widget.Material3.LoadingIndicator.Contained"
+		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		android:layout_gravity="center"
-		android:text="@string/app_name"
 		android:textAlignment="center" />
 
 </FrameLayout>

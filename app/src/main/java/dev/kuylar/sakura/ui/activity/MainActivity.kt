@@ -165,10 +165,13 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 			getSharedPreferences("main", MODE_PRIVATE).getString("selectedSpaceId", null)
 		)
 		binding.roomsPanel.roomsRecycler.adapter = SpaceTreeRecyclerAdapter(this)
-		if (autoNavigate)
-			getSharedPreferences("main", MODE_PRIVATE).getString("selectedRoomId", null)?.let {
-				openRoomTimeline(it)
-			}
+		if (autoNavigate) {
+			val navigatedFromIntent = handleIntent(intent)
+			if (!navigatedFromIntent)
+				getSharedPreferences("main", MODE_PRIVATE).getString("selectedRoomId", null)?.let {
+					openRoomTimeline(it)
+				}
+		}
 	}
 
 	fun openSpaceTree(space: MatrixSpace) {
@@ -262,16 +265,35 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 
 	override fun onNewIntent(intent: Intent, caller: ComponentCaller) {
 		super.onNewIntent(intent, caller)
+		handleIntent(intent)
+	}
 
-		intent.getStringExtra("roomId")?.let {
-			autoNavigate = false
-			suspendThread {
-				// Ensure that client is created
-				Matrix.loadClient(this)
-				runOnUiThread {
-					openRoomTimeline(it)
+	private fun handleIntent(intent: Intent): Boolean {
+		return if (intent.action == Intent.ACTION_VIEW) {
+			val uri = intent.data ?: return false
+
+			return when (uri.host) {
+				"room" -> {
+					uri.lastPathSegment?.let { roomId ->
+						openRoomTimeline(roomId)
+						true
+					} ?: false
 				}
+				else -> false
 			}
+
+		} else {
+			intent.getStringExtra("roomId")?.let {
+				autoNavigate = false
+				suspendThread {
+					// Ensure that client is created
+					Matrix.loadClient(this)
+					runOnUiThread {
+						openRoomTimeline(it)
+					}
+				}
+				true
+			} ?: false
 		}
 	}
 
