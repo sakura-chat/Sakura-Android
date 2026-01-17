@@ -75,4 +75,7 @@
 	<string name="typing_indicator_3">%s, %s and %s are typing…</string>
 	<string name="typing_indicator_more">Several people are typing…</string>
 	<string name="title_activity_bubble">Bubble Activity</string>
+	<string name="error_title">Whoops!</string>
+	<string name="error_body">Looks like something has gone wrong</string>
+	<string name="error_no_details">An unknown error has occurred.</string>
 </resources>

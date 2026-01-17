@@ -30,6 +30,7 @@ import dev.kuylar.sakura.databinding.ItemLoadingSpinnerBinding
 import dev.kuylar.sakura.databinding.ItemMessageBinding
 import dev.kuylar.sakura.databinding.ItemReactionBinding
 import dev.kuylar.sakura.databinding.ItemSpaceListDividerBinding
+import dev.kuylar.sakura.databinding.LayoutErrorBinding
 import dev.kuylar.sakura.ui.fragment.TimelineFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.EventBottomSheetFragment
 import kotlinx.coroutines.CoroutineScope
@@ -71,6 +72,7 @@ class TimelineRecyclerAdapter(
 	private var hasOlderMessages = true
 	private var hasNewerMessages = false
 	private var getRecentJob: Job? = null
+	private var ex: Throwable? = null
 	var lastEventId: EventId? = null
 	var lastEventTimestamp = 0L
 	var firstEventId: EventId? = null
@@ -82,16 +84,20 @@ class TimelineRecyclerAdapter(
 		suspendThread {
 			client.getRoom(roomId)?.let {
 				room = it
-				val first = client.client.room.getLastTimelineEvents(
-					RoomId(roomId),
-				) {
-					this.maxSize = 50
-					this.fetchSize = 50
-				}.first()?.toList() ?: emptyList()
-				first.forEach { event ->
-					insertEvent(event)
+				try {
+					val first = client.client.room.getLastTimelineEvents(
+						RoomId(roomId),
+					) {
+						this.maxSize = 50
+						this.fetchSize = 50
+					}.first()?.toList() ?: emptyList()
+					first.forEach { event ->
+						insertEvent(event)
+					}
+					startListeningToEvents()
+				} catch (e: Exception) {
+					handleError(e)
 				}
-				startListeningToEvents()
 				isReady = true
 			}
 		}
@@ -112,6 +118,8 @@ class TimelineRecyclerAdapter(
 				)
 			)
 
+			3 -> ErrorViewHolder(LayoutErrorBinding.inflate(layoutInflater, parent, false))
+
 			else -> TimelineViewHolder(
 				ItemSpaceListDividerBinding.inflate(
 					layoutInflater,
@@ -123,7 +131,8 @@ class TimelineRecyclerAdapter(
 	}
 
 	override fun getItemViewType(position: Int): Int {
-		return if (hasNewerMessages && position == 0) 2
+		return if (ex != null && position == 0) 3
+		else if (hasNewerMessages && position == 0) 2
 		else if (hasOlderMessages && position == eventModels.size) 2
 		else 1
 	}
@@ -141,12 +150,13 @@ class TimelineRecyclerAdapter(
 				eventModels.getOrNull(realPosition + 1),
 				eventModels.getOrNull(realPosition - 1)
 			)
-		} else if (holder is LoadingIconViewHolder) {
-			Log.i("TimelineRecyclerAdapter", "loading holder @ $position")
+		} else if (holder is ErrorViewHolder) {
+			holder.bind(ex)
 		}
 	}
 
 	override fun getItemCount(): Int {
+		if (ex != null) return 1
 		var size = eventModels.size
 		if (hasOlderMessages) size++
 		if (hasNewerMessages) size++
@@ -306,12 +316,16 @@ class TimelineRecyclerAdapter(
 		}
 		getRecentJob?.cancel()
 		getRecentJob = CoroutineScope(Dispatchers.Main).launch {
-			client.client.room.getTimelineEvents(
-				RoomId(roomId),
-				lastEventId ?: EventId(""),
-				GetEvents.Direction.FORWARDS
-			).collect { newEvent ->
-				insertEvent(newEvent, 0)
+			try {
+				client.client.room.getTimelineEvents(
+					RoomId(roomId),
+					lastEventId ?: EventId(""),
+					GetEvents.Direction.FORWARDS
+				).collect { newEvent ->
+					insertEvent(newEvent, 0)
+				}
+			} catch (e: Exception) {
+				handleError(e)
 			}
 		}
 	}
@@ -335,6 +349,18 @@ class TimelineRecyclerAdapter(
 			it.dispose()
 		}
 		eventModels.clear()
+		getRecentJob?.cancel()
+	}
+
+	private fun handleError(e: Throwable) {
+		eventModels.clear()
+		Log.e("TimelineRecyclerAdapter", "An error has occurred", e)
+		ex = e
+		fragment.context?.let {
+			Handler(it.mainLooper).post {
+				notifyDataSetChanged()
+			}
+		}
 	}
 
 	open class TimelineViewHolder(binding: ViewBinding) : RecyclerView.ViewHolder(binding.root)
@@ -607,4 +633,21 @@ class TimelineRecyclerAdapter(
 
 	class LoadingIconViewHolder(val binding: ItemLoadingSpinnerBinding) :
 		TimelineViewHolder(binding)
+
+	class ErrorViewHolder(val binding: LayoutErrorBinding) : TimelineViewHolder(binding) {
+		fun bind(ex: Throwable?) {
+			if (ex != null) {
+				val sb = StringBuilder()
+				sb.appendLine(ex.javaClass.name)
+					.appendLine("=".repeat(ex.javaClass.name.length))
+					.appendLine(ex.message)
+					.appendLine()
+					.appendLine("Stack trace:")
+					.appendLine(ex.stackTraceToString())
+				binding.details.text = sb.toString()
+			} else {
+				binding.details.setText(R.string.error_no_details)
+			}
+		}
+	}
 }

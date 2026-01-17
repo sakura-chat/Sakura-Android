@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	style="?materialCardViewFilledStyle"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	app:cardBackgroundColor="?colorErrorContainer">
+
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:gravity="center"
+		android:orientation="vertical">
+
+		<ImageView
+			android:layout_width="64dp"
+			android:layout_height="64dp"
+			app:srcCompat="@drawable/ic_bug"
+			app:tint="?colorError" />
+
+		<TextView
+			style="?textAppearanceTitleLarge"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginVertical="12dp"
+			android:text="@string/error_title"
+			android:textAlignment="center" />
+
+		<TextView
+			style="?textAppearanceBodyLarge"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:text="@string/error_body"
+			android:textAlignment="center" />
+
+		<TextView
+			android:id="@+id/details"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginTop="12dp"
+			android:fontFamily="monospace"
+			android:maxLines="10"
+			android:paddingHorizontal="16dp"
+			android:scrollbars="vertical"
+			android:scrollHorizontally="true"
+			android:text="@string/error_no_details"
+			tools:text="@tools:sample/lorem/random" />
+	</LinearLayout>
+</com.google.android.material.card.MaterialCardView>
