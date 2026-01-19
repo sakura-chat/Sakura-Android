@@ -6,17 +6,19 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.os.bundleOf
 import androidx.navigation.fragment.findNavController
+import dagger.hilt.android.AndroidEntryPoint
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentLoginWithPasswordBinding
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 
+@AndroidEntryPoint
 class LoginWithPasswordFragment : Fragment() {
 	private lateinit var binding: FragmentLoginWithPasswordBinding
 	private lateinit var homeserver: String
+	private lateinit var matrix: Matrix
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -42,8 +44,7 @@ class LoginWithPasswordFragment : Fragment() {
 			binding.buttonLogin.isEnabled = false
 			suspendThread {
 				try {
-					Matrix.login(
-						requireContext(),
+					matrix.login(
 						homeserver,
 						IdentifierType.User(binding.inputUsername.editText?.text.toString()),
 						binding.inputPassword.editText?.text.toString()

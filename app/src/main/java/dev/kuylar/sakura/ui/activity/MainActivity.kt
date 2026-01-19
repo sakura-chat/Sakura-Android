@@ -293,13 +293,7 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		} else {
 			intent.getStringExtra("roomId")?.let {
 				autoNavigate = false
-				suspendThread {
-					// Ensure that client is created
-					Matrix.loadClient(this, from = "MainActivity:290")
-					runOnUiThread {
-						openRoomTimeline(it)
-					}
-				}
+				openRoomTimeline(it)
 				true
 			} ?: false
 		}

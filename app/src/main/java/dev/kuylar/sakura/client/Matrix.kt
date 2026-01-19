@@ -111,6 +111,20 @@ class Matrix {
 		}.getOrThrow()!!
 	}
 
+	suspend fun login(homeserver: String, id: IdentifierType.User, password: String, type: String = "main") {
+		val (repo, media) = getModules(context, type)
+		client = MatrixClient.login(
+			baseUrl = Url(homeserver),
+			identifier = id,
+			password = password,
+			initialDeviceDisplayName = "Sakura",
+			repositoriesModule = repo,
+			mediaStoreModule = media,
+		) {
+			modulesFactories += ::prepClient
+		}.getOrThrow()
+	}
+
 	suspend fun getRoom(roomId: String): Room? {
 		if (!this::client.isInitialized) {
 			Log.w("MatrixClient", "getRoom() called before client was initialized.")
@@ -604,41 +618,7 @@ class Matrix {
 			}
 		}
 
-		@Deprecated("Use the Hilt provided singleton instead")
-		suspend fun loadClient(context: Context, type: String = "main", from: String): Matrix {
-			instance = Matrix(context, from)
-			instance.initialize(type)
-			return instance
-		}
-
-		@Deprecated("Use the Hilt provided singleton instead")
-		suspend fun login(
-			context: Context,
-			homeserver: String,
-			id: IdentifierType,
-			password: String,
-			type: String = "main",
-		): Matrix {
-			val (repo, media) = getModules(context, type)
-			val client = MatrixClient.login(
-				baseUrl = Url(homeserver),
-				identifier = id,
-				password = password,
-				initialDeviceDisplayName = "Sakura",
-				repositoriesModule = repo,
-				mediaStoreModule = media,
-			) {
-				modulesFactories += ::prepClient
-			}.getOrThrow()
-			prepClient()
-			instance = Matrix(context, "login")
-			instance.client = client
-			return instance
-		}
-
-		fun startLoginFlow(
-			homeserver: Uri,
-		): MatrixClientServerApiClientImpl {
+		fun startLoginFlow(homeserver: Uri): MatrixClientServerApiClientImpl {
 			return MatrixClientServerApiClientImpl(Url(homeserver.toString()))
 		}
 
