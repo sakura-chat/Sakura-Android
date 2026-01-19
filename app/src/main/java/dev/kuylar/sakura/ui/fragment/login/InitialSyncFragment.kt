@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import dagger.hilt.android.AndroidEntryPoint
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
@@ -15,6 +16,7 @@ import dev.kuylar.sakura.ui.activity.InitialSyncCompleteListener
 import net.folivo.trixnity.client.MatrixClient
 import javax.inject.Inject
 
+@AndroidEntryPoint
 class InitialSyncFragment : Fragment() {
 	private lateinit var binding: FragmentInitialSyncBinding
 	@Inject lateinit var client: Matrix

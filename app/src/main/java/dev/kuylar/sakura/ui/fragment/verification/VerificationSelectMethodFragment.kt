@@ -5,6 +5,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import dagger.hilt.android.AndroidEntryPoint
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentVerificationSelectMethodBinding
@@ -14,6 +15,7 @@ import net.folivo.trixnity.client.verification.ActiveVerificationState
 import net.folivo.trixnity.core.model.events.m.key.verification.VerificationMethod
 import javax.inject.Inject
 
+@AndroidEntryPoint
 class VerificationSelectMethodFragment : Fragment() {
 	private lateinit var binding: FragmentVerificationSelectMethodBinding
 	@Inject lateinit var client: Matrix

@@ -5,8 +5,10 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import dagger.hilt.android.AndroidEntryPoint
 import dev.kuylar.sakura.databinding.FragmentVerificationMessageBinding
 
+@AndroidEntryPoint
 class VerificationMessageFragment : Fragment() {
 	private lateinit var binding: FragmentVerificationMessageBinding
 	private var state: Boolean? = null

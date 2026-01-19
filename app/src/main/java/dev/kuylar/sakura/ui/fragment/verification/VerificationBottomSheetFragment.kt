@@ -8,6 +8,7 @@ import androidx.core.os.bundleOf
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import dagger.hilt.android.AndroidEntryPoint
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
@@ -17,6 +18,7 @@ import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveVerificationState
 import javax.inject.Inject
 
+@AndroidEntryPoint
 class VerificationBottomSheetFragment() : BottomSheetDialogFragment() {
 	private lateinit var binding: FragmentVerificationBottomSheetBinding
 	@Inject lateinit var client: Matrix
