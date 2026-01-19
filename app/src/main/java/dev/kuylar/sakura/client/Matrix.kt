@@ -10,6 +10,10 @@ import android.util.Log
 import dev.kuylar.sakura.Utils
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.customevent.*
+import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
+import dev.kuylar.sakura.emoji.RoomEmojiCategoryModel
+import dev.kuylar.sakura.emojipicker.model.CategoryModel
+import dev.kuylar.sakura.emojipicker.model.EmojiModel
 import io.ktor.http.Url
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -19,6 +23,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.MatrixClientImpl
 import net.folivo.trixnity.client.flattenValues
 import net.folivo.trixnity.client.fromStore
 import net.folivo.trixnity.client.login
@@ -26,6 +31,7 @@ import net.folivo.trixnity.client.media.okio.createOkioMediaStoreModule
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.getAccountData
 import net.folivo.trixnity.client.room.getAllState
+import net.folivo.trixnity.client.store.AccountStore
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.TimelineEvent
@@ -116,7 +122,12 @@ class Matrix {
 		getRecentEmojis()
 	}
 
-	suspend fun login(homeserver: String, id: IdentifierType.User, password: String, type: String = "main") {
+	suspend fun login(
+		homeserver: String,
+		id: IdentifierType.User,
+		password: String,
+		type: String = "main"
+	) {
 		val (repo, media) = getModules(context, type)
 		client = MatrixClient.login(
 			baseUrl = Url(homeserver),
@@ -422,7 +433,10 @@ class Matrix {
 			return
 		}
 		if (syncStarted) {
-			Log.w("MatrixClient", "startSync() called after sync was already started from elsewhere.")
+			Log.w(
+				"MatrixClient",
+				"startSync() called after sync was already started from elsewhere."
+			)
 			return
 		}
 		syncStarted = true
@@ -533,16 +547,20 @@ class Matrix {
 		Handler(context.mainLooper).post(block)
 	}
 
-	fun getRecentEmojis(): List<RecentEmoji> {
-		if (!this::client.isInitialized) {
-			Log.w("MatrixClient", "getRecentEmojis() called before client was initialized.")
-			return emptyList()
-		}
+	private fun startUpdatingRecentEmojiCache() {
 		if (!loadedRecentEmoji) {
 			suspendThread {
 				updateRecentEmojiCache()
 			}
 		}
+	}
+
+	fun getRecentEmojis(): List<RecentEmoji> {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "getRecentEmojis() called before client was initialized.")
+			return emptyList()
+		}
+		startUpdatingRecentEmojiCache()
 		return recentEmojiCache.sortedByDescending { it.count }
 	}
 
@@ -551,7 +569,7 @@ class Matrix {
 			Log.w("MatrixClient", "appendRecentEmoji() called before client was initialized.")
 			return
 		}
-		updateRecentEmojiCache()
+		startUpdatingRecentEmojiCache()
 		val recentEmojis = recentEmojiCache.toMutableList()
 		val index = recentEmojis.indexOfFirst { it.emoji == emoji }
 		if (index >= 0) {
@@ -563,6 +581,42 @@ class Matrix {
 		client.api.user.setAccountData(ElementRecentEmojiEventContent().apply {
 			this.recentEmoji = recentEmojis.sortedByDescending { it.count }
 		}, userId)
+	}
+
+	suspend fun getRoomEmoji(roomId: RoomId): Map<RoomEmojiCategoryModel, List<EmojiModel>> {
+		startUpdatingRecentEmojiCache()
+		val packs = client.room.getAllState<RoomImagePackEventContent>(roomId).firstOrNull()
+			?.map { it.value.first() }
+			?: return emptyMap()
+		return packs.mapNotNull {
+			it?.let {
+				Pair(
+					RoomEmojiCategoryModel(
+						roomId,
+						it.stateKey,
+						it.content.pack?.displayName ?: it.stateKey,
+					),
+					it.content.images
+						?.filter { e -> e.value.usage?.contains("emoticon") ?: true }
+						?.map { emoji ->
+							RoomCustomEmojiModel(emoji.value.url, emoji.key)
+						} ?: emptyList()
+				)
+			}
+		}.toMap()
+	}
+
+	suspend fun getAccountEmoji(): Map<CategoryModel, List<EmojiModel>> {
+		startUpdatingRecentEmojiCache()
+		val roomEmojis =
+			client.user.getAccountData<EmoteRoomsEventContent>().firstOrNull() ?: return emptyMap()
+		val res = mutableMapOf<CategoryModel, List<EmojiModel>>()
+		roomEmojis.rooms?.forEach { (roomId, packs) ->
+			val roomEmojis = getRoomEmoji(RoomId(roomId))
+			if (packs.isEmpty()) res.putAll(roomEmojis)
+			else res.putAll(roomEmojis.filterKeys { it.stateKey in packs })
+		}
+		return res
 	}
 
 	private suspend fun updateRecentEmojiCache() {
@@ -669,9 +723,12 @@ class Matrix {
 			val customMappings = createEventContentSerializerMappings {
 				stateOf<SpaceParentEventContent>("m.space.parent")
 				stateOf<SpaceChildrenEventContent>("m.space.child")
-				roomAccountDataOf<SpaceOrderEventContent>("org.matrix.msc3230.space_order")
+				stateOf<RoomImagePackEventContent>("im.ponies.room_emotes")
 				messageOf<ShortcodeReactionEventContent>("m.reaction")
+				roomAccountDataOf<SpaceOrderEventContent>("org.matrix.msc3230.space_order")
 				globalAccountDataOf<ElementRecentEmojiEventContent>("io.element.recent_emoji")
+				globalAccountDataOf<EmoteRoomsEventContent>("im.ponies.emote_rooms")
+				globalAccountDataOf<UserImagePackEventContent>("im.ponies.user_emotes")
 			}
 
 			return module {
@@ -689,7 +746,11 @@ class Matrix {
 
 		fun setClient(client: Matrix) {
 			if (this::instance.isInitialized) {
-				Log.w("MatrixClient", "setClient called after instance was initialized!", Exception())
+				Log.w(
+					"MatrixClient",
+					"setClient called after instance was initialized!",
+					Exception()
+				)
 			}
 			instance = client
 		}

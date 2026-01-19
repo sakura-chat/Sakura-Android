@@ -430,7 +430,7 @@ class TimelineRecyclerAdapter(
 				handleReactions(event, eventModel.reactions!!.reactions)
 			} else
 				binding.reactions.visibility = View.GONE
-			val content = event.content?.getOrNull() ?: return
+			val content = event.content?.getOrNull()
 			repliedEvent?.let {
 				handleReply(it)
 			}
@@ -510,6 +510,10 @@ class TimelineRecyclerAdapter(
 						.into(attachmentBinding.imageAttachment)
 					binding.attachment.visibility = View.VISIBLE
 					binding.attachment.addView(attachmentBinding.root)
+				}
+
+				null -> {
+					binding.body.setText(R.string.event_failed_to_decrypt)
 				}
 
 				else -> {

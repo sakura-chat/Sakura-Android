@@ -78,4 +78,5 @@
 	<string name="error_title">Whoops!</string>
 	<string name="error_body">Looks like something has gone wrong</string>
 	<string name="error_no_details">An unknown error has occurred.</string>
+	<string name="event_failed_to_decrypt">⚠️ Failed to get event contents. Either event is malformed or your device doesn\'t have the keys to decrypt this event.</string>
 </resources>

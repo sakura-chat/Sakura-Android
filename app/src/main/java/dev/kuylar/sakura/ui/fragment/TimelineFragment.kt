@@ -48,19 +48,25 @@ import net.folivo.trixnity.core.model.RoomId
 import java.util.Map.entry
 import kotlin.math.max
 import androidx.core.view.isVisible
+import androidx.recyclerview.widget.RecyclerView
+import dev.kuylar.sakura.emoji.CustomEmojiModel
+import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class TimelineFragment : Fragment(), MenuProvider {
 	private lateinit var binding: FragmentTimelineBinding
 	private lateinit var roomId: String
-	@Inject lateinit var client: Matrix
+
+	@Inject
+	lateinit var client: Matrix
 	private lateinit var timelineAdapter: TimelineRecyclerAdapter
 	private var isLoadingMore = false
 	private var editingEvent: EventId? = null
 	private var replyingEvent: EventId? = null
 	private var typingUsersJob: Job? = null
 	private var lastReadEvent: EventId? = null
+	private var clearCacheUnlocked = false
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -106,9 +112,9 @@ class TimelineFragment : Fragment(), MenuProvider {
 		binding.timelineRecycler.layoutManager =
 			LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, true)
 		binding.timelineRecycler.addOnScrollListener(object :
-			androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
+			RecyclerView.OnScrollListener() {
 			override fun onScrolled(
-				recyclerView: androidx.recyclerview.widget.RecyclerView,
+				recyclerView: RecyclerView,
 				dx: Int,
 				dy: Int
 			) {
@@ -163,7 +169,11 @@ class TimelineFragment : Fragment(), MenuProvider {
 				if (binding.emojiPicker.isVisible) View.GONE else View.VISIBLE
 		}
 		binding.emojiPicker.setOnEmojiSelectedCallback { emoji ->
-			binding.input.editableText.insert(binding.input.selectionStart, emoji.name)
+			if (emoji is RoomCustomEmojiModel) {
+				binding.input.insertMention(emoji.toMention(this))
+			} else {
+				binding.input.editableText.insert(binding.input.selectionStart, emoji.name)
+			}
 		}
 
 		setFragmentResultListener("timeline_action") { _, bundle ->
@@ -185,27 +195,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 			}
 		}
 
-		val recent = client.getRecentEmojis().take(24)
-		EmojiManager.getInstance(requireContext()).getEmojiByCategory().let { map ->
-			activity?.runOnUiThread {
-				val items =
-					emptyMap<CustomEmojiCategoryModel, List<EmojiModel>>().toMutableMap()
-				map.mapKeys { CustomEmojiCategoryModel(it.key) }
-					.mapValues { it.value.map { e -> EmojiModel(e.surrogates) } }
-					.entries.toMutableList().apply {
-						add(
-							0,
-							entry(
-								CustomEmojiCategoryModel("recent"),
-								recent.map { EmojiModel(it.emoji) })
-						)
-					}
-					.associateByTo(items, { it.key }, { it.value })
-
-				@Suppress("UNCHECKED_CAST")
-				binding.emojiPicker.loadItems(items as Map<CategoryModel, List<EmojiModel>>)
-			}
-		}
+		updateEmojiPicker()
 
 		binding.input.addTextChangedListener {
 			suspendThread {
@@ -245,7 +235,10 @@ class TimelineFragment : Fragment(), MenuProvider {
 		if (msg.isBlank()) return
 		if (msg.startsWith('/')) {
 			val commandExecuted = tryExecuteCommand(msg)
-			if (commandExecuted) return
+			if (commandExecuted) {
+				binding.input.editableText.clear()
+				return
+			}
 		}
 		if (editingEvent != null) {
 			suspendThread {
@@ -295,6 +288,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 				}
 				true
 			}
+
 			"/notification deletechannels" -> {
 				Log.i("TimelineFragment", "Deleting notification channels:")
 				val nm = context?.getSystemService<NotificationManager>() ?: return true
@@ -304,12 +298,32 @@ class TimelineFragment : Fragment(), MenuProvider {
 				}
 				true
 			}
+
 			"/reinit" -> {
 				Log.i("TimelineFragment", "Reinitializing the recycler adapter")
 				timelineAdapter.dispose()
-				timelineAdapter = TimelineRecyclerAdapter(this, roomId, binding.timelineRecycler, client)
+				timelineAdapter =
+					TimelineRecyclerAdapter(this, roomId, binding.timelineRecycler, client)
 				true
 			}
+
+			"/forceinitialsync" -> {
+				if (!clearCacheUnlocked) {
+					Toast.makeText(
+						context,
+						"Are you sure you want to force an initial sync?",
+						Toast.LENGTH_SHORT
+					).show()
+					clearCacheUnlocked = true
+					return true
+				}
+				clearCacheUnlocked = false
+				suspendThread {
+					client.client.clearCache()
+				}
+				true
+			}
+
 			else -> false
 		}
 	}
@@ -395,5 +409,40 @@ class TimelineFragment : Fragment(), MenuProvider {
 	override fun onDestroy() {
 		typingUsersJob?.cancel()
 		super.onDestroy()
+	}
+
+	private fun updateEmojiPicker() {
+		suspendThread {
+			val roomEmoji = client.getRoomEmoji(RoomId(roomId))
+			val accountEmoji = client.getAccountEmoji()
+			val recent = client.getRecentEmojis().take(24)
+			EmojiManager.getInstance(requireContext()).getEmojiByCategory().let { map ->
+				activity?.runOnUiThread {
+					val items = emptyMap<CategoryModel, List<EmojiModel>>().toMutableMap()
+
+					val allEmojis: Map<CategoryModel, List<EmojiModel>> =
+						map.mapKeys { CustomEmojiCategoryModel(it.key) }
+							.mapValues { it.value.map { e -> EmojiModel(e.surrogates) } }
+					allEmojis.entries.toMutableList().apply {
+						add(
+							0,
+							entry(
+								CustomEmojiCategoryModel("recent"),
+								recent.map { CustomEmojiModel(it.emoji) })
+						)
+						accountEmoji.forEach {
+							if (roomEmoji.keys.any { other -> other == it }) return@forEach
+							add(1, it)
+						}
+						roomEmoji.forEach {
+							add(1, it)
+						}
+					}.associateByTo(items, { it.key }, { it.value })
+
+					binding.emojiPicker.setEmojiLayout(R.layout.item_emoji)
+					binding.emojiPicker.loadItems(items)
+				}
+			}
+		}
 	}
 }
