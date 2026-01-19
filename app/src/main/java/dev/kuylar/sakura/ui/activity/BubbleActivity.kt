@@ -64,7 +64,9 @@ class BubbleActivity : AppCompatActivity() {
 			}
 			client.startSync()
 			intent.getStringExtra("roomId")?.let {
-				navController.navigate(R.id.nav_room, bundleOf("roomId" to it))
+				runOnUiThread {
+					navController.navigate(R.id.nav_room, bundleOf("roomId" to it))
+				}
 			}
 			lifecycleScope.launch {
 				client.addSyncStateListener {
