@@ -109,6 +109,11 @@ class Matrix {
 		) {
 			modulesFactories += ::prepClient
 		}.getOrThrow()!!
+
+		// Update filters if required.
+		updateFilters()
+		// Load this beforehand so we always have a list of recent emojis in hand
+		getRecentEmojis()
 	}
 
 	suspend fun login(homeserver: String, id: IdentifierType.User, password: String, type: String = "main") {
@@ -573,6 +578,64 @@ class Matrix {
 		} catch (e: Exception) {
 			Log.e("MatrixClient", "Failed to update recent emoji cache", e)
 			loadedRecentEmoji = false
+		}
+	}
+
+	private suspend fun updateFilters() {
+		try {
+			// This is f-cked up.
+			// Not a good way to get the filter ID imo, but it works
+			(client as? MatrixClientImpl)?.di?.get<AccountStore>()?.let { accountStore ->
+				val account = accountStore.getAccount() ?: return@let
+				val filterId = account.filterId ?: return@let
+				val filter =
+					client.api.user.getFilter(account.userId, filterId).getOrNull() ?: return@let
+				var changed = false
+
+				fun Set<String>.add(value: String): Set<String> {
+					if (contains(value)) return this
+					changed = true
+					return plus(value)
+				}
+
+				val newFilter = filter.copy(
+					accountData = filter.accountData?.copy(
+						types = filter.accountData?.types
+							?.add("io.element.recent_emoji")
+							?.add("im.ponies.emote_rooms")
+							?.add("im.ponies.user_emotes")
+					),
+					room = filter.room?.copy(
+						accountData = filter.room?.accountData?.copy(
+							types = filter.room?.accountData?.types
+								?.add("org.matrix.msc3230.space_order")
+						),
+						state = filter.room?.state?.copy(
+							types = filter.room?.state?.types
+								?.add("m.space.parent")
+								?.add("m.space.child")
+								?.add("im.ponies.room_emotes")
+						),
+						timeline = filter.room?.timeline?.copy(
+							types = filter.room?.timeline?.types
+								?.add("m.space.parent")
+								?.add("m.space.child")
+								?.add("im.ponies.room_emotes")
+								?.add("m.reaction")
+						)
+					)
+				)
+				if (!changed) return@let
+				Log.i(
+					"MatrixClient",
+					"New event types have been added since the last filter update, updating filter"
+				)
+				val newFilterId = client.api.user.setFilter(account.userId, newFilter).getOrThrow()
+				Log.i("MatrixClient", "Filter updated: $newFilterId")
+				accountStore.updateAccount { it?.copy(filterId = newFilterId) }
+			}
+		} catch (e: Exception) {
+			Log.e("MatrixClient", "Failed to update filters", e)
 		}
 	}
 
