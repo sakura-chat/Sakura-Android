@@ -62,7 +62,4 @@ object Utils {
 			else -> return content.javaClass.name
 		}
 	}
-
-	// TODO: Implement this
-	fun parseMarkdown(input: String) = input
 }

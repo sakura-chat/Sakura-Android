@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.LayoutRes
+import androidx.core.view.children
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import dev.kuylar.sakura.emojipicker.model.CategoryModel
@@ -78,10 +79,11 @@ class EmojiRecyclerAdapter(context: Context, private val recyclerView: RecyclerV
 
 	class EmojiViewHolder(val view: View) : CustomViewHolder(view) {
 		fun bind(item: EmojiModel) {
-			item.bind(view)
 			view.setOnClickListener {
 				(bindingAdapter as? EmojiRecyclerAdapter)?.onEmojiSelectedCallback?.invoke(item)
 			}
+			if (view is ViewGroup) view.children.forEach { it.isClickable = false }
+			item.bind(view)
 		}
 	}
 

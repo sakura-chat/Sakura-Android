@@ -20,9 +20,10 @@ glide = "4.16.0"
 overlappingpanels = "0.1.5"
 mentionsedittext = "1.0.0"
 google-services = "4.4.4"
-firebase-bom = "34.7.0"
+firebase-bom = "34.8.0"
 emoji2 = "1.6.0"
-hilt = "2.57.1"
+hilt = "2.58"
+commonmark = "0.27.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -50,6 +51,7 @@ firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging
 emoji2 = { group = "androidx.emoji2", name = "emoji2", version.ref = "emoji2" }
 dagger-hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 dagger-hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+commonmark = { group = "org.commonmark", name = "commonmark", version.ref = "commonmark" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

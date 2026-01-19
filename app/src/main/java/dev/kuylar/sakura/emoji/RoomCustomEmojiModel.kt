@@ -4,6 +4,7 @@ import android.graphics.drawable.Drawable
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
@@ -21,10 +22,15 @@ class RoomCustomEmojiModel(val uri: String, val shortcode: String) : EmojiModel(
 		Glide.with(view)
 			.load(uri)
 			.into(iv)
+		iv.contentDescription = shortcode
+		view.setOnLongClickListener {
+			Toast.makeText(view.context, shortcode, Toast.LENGTH_SHORT).show()
+			true
+		}
 	}
 
 	fun toMention(fragment: Fragment): MentionSpan {
-		return ImageMentionSpan(":$shortcode~$uri:") {
+		return ImageMentionSpan(":$shortcode~${uri.substringAfter("mxc://")}:") {
 			Glide.with(fragment)
 				.asDrawable()
 				.load(uri)

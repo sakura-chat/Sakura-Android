@@ -74,4 +74,5 @@ dependencies {
 	implementation(project(":emojipicker"))
 	implementation(libs.dagger.hilt.android)
 	ksp(libs.dagger.hilt.compiler)
+	implementation(libs.commonmark)
 }

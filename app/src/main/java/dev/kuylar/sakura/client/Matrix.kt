@@ -14,6 +14,7 @@ import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
 import dev.kuylar.sakura.emoji.RoomEmojiCategoryModel
 import dev.kuylar.sakura.emojipicker.model.CategoryModel
 import dev.kuylar.sakura.emojipicker.model.EmojiModel
+import dev.kuylar.sakura.markdown.MarkdownHandler
 import io.ktor.http.Url
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -78,6 +79,7 @@ import androidx.room.Room as AndroidRoom
 class Matrix {
 	val userId: UserId
 		get() = client.userId
+	@Inject lateinit var markdown: MarkdownHandler
 	private val context: Context
 	private val from: String
 	lateinit var client: MatrixClient
@@ -366,8 +368,9 @@ class Matrix {
 			}
 			content(
 				RoomMessageEventContent.TextBased.Text(
-					msg,
-					formattedBody = Utils.parseMarkdown(msg),
+					markdown.inputToPlaintext(msg),
+					format = "org.matrix.custom.html",
+					formattedBody = markdown.inputToMarkdown(msg),
 					relatesTo = relatesTo
 				)
 			)
@@ -382,13 +385,15 @@ class Matrix {
 		client.room.sendMessage(RoomId(roomId)) {
 			content(
 				RoomMessageEventContent.TextBased.Text(
-					"* $msg",
-					formattedBody = Utils.parseMarkdown(msg),
+					"* ${markdown.inputToPlaintext(msg)}",
+					format = "org.matrix.custom.html",
+					formattedBody = markdown.inputToMarkdown(msg),
 					relatesTo = RelatesTo.Replace(
 						eventId,
 						newContent = RoomMessageEventContent.TextBased.Text(
-							msg,
-							formattedBody = Utils.parseMarkdown(msg)
+							markdown.inputToPlaintext(msg),
+							format = "org.matrix.custom.html",
+							formattedBody = markdown.inputToMarkdown(msg)
 						)
 					)
 				)

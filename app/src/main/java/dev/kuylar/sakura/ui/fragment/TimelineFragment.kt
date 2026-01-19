@@ -51,6 +51,7 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import dev.kuylar.sakura.emoji.CustomEmojiModel
 import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
+import dev.kuylar.sakura.markdown.MarkdownHandler
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -60,6 +61,8 @@ class TimelineFragment : Fragment(), MenuProvider {
 
 	@Inject
 	lateinit var client: Matrix
+	@Inject
+	lateinit var markdown: MarkdownHandler
 	private lateinit var timelineAdapter: TimelineRecyclerAdapter
 	private var isLoadingMore = false
 	private var editingEvent: EventId? = null
