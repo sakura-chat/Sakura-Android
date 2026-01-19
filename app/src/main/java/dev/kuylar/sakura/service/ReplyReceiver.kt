@@ -22,6 +22,7 @@ import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.ui.activity.MainActivity
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.runBlocking
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.store.eventId
 import net.folivo.trixnity.client.store.originTimestamp
@@ -39,10 +40,13 @@ class ReplyReceiver : BroadcastReceiver() {
 	override fun onReceive(context: Context, intent: Intent) {
 		val remoteInput = RemoteInput.getResultsFromIntent(intent)
 		val replyMessage =
-			remoteInput?.getCharSequence("dev.kuylar.sakura.notification.reply")?.toString()
-		val roomId = intent.getStringExtra("roomId")?.let { RoomId(it) }
-		val eventId = intent.getStringExtra("eventId")?.let { EventId(it) }
-		if (roomId == null || eventId == null || replyMessage == null) return
+			remoteInput?.getCharSequence("dev.kuylar.sakura.notification.reply")?.toString() ?: return
+		val roomId = intent.getStringExtra("roomId")?.let { RoomId(it) } ?: return
+		val eventId = intent.getStringExtra("eventId")?.let { EventId(it) } ?: return
+		runBlocking {
+			if (!matrix.initialized)
+				matrix.initialize("main")
+		}
 		Log.i("ReplyReceiver", "Received reply @ $roomId: $replyMessage")
 		suspendThread {
 			val room = matrix.client.room.getById(roomId).firstOrNull()

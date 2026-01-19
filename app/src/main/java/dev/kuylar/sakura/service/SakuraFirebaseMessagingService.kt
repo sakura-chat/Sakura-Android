@@ -33,6 +33,7 @@ import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.ui.activity.BubbleActivity
 import dev.kuylar.sakura.ui.activity.MainActivity
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.store.RoomUser
@@ -65,6 +66,10 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 	override fun onMessageReceived(message: RemoteMessage) {
 		super.onMessageReceived(message)
 		Log.i("SakuraFirebaseMessagingService", "Received message")
+		runBlocking {
+			if (!client.initialized)
+				client.initialize("main")
+		}
 		val priority = message.data["priority"] ?: "high"
 		val eventType = message.data["type"]
 		val eventId = message.data["eventId"]?.let { EventId(it) }

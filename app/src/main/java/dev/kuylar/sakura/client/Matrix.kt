@@ -91,6 +91,9 @@ class Matrix {
 		this.from = "Hilt"
 	}
 
+	val initialized: Boolean
+		get() = this::client.isInitialized
+
 	suspend fun initialize(type: String) {
 		if (this::client.isInitialized) {
 			Log.w("MatrixClient", "initialize() called after client was already initialized.")
