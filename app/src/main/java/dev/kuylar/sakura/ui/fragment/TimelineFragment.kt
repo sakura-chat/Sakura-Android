@@ -24,6 +24,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.discord.panels.PanelsChildGestureRegionObserver
 import com.google.android.material.tabs.TabLayout
+import dagger.hilt.android.AndroidEntryPoint
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils
 import dev.kuylar.sakura.Utils.suspendThread
@@ -42,16 +43,18 @@ import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.store.eventId
 import net.folivo.trixnity.client.store.roomId
 import net.folivo.trixnity.client.store.sender
-import net.folivo.trixnity.client.user
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import java.util.Map.entry
 import kotlin.math.max
+import androidx.core.view.isVisible
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class TimelineFragment : Fragment(), MenuProvider {
 	private lateinit var binding: FragmentTimelineBinding
 	private lateinit var roomId: String
-	private lateinit var client: Matrix
+	@Inject lateinit var client: Matrix
 	private lateinit var timelineAdapter: TimelineRecyclerAdapter
 	private var isLoadingMore = false
 	private var editingEvent: EventId? = null
@@ -64,7 +67,6 @@ class TimelineFragment : Fragment(), MenuProvider {
 		arguments?.getString("roomId")?.let {
 			roomId = it
 		}
-		client = Matrix.getClient()
 	}
 
 	override fun onCreateView(
@@ -100,7 +102,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 			Lifecycle.State.RESUMED
 		)
 
-		timelineAdapter = TimelineRecyclerAdapter(this, roomId, binding.timelineRecycler)
+		timelineAdapter = TimelineRecyclerAdapter(this, roomId, binding.timelineRecycler, client)
 		binding.timelineRecycler.layoutManager =
 			LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, true)
 		binding.timelineRecycler.addOnScrollListener(object :
@@ -158,13 +160,13 @@ class TimelineFragment : Fragment(), MenuProvider {
 			requireContext().getSystemService<InputMethodManager>()
 				?.hideSoftInputFromWindow(binding.input.windowToken, 0)
 			binding.emojiPicker.visibility =
-				if (binding.emojiPicker.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+				if (binding.emojiPicker.isVisible) View.GONE else View.VISIBLE
 		}
 		binding.emojiPicker.setOnEmojiSelectedCallback { emoji ->
 			binding.input.editableText.insert(binding.input.selectionStart, emoji.name)
 		}
 
-		setFragmentResultListener("timeline_action") { key, bundle ->
+		setFragmentResultListener("timeline_action") { _, bundle ->
 			val action = bundle.getString("action")
 			val eventId = bundle.getString("eventId")?.let { EventId(it) }
 
@@ -305,7 +307,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 			"/reinit" -> {
 				Log.i("TimelineFragment", "Reinitializing the recycler adapter")
 				timelineAdapter.dispose()
-				timelineAdapter = TimelineRecyclerAdapter(this, roomId, binding.timelineRecycler)
+				timelineAdapter = TimelineRecyclerAdapter(this, roomId, binding.timelineRecycler, client)
 				true
 			}
 			else -> false

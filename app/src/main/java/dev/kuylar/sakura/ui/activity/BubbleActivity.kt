@@ -1,7 +1,5 @@
 package dev.kuylar.sakura.ui.activity
 
-import android.app.ComponentCaller
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
@@ -13,6 +11,7 @@ import androidx.core.view.postDelayed
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
+import dagger.hilt.android.AndroidEntryPoint
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
@@ -21,11 +20,14 @@ import dev.kuylar.sakura.ui.fragment.verification.VerificationBottomSheetFragmen
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.verification.ActiveDeviceVerification
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import javax.inject.Inject
 import com.google.android.material.R as MaterialR
 
+@AndroidEntryPoint
 class BubbleActivity : AppCompatActivity() {
 	private lateinit var binding: ActivityBubbleBinding
-	private lateinit var client: Matrix
+	@Inject
+	lateinit var client: Matrix
 	private lateinit var navController: NavController
 
 	override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,6 +36,8 @@ class BubbleActivity : AppCompatActivity() {
 
 		binding = ActivityBubbleBinding.inflate(layoutInflater)
 		setContentView(binding.root)
+
+		if (!Matrix.isInitialized()) Matrix.setClient(client)
 
 		val navHostFragment =
 			supportFragmentManager.findFragmentById(binding.navHostFragment.id) as NavHostFragment
@@ -50,7 +54,7 @@ class BubbleActivity : AppCompatActivity() {
 		handleStateChange(SyncState.STOPPED)
 		suspendThread {
 			try {
-				client = Matrix.loadClient(this, "main")
+				client.initialize("main")
 			} catch (_: Exception) {
 				// Failed to load client. Give up, since we're in a bubble
 				this@BubbleActivity.runOnUiThread {
@@ -60,13 +64,7 @@ class BubbleActivity : AppCompatActivity() {
 			}
 			client.startSync()
 			intent.getStringExtra("roomId")?.let {
-				suspendThread {
-					// Ensure that client is created
-					Matrix.loadClient(this)
-					runOnUiThread {
-						navController.navigate(R.id.nav_room, bundleOf("roomId" to it))
-					}
-				}
+				navController.navigate(R.id.nav_room, bundleOf("roomId" to it))
 			}
 			lifecycleScope.launch {
 				client.addSyncStateListener {

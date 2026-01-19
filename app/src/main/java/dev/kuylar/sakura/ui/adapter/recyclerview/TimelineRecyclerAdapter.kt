@@ -63,10 +63,10 @@ import java.util.concurrent.CopyOnWriteArrayList
 class TimelineRecyclerAdapter(
 	val fragment: Fragment,
 	val roomId: String,
-	val recycler: RecyclerView
+	val recycler: RecyclerView,
+	val client: Matrix
 ) : RecyclerView.Adapter<TimelineRecyclerAdapter.TimelineViewHolder>() {
 	private lateinit var room: Room
-	private val client = Matrix.getClient()
 	private val layoutInflater = fragment.layoutInflater
 	private var eventModels = CopyOnWriteArrayList<EventModel>()
 	private var hasOlderMessages = true
@@ -109,7 +109,7 @@ class TimelineRecyclerAdapter(
 		viewType: Int
 	): TimelineViewHolder {
 		return when (viewType) {
-			1 -> EventViewHolder(ItemMessageBinding.inflate(layoutInflater, parent, false))
+			1 -> EventViewHolder(ItemMessageBinding.inflate(layoutInflater, parent, false), client)
 			2 -> LoadingIconViewHolder(
 				ItemLoadingSpinnerBinding.inflate(
 					layoutInflater,
@@ -197,7 +197,7 @@ class TimelineRecyclerAdapter(
 		if (eventModels.any { snapshot.eventId == it.eventId }) return snapshot
 		fragment.activity?.runOnUiThread {
 			if (index == null) {
-				eventModels.add(EventModel(snapshot.roomId, snapshot.eventId, event, snapshot) {
+				eventModels.add(EventModel(snapshot.roomId, snapshot.eventId, event, client, snapshot) {
 					updateEventById(snapshot.eventId)
 				})
 				if (notify)
@@ -205,7 +205,7 @@ class TimelineRecyclerAdapter(
 			} else {
 				eventModels.add(
 					index,
-					EventModel(snapshot.roomId, snapshot.eventId, event, snapshot) {
+					EventModel(snapshot.roomId, snapshot.eventId, event, client, snapshot) {
 						updateEventById(snapshot.eventId)
 					})
 				if (notify)
@@ -364,8 +364,7 @@ class TimelineRecyclerAdapter(
 	}
 
 	open class TimelineViewHolder(binding: ViewBinding) : RecyclerView.ViewHolder(binding.root)
-	open class EventViewHolder(val binding: ItemMessageBinding) : TimelineViewHolder(binding) {
-		private val client = Matrix.getClient()
+	open class EventViewHolder(val binding: ItemMessageBinding, val client: Matrix) : TimelineViewHolder(binding) {
 		private val layoutInflater =
 			binding.root.context.getSystemService<LayoutInflater>() as LayoutInflater
 

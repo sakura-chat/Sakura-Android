@@ -1,6 +1,7 @@
 package dev.kuylar.sakura.client
 
 import android.annotation.SuppressLint
+import android.app.Application
 import android.content.Context
 import android.net.Uri
 import android.os.Build
@@ -12,7 +13,6 @@ import dev.kuylar.sakura.client.customevent.*
 import io.ktor.http.Url
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
@@ -61,31 +61,76 @@ import net.folivo.trixnity.core.serialization.events.stateOf
 import okio.Path.Companion.toPath
 import org.koin.core.module.Module
 import org.koin.dsl.module
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.io.path.Path
 import kotlin.io.path.absolutePathString
-import kotlin.time.Duration
-import kotlin.time.DurationUnit
 import kotlin.time.ExperimentalTime
 import androidx.room.Room as AndroidRoom
 
-class Matrix(val context: Context, val client: MatrixClient) {
+@Singleton
+class Matrix {
 	val userId: UserId
 		get() = client.userId
+	private val context: Context
+	private val from: String
+	lateinit var client: MatrixClient
 	private val activeVerifications = HashMap<String, ActiveVerification>()
 	private var recentEmojiCache: List<RecentEmoji> = emptyList()
 	private var loadedRecentEmoji = false
+	private var syncStarted = false
+
+	constructor(context: Context, from: String) {
+		this.context = context
+		this.from = from
+	}
+
+	@Inject
+	constructor(application: Application) {
+		this.context = application
+		this.from = "Hilt"
+	}
+
+	suspend fun initialize(type: String) {
+		if (this::client.isInitialized) {
+			Log.w("MatrixClient", "initialize() called after client was already initialized.")
+			return
+		}
+		Log.i("MatrixClient", "MatrixClient initialized from $from")
+		val (repo, media) = getModules(context, type)
+		client = MatrixClient.fromStore(
+			repositoriesModule = repo,
+			mediaStoreModule = media,
+			onSoftLogin = null,
+			coroutineContext = Dispatchers.Default
+		) {
+			modulesFactories += ::prepClient
+		}.getOrThrow()!!
+	}
 
 	suspend fun getRoom(roomId: String): Room? {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "getRoom() called before client was initialized.")
+			return null
+		}
 		return client.room.getById(RoomId(roomId)).first()
 	}
 
 	suspend fun getRooms(): List<Room> {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "getRooms() called before client was initialized.")
+			return emptyList()
+		}
 		return client.room.getAll().flattenValues().first()
 			.filter { it.membership != Membership.LEAVE && it.membership != Membership.BAN }
 			.toList()
 	}
 
 	fun getRoomsFlow(): Flow<List<Room>> {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "getRoomsFlow() called before client was initialized.")
+			return flow { }
+		}
 		return flow {
 			client.room.getAll().flattenValues().collect {
 				emit(it.filter { it.membership != Membership.LEAVE && it.membership != Membership.BAN }
@@ -96,6 +141,10 @@ class Matrix(val context: Context, val client: MatrixClient) {
 
 	@OptIn(ExperimentalTime::class)
 	suspend fun getSpaceTree(): List<MatrixSpace> {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "getSpaceTree() called before client was initialized.")
+			return emptyList()
+		}
 		val allRooms = getRooms()
 		val unownedRooms = allRooms.associateByTo(HashMap()) { it.roomId }
 		val parentToChildren = HashMap<String, MutableList<RoomId>>()
@@ -168,6 +217,10 @@ class Matrix(val context: Context, val client: MatrixClient) {
 
 	@OptIn(ExperimentalTime::class)
 	fun getSpaceTreeFlow(): Flow<List<MatrixSpace>> {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "getSpaceTreeFlow() called before client was initialized.")
+			return flow {}
+		}
 		return flow {
 			getRoomsFlow().collect { allRooms ->
 				val unownedRooms = allRooms.associateByTo(HashMap()) { it.roomId }
@@ -246,10 +299,18 @@ class Matrix(val context: Context, val client: MatrixClient) {
 	}
 
 	suspend fun getUser(userId: UserId, roomId: RoomId): RoomUser? {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "getUser() called before client was initialized.")
+			return null
+		}
 		return client.user.getById(roomId, userId).first()
 	}
 
 	suspend fun getEvent(roomId: RoomId, eventId: EventId, retryCount: Int = 0): TimelineEvent? {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "getEvent() called before client was initialized.")
+			return null
+		}
 		val res = client.room.getTimelineEvent(roomId, eventId).firstOrNull()
 		if (res == null && retryCount > 0) {
 			client.syncOnce()
@@ -262,6 +323,10 @@ class Matrix(val context: Context, val client: MatrixClient) {
 		getEvent(RoomId(roomId), EventId(eventId))
 
 	suspend fun sendMessage(roomId: String, msg: String, replyTo: EventId? = null) {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "sendMessage() called before client was initialized.")
+			return
+		}
 		client.room.sendMessage(RoomId(roomId)) {
 			val relatesTo = replyTo?.let {
 				RelatesTo.Reply(RelatesTo.ReplyTo(it))
@@ -277,6 +342,10 @@ class Matrix(val context: Context, val client: MatrixClient) {
 	}
 
 	suspend fun editEvent(roomId: String, eventId: EventId, msg: String) {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "editEvent() called before client was initialized.")
+			return
+		}
 		client.room.sendMessage(RoomId(roomId)) {
 			content(
 				RoomMessageEventContent.TextBased.Text(
@@ -300,6 +369,10 @@ class Matrix(val context: Context, val client: MatrixClient) {
 		reaction: String,
 		shortcode: String? = null
 	) {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "reactToEvent() called before client was initialized.")
+			return
+		}
 		val sc = shortcode?.trim(':')
 		appendRecentEmoji(reaction)
 		client.room.sendMessage(roomId) {
@@ -314,14 +387,32 @@ class Matrix(val context: Context, val client: MatrixClient) {
 	}
 
 	suspend fun redactEvent(roomId: RoomId, eventId: EventId, reason: String? = null) {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "redactEvent() called before client was initialized.")
+			return
+		}
 		client.api.room.redactEvent(roomId, eventId, reason).getOrThrow()
 	}
 
 	suspend fun startSync() {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "startSync() called before client was initialized.")
+			return
+		}
+		if (syncStarted) {
+			Log.w("MatrixClient", "startSync() called after sync was already started from elsewhere.")
+			return
+		}
+		syncStarted = true
 		client.startSync()
+		Log.i("MatrixClient", "Sync started from $from")
 	}
 
 	suspend fun addSyncStateListener(listener: ((SyncState) -> Unit)) {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "addSyncStateListener() called before client was initialized.")
+			return
+		}
 		client.syncState.collect {
 			runOnUiThread {
 				listener.invoke(it)
@@ -330,6 +421,10 @@ class Matrix(val context: Context, val client: MatrixClient) {
 	}
 
 	suspend fun registerFcmPusher(token: String) {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "registerFcmPusher() called before client was initialized.")
+			return
+		}
 		client.api.push.setPushers(
 			SetPushers.Request.Set(
 				"dev.kuylar.sakura.android",
@@ -349,12 +444,23 @@ class Matrix(val context: Context, val client: MatrixClient) {
 	}
 
 	fun getVerification(id: String): ActiveVerification? {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "getVerification() called before client was initialized.")
+			return null
+		}
 		synchronized(activeVerifications) {
 			return activeVerifications[id]
 		}
 	}
 
 	suspend fun addOnDeviceVerificationRequestListener(listener: ((ActiveDeviceVerification) -> Unit)) {
+		if (!this::client.isInitialized) {
+			Log.w(
+				"MatrixClient",
+				"addOnDeviceVerificationRequestListener() called before client was initialized."
+			)
+			return
+		}
 		client.verification.activeDeviceVerification.collect {
 			if (it == null) return@collect
 			val id = it.transactionId ?: "deviceVerification"
@@ -385,6 +491,13 @@ class Matrix(val context: Context, val client: MatrixClient) {
 	}
 
 	suspend fun addOnUserVerificationRequestListener(listener: ((ActiveUserVerification) -> Unit)) {
+		if (!this::client.isInitialized) {
+			Log.w(
+				"MatrixClient",
+				"addOnUserVerificationRequestListener() called before client was initialized."
+			)
+			return
+		}
 		client.verification.activeUserVerifications.collect {
 			it.forEach { v ->
 				runOnUiThread {
@@ -399,6 +512,10 @@ class Matrix(val context: Context, val client: MatrixClient) {
 	}
 
 	fun getRecentEmojis(): List<RecentEmoji> {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "getRecentEmojis() called before client was initialized.")
+			return emptyList()
+		}
 		if (!loadedRecentEmoji) {
 			suspendThread {
 				updateRecentEmojiCache()
@@ -408,6 +525,10 @@ class Matrix(val context: Context, val client: MatrixClient) {
 	}
 
 	suspend fun appendRecentEmoji(emoji: String) {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "appendRecentEmoji() called before client was initialized.")
+			return
+		}
 		updateRecentEmojiCache()
 		val recentEmojis = recentEmojiCache.toMutableList()
 		val index = recentEmojis.indexOfFirst { it.emoji == emoji }
@@ -480,20 +601,14 @@ class Matrix(val context: Context, val client: MatrixClient) {
 			}
 		}
 
-		suspend fun loadClient(context: Context, type: String = "main"): Matrix {
-			val (repo, media) = getModules(context, type)
-			val client = MatrixClient.fromStore(
-				repositoriesModule = repo,
-				mediaStoreModule = media,
-				onSoftLogin = null,
-				coroutineContext = Dispatchers.Default
-			) {
-				modulesFactories += ::prepClient
-			}.getOrThrow()!!
-			instance = Matrix(context, client)
+		@Deprecated("Use the Hilt provided singleton instead")
+		suspend fun loadClient(context: Context, type: String = "main", from: String): Matrix {
+			instance = Matrix(context, from)
+			instance.initialize(type)
 			return instance
 		}
 
+		@Deprecated("Use the Hilt provided singleton instead")
 		suspend fun login(
 			context: Context,
 			homeserver: String,
@@ -513,19 +628,27 @@ class Matrix(val context: Context, val client: MatrixClient) {
 				modulesFactories += ::prepClient
 			}.getOrThrow()
 			prepClient()
-			instance = Matrix(context, client)
+			instance = Matrix(context, "login")
+			instance.client = client
 			return instance
 		}
 
 		fun startLoginFlow(
-			context: Context,
 			homeserver: Uri,
-			type: String = "main",
 		): MatrixClientServerApiClientImpl {
-			val (repo, media) = getModules(context, type)
 			return MatrixClientServerApiClientImpl(Url(homeserver.toString()))
 		}
 
+		fun isInitialized() = this::instance.isInitialized
+
+		fun setClient(client: Matrix) {
+			if (this::instance.isInitialized) {
+				Log.w("MatrixClient", "setClient called after instance was initialized!", Exception())
+			}
+			instance = client
+		}
+
+		@Deprecated("Only use as a last resort for when you can't realistically inject a Matrix instance")
 		fun getClient(): Matrix {
 			if (!this::instance.isInitialized) throw IllegalStateException("Client not initialized")
 			return instance

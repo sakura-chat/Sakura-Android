@@ -17,10 +17,9 @@ import dev.kuylar.sakura.ui.activity.MainActivity
 import net.folivo.trixnity.client.room
 
 @SuppressLint("NotifyDataSetChanged")
-class SpaceListRecyclerAdapter(val activity: MainActivity, var selectedSpaceId: String? = null) :
+class SpaceListRecyclerAdapter(val activity: MainActivity, var client: Matrix, var selectedSpaceId: String? = null) :
 	RecyclerView.Adapter<SpaceListRecyclerAdapter.SpaceListViewModel>() {
 	var layoutInflater = activity.layoutInflater
-	var client = Matrix.getClient()
 	var spaceTree: Map<String, MatrixSpace> = emptyMap()
 
 	init {

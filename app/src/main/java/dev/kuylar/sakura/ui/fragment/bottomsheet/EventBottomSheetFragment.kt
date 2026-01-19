@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.view.postDelayed
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import dagger.hilt.android.AndroidEntryPoint
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.RecentEmoji
@@ -30,11 +31,13 @@ import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class EventBottomSheetFragment : BottomSheetDialogFragment() {
 	private lateinit var binding: FragmentEventBottomSheetBinding
 	private lateinit var event: TimelineEvent
-	private val client = Matrix.getClient()
+	@Inject lateinit var client: Matrix
 	private var eventType: String? = null
 	private var eventId: EventId? = null
 	private var roomId: RoomId? = null

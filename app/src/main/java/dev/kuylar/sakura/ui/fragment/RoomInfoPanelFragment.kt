@@ -7,22 +7,24 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
+import dagger.hilt.android.AndroidEntryPoint
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentRoomInfoPanelBinding
 import dev.kuylar.sakura.ui.adapter.recyclerview.UserListRecyclerAdapter
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class RoomInfoPanelFragment : Fragment() {
 	private lateinit var binding: FragmentRoomInfoPanelBinding
 	private lateinit var roomId: String
-	private lateinit var client: Matrix
+	@Inject lateinit var client: Matrix
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		arguments?.getString("roomId")?.let {
 			roomId = it
 		}
-		client = Matrix.getClient()
 	}
 
 	override fun onCreateView(
@@ -53,6 +55,6 @@ class RoomInfoPanelFragment : Fragment() {
 		}
 
 		binding.recycler.layoutManager = LinearLayoutManager(requireContext())
-		binding.recycler.adapter = UserListRecyclerAdapter(this, roomId)
+		binding.recycler.adapter = UserListRecyclerAdapter(this, roomId, client)
 	}
 }

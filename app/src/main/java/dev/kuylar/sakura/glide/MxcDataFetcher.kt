@@ -22,6 +22,7 @@ class MxcDataFetcher(val model: Uri, val width: Int, val height: Int) : DataFetc
 		callback: DataFetcher.DataCallback<in ByteBuffer>
 	) {
 		val isFullMedia = !model.getBooleanQueryParameter("thumbnail", true)
+		@Suppress("DEPRECATION")
 		val client = Matrix.getClient()
 		runBlocking {
 			val res =

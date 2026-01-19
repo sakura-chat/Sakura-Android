@@ -1,15 +1,11 @@
 package dev.kuylar.sakura.ui.adapter.recyclerview
 
-import android.util.Log
 import dev.kuylar.sakura.client.Matrix
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.room
 import net.folivo.trixnity.client.room.TimelineEventAggregation
@@ -18,7 +14,6 @@ import net.folivo.trixnity.client.room.getTimelineEventReplaceAggregation
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -26,13 +21,13 @@ class EventModel(
 	val roomId: RoomId,
 	val eventId: EventId,
 	val flow: Flow<TimelineEvent>,
+	val client: Matrix,
 	var snapshot: TimelineEvent? = null,
 	var onChange: (() -> Unit)? = null
 ) {
 	var repliedSnapshot: TimelineEvent? = null
 	var reactions: TimelineEventAggregation.Reaction? = null
 	var replaces: TimelineEventAggregation.Replace? = null
-	private val client = Matrix.getClient()
 	private var collectJob: Job? = null
 	private var reactionsJob: Job? = null
 	private var replacesJob: Job? = null

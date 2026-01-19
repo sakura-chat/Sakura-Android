@@ -21,11 +21,10 @@ import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import com.google.android.material.R as MaterialR
 
 @SuppressLint("NotifyDataSetChanged")
-class SpaceTreeRecyclerAdapter(val activity: MainActivity) :
+class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 	RecyclerView.Adapter<SpaceTreeRecyclerAdapter.RoomListViewModel>() {
 	var layoutInflater = activity.layoutInflater
-	private var client = Matrix.getClient()
-	private var spaceTree: Map<String, MatrixSpace> = emptyMap()
+		private var spaceTree: Map<String, MatrixSpace> = emptyMap()
 	private var spaceId = "!home:SakuraNative"
 	private var firstLoadComplete = false
 	private var currentSpace = MatrixSpace(null, emptyList(), emptyList(), 0)
@@ -61,7 +60,7 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity) :
 
 		// Add all children first
 		items.addAll(currentSpace.children.map {
-			RoomModel(it.roomId, it) {
+			RoomModel(it.roomId, it, client) {
 				activity.runOnUiThread {
 					val index = items.indexOfFirst { e -> (e as? RoomModel)?.id == it.roomId }
 					if (index >= 0) {
@@ -77,7 +76,7 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity) :
 			val childSpaceId = childSpace.parent?.roomId?.full
 			if (childSpaceId != null && (expandedRooms[childSpaceId] ?: true)) {
 				items.addAll(childSpace.children.map {
-					RoomModel(it.roomId, it) {
+					RoomModel(it.roomId, it, client) {
 						activity.runOnUiThread {
 							val index =
 								items.indexOfFirst { e -> (e as? RoomModel)?.id == it.roomId }

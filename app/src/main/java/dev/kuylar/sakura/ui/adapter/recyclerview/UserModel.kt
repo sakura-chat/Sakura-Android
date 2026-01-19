@@ -14,11 +14,11 @@ import net.folivo.trixnity.core.model.UserId
 class UserModel(
 	val userId: UserId,
 	val flow: Flow<RoomUser?>,
+	val client: Matrix,
 	var snapshot: RoomUser? = null,
 	var onChange: (() -> Unit)? = null,
 ) {
 	var presence: UserPresence? = null
-	private val client = Matrix.getClient()
 	private var collectJob: Job? = null
 	private var presenceJob: Job? = null
 

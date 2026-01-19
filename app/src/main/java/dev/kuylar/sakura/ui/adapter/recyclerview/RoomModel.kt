@@ -18,9 +18,9 @@ import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 class RoomModel(
 	val id: RoomId,
 	var snapshot: Room,
+	val client: Matrix,
 	var onChange: (() -> Unit)? = null
 ) {
-	private val client = Matrix.getClient()
 	private var collectJob: Job? = null
 	var lastMessage: TimelineEvent? = null
 

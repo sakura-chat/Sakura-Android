@@ -20,9 +20,8 @@ import net.folivo.trixnity.core.model.events.m.Presence
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
-class UserListRecyclerAdapter(val fragment: Fragment, val roomId: String) :
+class UserListRecyclerAdapter(val fragment: Fragment, val roomId: String, val client: Matrix) :
 	RecyclerView.Adapter<UserListRecyclerAdapter.ViewHolder>() {
-	private val client = Matrix.getClient()
 	private val layoutInflater = fragment.layoutInflater
 	private var users = mutableMapOf<UserId, UserModel>()
 
@@ -51,7 +50,7 @@ class UserListRecyclerAdapter(val fragment: Fragment, val roomId: String) :
 			notifyItemChanged(existing)
 			return
 		}
-		users[id] = UserModel(id, userFlow) {
+		users[id] = UserModel(id, userFlow, client) {
 			notifyItemChanged(users.keys.indexOf(id))
 		}
 		notifyItemInserted(users.size - 1)

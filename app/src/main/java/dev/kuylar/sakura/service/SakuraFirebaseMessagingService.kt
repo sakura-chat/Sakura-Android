@@ -25,6 +25,7 @@ import androidx.core.graphics.drawable.IconCompat
 import androidx.core.os.bundleOf
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import dagger.hilt.android.AndroidEntryPoint
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils
 import dev.kuylar.sakura.Utils.suspendThread
@@ -44,16 +45,20 @@ import net.folivo.trixnity.client.user
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import javax.inject.Inject
 import kotlin.io.path.Path
 import kotlin.io.path.writeText
 
+@AndroidEntryPoint
 class SakuraFirebaseMessagingService : FirebaseMessagingService() {
+	@Inject lateinit var client: Matrix
+
 	override fun onNewToken(token: String) {
 		super.onNewToken(token)
 		Log.i("SakuraFirebaseMessagingService", "Refreshed token: $token")
 		Path(applicationContext.filesDir.absolutePath, "fcm_token").writeText("$token\n")
 		suspendThread {
-			Matrix.getClient().registerFcmPusher(token)
+			client.registerFcmPusher(token)
 		}
 	}
 
@@ -76,16 +81,15 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 		if (eventId != null && roomId != null) {
 			suspendThread {
 				Log.d("SakuraFirebaseMessagingService", "Loading client")
-				val matrix = Matrix.loadClient(applicationContext)
 				Log.d("SakuraFirebaseMessagingService", "Loading event")
 				val notificationEvent =
-					matrix.getEvent(roomId, eventId, retryCount = 3) ?: return@suspendThread
+					client.getEvent(roomId, eventId, retryCount = 3) ?: return@suspendThread
 				Log.d("SakuraFirebaseMessagingService", "Loading user")
 				val senderUser = (senderUserId ?: notificationEvent.sender)?.let {
-					matrix.client.user.getById(roomId, it).first()
+					client.client.user.getById(roomId, it).first()
 				} ?: return@suspendThread
 				Log.d("SakuraFirebaseMessagingService", "Loading room")
-				val room = matrix.client.room.getById(roomId).first() ?: return@suspendThread
+				val room = client.client.room.getById(roomId).first() ?: return@suspendThread
 				Log.d(
 					"SakuraFirebaseMessagingService",
 					"Creating and sending the notification (event=${notificationEvent.eventId.full}, room=${room.roomId.full}, senderUser=${senderUser.userId.full})"

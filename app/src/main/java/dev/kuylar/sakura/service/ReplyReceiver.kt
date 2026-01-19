@@ -15,6 +15,7 @@ import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.os.bundleOf
+import dagger.hilt.android.AndroidEntryPoint
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils
 import dev.kuylar.sakura.Utils.suspendThread
@@ -28,8 +29,13 @@ import net.folivo.trixnity.client.store.sender
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class ReplyReceiver : BroadcastReceiver() {
+	@Inject
+	lateinit var matrix: Matrix
+
 	override fun onReceive(context: Context, intent: Intent) {
 		val remoteInput = RemoteInput.getResultsFromIntent(intent)
 		val replyMessage =
@@ -39,7 +45,6 @@ class ReplyReceiver : BroadcastReceiver() {
 		if (roomId == null || eventId == null || replyMessage == null) return
 		Log.i("ReplyReceiver", "Received reply @ $roomId: $replyMessage")
 		suspendThread {
-			val matrix = Matrix.getClient()
 			val room = matrix.client.room.getById(roomId).firstOrNull()
 			Log.i("ReplyReceiver", "Sending reply...")
 			matrix.client.api.room.sendMessageEvent(

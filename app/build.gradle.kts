@@ -3,6 +3,7 @@ plugins {
 	alias(libs.plugins.kotlin.android)
 	alias(libs.plugins.google.devtools.ksp)
 	alias(libs.plugins.google.services)
+	alias(libs.plugins.dagger.hilt.android)
 	kotlin("plugin.serialization") version "2.2.0"
 }
 
@@ -71,4 +72,6 @@ dependencies {
 	implementation(libs.firebase.messaging)
 	implementation(libs.emoji2)
 	implementation(project(":emojipicker"))
+	implementation(libs.dagger.hilt.android)
+	ksp(libs.dagger.hilt.compiler)
 }

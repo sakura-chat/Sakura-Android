@@ -3,6 +3,7 @@
 	xmlns:tools="http://schemas.android.com/tools">
 
 	<application
+		android:name=".SakuraApplication"
 		android:allowBackup="true"
 		android:appCategory="social"
 		android:dataExtractionRules="@xml/data_extraction_rules"
@@ -40,8 +41,8 @@
 				<category android:name="android.intent.category.BROWSABLE" />
 
 				<data
-					android:scheme="dev.kuylar.sakura"
-					android:host="room" />
+					android:host="room"
+					android:scheme="dev.kuylar.sakura" />
 			</intent-filter>
 		</activity>
 

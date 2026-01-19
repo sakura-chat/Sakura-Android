@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.discord.panels.OverlappingPanelsLayout
 import com.discord.panels.PanelsChildGestureRegionObserver
 import com.google.firebase.messaging.FirebaseMessaging
+import dagger.hilt.android.AndroidEntryPoint
 import com.google.android.material.R as MaterialR
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.suspendThread
@@ -37,11 +38,14 @@ import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.verification.ActiveDeviceVerification
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import javax.inject.Inject
 import kotlin.math.max
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.GestureRegionsListener {
+	@Inject
+	lateinit var client: Matrix
 	private lateinit var binding: ActivityMainBinding
-	private lateinit var client: Matrix
 	private lateinit var navController: NavController
 	private var autoNavigate = true
 
@@ -51,6 +55,8 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 
 		binding = ActivityMainBinding.inflate(layoutInflater)
 		setContentView(binding.root)
+
+		if (!Matrix.isInitialized()) Matrix.setClient(client)
 
 		ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
 			val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -118,8 +124,8 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		handleStateChange(SyncState.STOPPED)
 		suspendThread {
 			try {
-				client = Matrix.loadClient(this, "main")
-			} catch (e: Exception) {
+				client.initialize("main")
+			} catch (_: Exception) {
 				// Failed to load client. Give up and send the user to the login screen
 				this@MainActivity.runOnUiThread {
 					startActivity(Intent(this, LoginActivity::class.java))
@@ -162,9 +168,10 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		}
 		binding.roomsPanel.spacesRecycler.adapter = SpaceListRecyclerAdapter(
 			this,
+			client,
 			getSharedPreferences("main", MODE_PRIVATE).getString("selectedSpaceId", null)
 		)
-		binding.roomsPanel.roomsRecycler.adapter = SpaceTreeRecyclerAdapter(this)
+		binding.roomsPanel.roomsRecycler.adapter = SpaceTreeRecyclerAdapter(this, client)
 		if (autoNavigate) {
 			val navigatedFromIntent = handleIntent(intent)
 			if (!navigatedFromIntent)
@@ -279,6 +286,7 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 						true
 					} ?: false
 				}
+
 				else -> false
 			}
 
@@ -287,7 +295,7 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 				autoNavigate = false
 				suspendThread {
 					// Ensure that client is created
-					Matrix.loadClient(this)
+					Matrix.loadClient(this, from = "MainActivity:290")
 					runOnUiThread {
 						openRoomTimeline(it)
 					}

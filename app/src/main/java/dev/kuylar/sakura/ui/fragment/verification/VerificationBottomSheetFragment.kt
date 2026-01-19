@@ -15,10 +15,11 @@ import dev.kuylar.sakura.databinding.FragmentVerificationBottomSheetBinding
 import net.folivo.trixnity.client.verification.ActiveDeviceVerification
 import net.folivo.trixnity.client.verification.ActiveSasVerificationMethod
 import net.folivo.trixnity.client.verification.ActiveVerificationState
+import javax.inject.Inject
 
 class VerificationBottomSheetFragment() : BottomSheetDialogFragment() {
 	private lateinit var binding: FragmentVerificationBottomSheetBinding
-	private lateinit var client: Matrix
+	@Inject lateinit var client: Matrix
 	private lateinit var id: String
 	private lateinit var verification: ActiveDeviceVerification
 	private lateinit var navController: NavController
@@ -26,7 +27,6 @@ class VerificationBottomSheetFragment() : BottomSheetDialogFragment() {
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		if (arguments == null) return
-		client = Matrix.getClient()
 		id = requireArguments().getString("verification") ?: return
 		client.getVerification(id)
 			?.let { verification = it as ActiveDeviceVerification }

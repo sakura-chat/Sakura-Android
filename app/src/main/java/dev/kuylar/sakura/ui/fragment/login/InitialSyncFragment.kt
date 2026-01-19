@@ -13,15 +13,11 @@ import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentInitialSyncBinding
 import dev.kuylar.sakura.ui.activity.InitialSyncCompleteListener
 import net.folivo.trixnity.client.MatrixClient
+import javax.inject.Inject
 
 class InitialSyncFragment : Fragment() {
 	private lateinit var binding: FragmentInitialSyncBinding
-	private lateinit var client: Matrix
-
-	override fun onCreate(savedInstanceState: Bundle?) {
-		super.onCreate(savedInstanceState)
-		client = Matrix.getClient()
-	}
+	@Inject lateinit var client: Matrix
 
 	override fun onCreateView(
 		inflater: LayoutInflater, container: ViewGroup?,
