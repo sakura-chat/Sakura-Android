@@ -13,12 +13,13 @@ import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentLoginWithPasswordBinding
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class LoginWithPasswordFragment : Fragment() {
 	private lateinit var binding: FragmentLoginWithPasswordBinding
 	private lateinit var homeserver: String
-	private lateinit var matrix: Matrix
+	@Inject lateinit var matrix: Matrix
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)

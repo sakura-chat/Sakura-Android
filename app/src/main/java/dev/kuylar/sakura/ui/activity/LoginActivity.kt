@@ -9,12 +9,14 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
+import dagger.hilt.android.AndroidEntryPoint
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.ActivityLoginBinding
 import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import net.folivo.trixnity.clientserverapi.model.authentication.LoginType
 
+@AndroidEntryPoint
 class LoginActivity : AppCompatActivity(), InitialSyncCompleteListener {
 	private lateinit var binding: ActivityLoginBinding
 	private lateinit var client: MatrixClientServerApiClient
