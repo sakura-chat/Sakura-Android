@@ -44,6 +44,7 @@ class HomeserverSelectFragment : Fragment(), TextWatcher {
 				binding.inputHomeserver.error = getString(R.string.error_invalid_homeserver_url)
 				return@getLoginFlow
 			}
+			binding.inputHomeserver.error = null
 			binding.buttonPassword.isEnabled = loginFlow.any { it.name == "m.login.password" }
 			binding.buttonPassword.setOnClickListener {
 				findNavController().navigate(
