@@ -62,6 +62,7 @@ dependencies {
 	implementation(libs.trixnity.client.repository.room)
 	implementation(libs.trixnity.client.media.okio)
 	implementation(libs.ktor)
+	implementation(libs.ktor.resources)
 	implementation(libs.kotlinx.serialization.json)
 	implementation(libs.recyclerviewbuilder)
 	implementation(libs.glide)

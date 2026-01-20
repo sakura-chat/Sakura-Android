@@ -54,6 +54,7 @@ import net.folivo.trixnity.clientserverapi.model.push.SetPushers
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
+import net.folivo.trixnity.core.model.events.m.DirectEventContent
 import net.folivo.trixnity.core.model.events.m.RelatesTo
 import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
 import net.folivo.trixnity.core.model.events.m.room.Membership
@@ -624,6 +625,11 @@ class Matrix {
 		return res
 	}
 
+	// TODO: Create DM channel here too
+	suspend fun getDmChannel(userId: UserId): RoomId? {
+		return client.user.getAccountData<DirectEventContent>().firstOrNull()?.mappings?.get(userId)?.firstOrNull()
+	}
+
 	private suspend fun updateRecentEmojiCache() {
 		try {
 			client.user.getAccountData<ElementRecentEmojiEventContent>().collect { data ->
@@ -663,6 +669,7 @@ class Matrix {
 							?.add("io.element.recent_emoji")
 							?.add("im.ponies.emote_rooms")
 							?.add("im.ponies.user_emotes")
+							?.add("dev.kuylar.sakura.user_notes")
 					),
 					room = filter.room?.copy(
 						accountData = filter.room?.accountData?.copy(
@@ -734,6 +741,7 @@ class Matrix {
 				globalAccountDataOf<ElementRecentEmojiEventContent>("io.element.recent_emoji")
 				globalAccountDataOf<EmoteRoomsEventContent>("im.ponies.emote_rooms")
 				globalAccountDataOf<UserImagePackEventContent>("im.ponies.user_emotes")
+				globalAccountDataOf<UserNoteEventContent>("dev.kuylar.sakura.user_notes")
 			}
 
 			return module {

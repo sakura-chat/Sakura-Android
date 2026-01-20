@@ -33,6 +33,7 @@ import dev.kuylar.sakura.databinding.ItemSpaceListDividerBinding
 import dev.kuylar.sakura.databinding.LayoutErrorBinding
 import dev.kuylar.sakura.ui.fragment.TimelineFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.EventBottomSheetFragment
+import dev.kuylar.sakura.ui.fragment.bottomsheet.ProfileBottomSheetFragment
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -397,6 +398,15 @@ class TimelineRecyclerAdapter(
 					val f = EventBottomSheetFragment()
 					f.arguments = bundleOf(
 						"eventId" to event.eventId.full,
+						"roomId" to event.roomId.full,
+					)
+					f.show(adapter.fragment.parentFragmentManager, "eventBottomSheet")
+					true
+				}
+				binding.avatar.setOnLongClickListener {
+					val f = ProfileBottomSheetFragment()
+					f.arguments = bundleOf(
+						"userId" to event.sender.full,
 						"roomId" to event.roomId.full,
 					)
 					f.show(adapter.fragment.parentFragmentManager, "eventBottomSheet")

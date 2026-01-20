@@ -3,6 +3,10 @@ package dev.kuylar.sakura
 import android.content.Context
 import android.text.format.DateFormat
 import android.text.format.DateUtils
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.events.m.Presence
@@ -12,11 +16,9 @@ import java.time.ZoneId
 import kotlin.concurrent.thread
 
 object Utils {
-	fun suspendThread(block: suspend (() -> Unit)) {
-		thread {
-			runBlocking {
-				block.invoke()
-			}
+	fun suspendThread(block: suspend (() -> Unit)): Job {
+		return CoroutineScope(Dispatchers.Main).launch {
+			block.invoke()
 		}
 	}
 

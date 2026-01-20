@@ -80,4 +80,13 @@
 	<string name="error_no_details">An unknown error has occurred.</string>
 	<string name="event_failed_to_decrypt">⚠️ Failed to get event contents. Either event is malformed or your device doesn\'t have the keys to decrypt this event.</string>
 	<string name="custom_emoji">Custom emoji</string>
+	<string name="action_message">Message</string>
+	<string name="user_notes">Note</string>
+	<string name="user_note_hint">Tap to add a note</string>
+	<string name="action_copy_id">Copy ID</string>
+	<string name="power_level_creator">Owner</string>
+	<string name="power_level_administrator">Admin</string>
+	<string name="power_level_moderator">Moderator</string>
+	<string name="power_level_user">User</string>
+	<string name="user_about_title">About Me</string>
 </resources>

@@ -38,6 +38,7 @@ import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.store.Room
 import net.folivo.trixnity.client.verification.ActiveDeviceVerification
 import net.folivo.trixnity.clientserverapi.client.SyncState
+import net.folivo.trixnity.core.model.RoomId
 import javax.inject.Inject
 import kotlin.math.max
 
@@ -191,7 +192,8 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 			?.changeSpace(space.parent?.roomId?.full ?: "!home:SakuraNative")
 	}
 
-	fun openRoomTimeline(room: Room) = openRoomTimeline(room.roomId.full)
+	fun openRoomTimeline(room: Room) = openRoomTimeline(room.roomId)
+	fun openRoomTimeline(roomId: RoomId) = openRoomTimeline(roomId.full)
 	fun openRoomTimeline(roomId: String) {
 		getSharedPreferences("main", MODE_PRIVATE).edit {
 			putString("selectedRoomId", roomId)
