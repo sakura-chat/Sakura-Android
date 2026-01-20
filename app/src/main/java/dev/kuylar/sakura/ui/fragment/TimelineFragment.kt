@@ -208,7 +208,9 @@ class TimelineFragment : Fragment(), MenuProvider {
 		typingUsersJob = CoroutineScope(Dispatchers.Main).launch {
 			client.client.room.usersTyping.collect {
 				val thisRoom = it[RoomId(roomId)] ?: return@collect
-				val users = thisRoom.users.mapNotNull { client.getUser(it, RoomId(roomId)) }
+				val users = thisRoom.users
+					.filterNot { uid -> uid == client.userId }
+					.mapNotNull { uid -> client.getUser(uid, RoomId(roomId)) }
 				val text = when (users.size) {
 					1 -> getString(R.string.typing_indicator_1, users[0].name)
 					2 -> getString(R.string.typing_indicator_2, users[0].name, users[1].name)
