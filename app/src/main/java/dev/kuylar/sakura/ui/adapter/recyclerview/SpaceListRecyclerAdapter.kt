@@ -23,6 +23,7 @@ class SpaceListRecyclerAdapter(val activity: MainActivity, var client: Matrix, v
 	var spaceTree: Map<String, MatrixSpace> = emptyMap()
 
 	init {
+		setHasStableIds(true)
 		suspendThread {
 			// Will be called every room change (hopefully)
 			client.client.room.getAll().collect {
@@ -123,6 +124,8 @@ class SpaceListRecyclerAdapter(val activity: MainActivity, var client: Matrix, v
 		return if (spaceTree.isEmpty()) 2    // One for the home icon, one for the divider
 		else spaceTree.size + 1              // One for the divider
 	}
+
+	override fun getItemId(position: Int) = getIdAtIndex(position).hashCode().toLong()
 
 	private fun openSpaceTree(space: MatrixSpace) {
 		val lastSelectedSpaceId = selectedSpaceId

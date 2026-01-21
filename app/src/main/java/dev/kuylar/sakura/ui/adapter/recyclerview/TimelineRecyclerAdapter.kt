@@ -82,6 +82,7 @@ class TimelineRecyclerAdapter(
 		private set
 
 	init {
+		setHasStableIds(true)
 		suspendThread {
 			client.getRoom(roomId)?.let {
 				room = it
@@ -164,12 +165,20 @@ class TimelineRecyclerAdapter(
 		return size
 	}
 
+	override fun getItemId(position: Int): Long {
+		var realPosition = position
+		if (hasNewerMessages) realPosition--
+		return eventModels.getOrNull(realPosition)?.eventId?.hashCode()?.toLong() ?: 0L
+	}
+
 	private fun updateEventById(eventId: EventId) {
 		eventModels
 			.indexOfFirst { it.eventId == eventId }
 			.takeIf { it >= 0 }
 			?.let { index ->
 				notifyItemChanged(index)
+				if (index > 0) notifyItemChanged(index - 1)
+				if (index < eventModels.size - 1) notifyItemChanged(index + 1)
 			}
 	}
 
@@ -201,16 +210,22 @@ class TimelineRecyclerAdapter(
 				eventModels.add(EventModel(snapshot.roomId, snapshot.eventId, event, client, snapshot) {
 					updateEventById(snapshot.eventId)
 				})
-				if (notify)
-					notifyItemInserted(eventModels.size - 1)
+				if (notify) {
+					val index = eventModels.size - 1
+					notifyItemInserted(index)
+					if (index > 0) notifyItemChanged(index - 1)
+				}
 			} else {
 				eventModels.add(
 					index,
 					EventModel(snapshot.roomId, snapshot.eventId, event, client, snapshot) {
 						updateEventById(snapshot.eventId)
 					})
-				if (notify)
+				if (notify) {
 					notifyItemInserted(index)
+					if (index > 0) notifyItemChanged(index - 1)
+					if (index < eventModels.size - 1) notifyItemChanged(index + 1)
+				}
 			}
 		}
 		return snapshot
@@ -368,6 +383,7 @@ class TimelineRecyclerAdapter(
 	open class EventViewHolder(val binding: ItemMessageBinding, val client: Matrix) : TimelineViewHolder(binding) {
 		private val layoutInflater =
 			binding.root.context.getSystemService<LayoutInflater>() as LayoutInflater
+		private var lastEventId: EventId? = null
 
 		fun bind(
 			eventModel: EventModel,
@@ -391,7 +407,9 @@ class TimelineRecyclerAdapter(
 					}
 				}
 			}
-			resetBindingState()
+			if (eventModel.eventId != lastEventId) {
+				resetBindingState()
+			}
 
 			(bindingAdapter as? TimelineRecyclerAdapter)?.let { adapter ->
 				binding.root.setOnLongClickListener {
@@ -518,6 +536,7 @@ class TimelineRecyclerAdapter(
 							}
 						})
 						.into(attachmentBinding.imageAttachment)
+					binding.attachment.removeAllViews()
 					binding.attachment.visibility = View.VISIBLE
 					binding.attachment.addView(attachmentBinding.root)
 				}
@@ -638,6 +657,7 @@ class TimelineRecyclerAdapter(
 			binding.attachment.visibility = View.GONE
 			if (binding.reactions.childCount > 1)
 				binding.reactions.removeViews(0, binding.reactions.childCount - 1)
+			binding.avatar.setImageDrawable(null)
 			binding.senderName.text = ""
 			binding.body.text = ""
 			binding.eventTimestamp.text = ""

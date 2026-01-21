@@ -32,6 +32,7 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 	private var items = mutableListOf<Any>()
 
 	init {
+		setHasStableIds(true)
 		suspendThread {
 			// Will be called every room change (hopefully)
 			client.getSpaceTreeFlow().collect {
@@ -101,6 +102,14 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 		expandedRooms.clear()
 		rebuildItemsList()
 		notifyDataSetChanged()
+	}
+
+	override fun getItemId(position: Int): Long {
+		return when (val item = items[position]) {
+			is RoomModel -> item.id.hashCode().toLong()
+			is SpaceModel -> item.snapshot.parent?.roomId?.hashCode()?.toLong() ?: 0
+			else -> -1 // Will never happen
+		}
 	}
 
 	open class RoomListViewModel(binding: ViewBinding) : RecyclerView.ViewHolder(binding.root)

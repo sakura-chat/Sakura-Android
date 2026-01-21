@@ -29,6 +29,7 @@ class UserListRecyclerAdapter(val fragment: Fragment, val roomId: String, val cl
 	private val userMap = mutableMapOf<UserId, UserModel>()
 
 	init {
+		setHasStableIds(true)
 		suspendThread {
 			client.getRoom(roomId)?.let {
 				client.client.user.getAll(RoomId(roomId)).collect { users ->
@@ -99,6 +100,10 @@ class UserListRecyclerAdapter(val fragment: Fragment, val roomId: String, val cl
 
 	override fun getItemCount() = users.size
 
+	override fun getItemId(position: Int): Long {
+		return users.getOrNull(position)?.hashCode()?.toLong() ?: 0L
+	}
+
 	private fun findSortedPosition(user: UserModel): Int {
 		return users.binarySearch { other ->
 			val otherUser = userMap[other]
@@ -116,8 +121,12 @@ class UserListRecyclerAdapter(val fragment: Fragment, val roomId: String, val cl
 	}
 
 	class ViewHolder(private val binding: ItemUserBinding) : RecyclerView.ViewHolder(binding.root) {
+		private var lastUserId: UserId? = null
+
 		@OptIn(ExperimentalTime::class)
 		fun bind(userModel: UserModel, roomId: String) {
+			if (userModel.userId != lastUserId) resetBindingState()
+
 			userModel.snapshot?.let { user ->
 				binding.avatar.loadImage(user.avatarUrl, true)
 				binding.name.text = user.name
@@ -143,6 +152,14 @@ class UserListRecyclerAdapter(val fragment: Fragment, val roomId: String, val cl
 					"profileBottomSheet"
 				)
 			}
+		}
+
+		fun resetBindingState() {
+			binding.avatar.loadImage(null)
+			binding.avatar.indicatorColor = Presence.OFFLINE.getIndicatorColor(binding.root.context)
+			binding.status.visibility = View.GONE
+			binding.status.text = null
+			binding.name.text = null
 		}
 	}
 }
