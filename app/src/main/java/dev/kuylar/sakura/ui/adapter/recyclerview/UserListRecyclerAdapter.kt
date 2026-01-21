@@ -25,14 +25,15 @@ import kotlin.time.Instant
 class UserListRecyclerAdapter(val fragment: Fragment, val roomId: String, val client: Matrix) :
 	RecyclerView.Adapter<UserListRecyclerAdapter.ViewHolder>() {
 	private val layoutInflater = fragment.layoutInflater
-	private var users = mutableMapOf<UserId, UserModel>()
+	private var users = mutableListOf<UserId>()
+	private val userMap = mutableMapOf<UserId, UserModel>()
 
 	init {
 		suspendThread {
 			client.getRoom(roomId)?.let {
 				client.client.user.getAll(RoomId(roomId)).collect { users ->
-					val addedUsers = users.filter { it.key !in this.users.keys }
-					val removedUsers = this.users.filter { it.key !in users.keys }
+					val addedUsers = users.filter { it.key !in this.userMap.keys }
+					val removedUsers = this.userMap.filter { it.key !in users.keys }
 					fragment.activity?.runOnUiThread {
 						addedUsers.forEach { (id, userFlow) ->
 							handleUserAdded(id, userFlow)
@@ -47,20 +48,41 @@ class UserListRecyclerAdapter(val fragment: Fragment, val roomId: String, val cl
 	}
 
 	private fun handleUserAdded(id: UserId, userFlow: Flow<RoomUser?>) {
-		val existing = users.keys.indexOf(id)
+		val existing = users.indexOfFirst { it == id }
 		if (existing >= 0) {
 			notifyItemChanged(existing)
 			return
 		}
-		users[id] = UserModel(id, userFlow, client) {
-			notifyItemChanged(users.keys.indexOf(id))
+		val model = UserModel(id, userFlow, client) {
+			handleUserUpdated(id, userFlow)
 		}
-		notifyItemInserted(users.size - 1)
+		userMap[id] = model
+		val insertIndex = findSortedPosition(model)
+		users.add(insertIndex, id)
+		notifyItemInserted(insertIndex)
 	}
 
 	private fun handleUserRemoved(id: UserId) {
-		users.remove(id)?.dispose()
-		notifyItemRemoved(users.size)
+		val index = users.indexOfFirst { it == id }
+		if (index >= 0) {
+			users.removeAt(index)
+			userMap.remove(id)?.dispose()
+			notifyItemRemoved(index)
+		}
+	}
+
+	private fun handleUserUpdated(id: UserId, userFlow: Flow<RoomUser?>) {
+		val oldIndex = users.indexOfFirst { it == id }
+		if (oldIndex >= 0) {
+			val user = users.removeAt(oldIndex)
+			val model = userMap[id] ?: return
+			val newIndex = findSortedPosition(model)
+			users.add(newIndex, user)
+			if (oldIndex != newIndex) {
+				notifyItemMoved(oldIndex, newIndex)
+			}
+			notifyItemChanged(newIndex)
+		}
 	}
 
 	override fun onCreateViewHolder(
@@ -72,10 +94,26 @@ class UserListRecyclerAdapter(val fragment: Fragment, val roomId: String, val cl
 		holder: ViewHolder,
 		position: Int
 	) {
-		holder.bind(users.values.elementAt(position), roomId)
+		holder.bind(userMap[users[position]]!!, roomId)
 	}
 
 	override fun getItemCount() = users.size
+
+	private fun findSortedPosition(user: UserModel): Int {
+		return users.binarySearch { other ->
+			val otherUser = userMap[other]
+			val otherText = otherUser?.snapshot?.name ?: other.full
+			val otherPresence = otherUser?.presence?.presence ?: Presence.OFFLINE
+			val userPresence = user.presence?.presence ?: Presence.OFFLINE
+			val userText = user.snapshot?.name ?: user.userId.full
+
+			when {
+				otherPresence == Presence.OFFLINE && userPresence != Presence.OFFLINE -> 1
+				otherPresence != Presence.OFFLINE && userPresence == Presence.OFFLINE -> -1
+				else -> otherText.compareTo(userText, ignoreCase = true)
+			}
+		}.let { if (it < 0) -(it + 1) else it }
+	}
 
 	class ViewHolder(private val binding: ItemUserBinding) : RecyclerView.ViewHolder(binding.root) {
 		@OptIn(ExperimentalTime::class)
