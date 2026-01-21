@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.MatrixClient
+import net.folivo.trixnity.client.MatrixClientConfiguration
 import net.folivo.trixnity.client.MatrixClientImpl
 import net.folivo.trixnity.client.flattenValues
 import net.folivo.trixnity.client.fromStore
@@ -51,6 +52,7 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.push.PusherData
 import net.folivo.trixnity.clientserverapi.model.push.SetPushers
+import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -114,10 +116,9 @@ class Matrix {
 			repositoriesModule = repo,
 			mediaStoreModule = media,
 			onSoftLogin = null,
-			coroutineContext = Dispatchers.Default
-		) {
-			modulesFactories += ::prepClient
-		}.getOrThrow()!!
+			coroutineContext = Dispatchers.Default,
+			configuration = ::prepClient
+		).getOrThrow()!!
 
 		// Update filters if required.
 		updateFilters()
@@ -139,9 +140,8 @@ class Matrix {
 			initialDeviceDisplayName = "Sakura",
 			repositoriesModule = repo,
 			mediaStoreModule = media,
-		) {
-			modulesFactories += ::prepClient
-		}.getOrThrow()
+			configuration = ::prepClient,
+		).getOrThrow()
 	}
 
 	suspend fun getRoom(roomId: String): Room? {
@@ -731,7 +731,7 @@ class Matrix {
 			return Pair(repositoriesModule, mediaStoreModule)
 		}
 
-		private fun prepClient(): Module {
+		private fun prepModules(): Module {
 			val customMappings = createEventContentSerializerMappings {
 				stateOf<SpaceParentEventContent>("m.space.parent")
 				stateOf<SpaceChildrenEventContent>("m.space.child")
@@ -749,6 +749,11 @@ class Matrix {
 					DefaultEventContentSerializerMappings + customMappings
 				}
 			}
+		}
+
+		private fun prepClient(config: MatrixClientConfiguration) {
+			config.deleteRooms = MatrixClientConfiguration.DeleteRooms.OnLeave
+			config.modulesFactories += ::prepModules
 		}
 
 		fun startLoginFlow(homeserver: Uri): MatrixClientServerApiClientImpl {
