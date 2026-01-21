@@ -324,6 +324,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 				}
 				clearCacheUnlocked = false
 				suspendThread {
+					client.updateFilters(true)
 					client.client.clearCache()
 				}
 				true

@@ -7,7 +7,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.util.Log
-import dev.kuylar.sakura.Utils
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.customevent.*
 import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
@@ -52,7 +51,6 @@ import net.folivo.trixnity.clientserverapi.client.SyncState
 import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
 import net.folivo.trixnity.clientserverapi.model.push.PusherData
 import net.folivo.trixnity.clientserverapi.model.push.SetPushers
-import net.folivo.trixnity.clientserverapi.model.users.Filters
 import net.folivo.trixnity.core.model.EventId
 import net.folivo.trixnity.core.model.RoomId
 import net.folivo.trixnity.core.model.UserId
@@ -82,7 +80,8 @@ import androidx.room.Room as AndroidRoom
 class Matrix {
 	val userId: UserId
 		get() = client.userId
-	@Inject lateinit var markdown: MarkdownHandler
+	@Inject
+	lateinit var markdown: MarkdownHandler
 	private val context: Context
 	private val from: String
 	lateinit var client: MatrixClient
@@ -627,7 +626,8 @@ class Matrix {
 
 	// TODO: Create DM channel here too
 	suspend fun getDmChannel(userId: UserId): RoomId? {
-		return client.user.getAccountData<DirectEventContent>().firstOrNull()?.mappings?.get(userId)?.firstOrNull()
+		return client.user.getAccountData<DirectEventContent>().firstOrNull()?.mappings?.get(userId)
+			?.firstOrNull()
 	}
 
 	private suspend fun updateRecentEmojiCache() {
@@ -646,7 +646,7 @@ class Matrix {
 		}
 	}
 
-	private suspend fun updateFilters() {
+	suspend fun updateFilters(force: Boolean = false) {
 		try {
 			// This is f-cked up.
 			// Not a good way to get the filter ID imo, but it works
@@ -655,7 +655,7 @@ class Matrix {
 				val filterId = account.filterId ?: return@let
 				val filter =
 					client.api.user.getFilter(account.userId, filterId).getOrNull() ?: return@let
-				var changed = false
+				var changed = force
 
 				fun Set<String>.add(value: String): Set<String> {
 					if (contains(value)) return this
@@ -680,7 +680,8 @@ class Matrix {
 							types = filter.room?.state?.types
 								?.add("m.space.parent")
 								?.add("m.space.child")
-								?.add("im.ponies.room_emotes")
+								?.add("im.ponies.room_emotes"),
+							lazyLoadMembers = false // TODO: Make this configurable
 						),
 						timeline = filter.room?.timeline?.copy(
 							types = filter.room?.timeline?.types
