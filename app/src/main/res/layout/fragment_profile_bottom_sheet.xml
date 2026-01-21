@@ -39,14 +39,22 @@
 
 			</FrameLayout>
 
-			<com.google.android.material.imageview.ShapeableImageView
+			<io.getstream.avatarview.AvatarView
 				android:id="@+id/avatar"
 				android:layout_width="96dp"
 				android:layout_height="96dp"
 				android:layout_marginHorizontal="16dp"
 				android:layout_marginTop="-48dp"
-				android:background="?colorSecondaryContainer"
-				app:shapeAppearanceOverlay="@style/circleImageView"
+				app:avatarViewBorderColor="?colorSurface"
+				app:avatarViewBorderWidth="8dp"
+				app:avatarViewIndicatorBorderColor="?colorSurface"
+				app:avatarViewIndicatorBorderSizeCriteria="9"
+				app:avatarViewIndicatorColor="@color/status_offline"
+				app:avatarViewIndicatorEnabled="true"
+				app:avatarViewIndicatorPosition="bottomRight"
+				app:avatarViewIndicatorSizeCriteria="6"
+				app:avatarViewInitialsTextStyle="bold"
+				app:avatarViewShape="circle"
 				tools:src="@tools:sample/avatars" />
 
 			<TextView

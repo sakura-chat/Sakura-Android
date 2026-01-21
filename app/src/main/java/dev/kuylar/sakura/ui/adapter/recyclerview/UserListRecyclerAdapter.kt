@@ -3,16 +3,14 @@ package dev.kuylar.sakura.ui.adapter.recyclerview
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
+import dev.kuylar.sakura.Utils.getIndicatorColor
 import dev.kuylar.sakura.Utils.suspendThread
-import dev.kuylar.sakura.Utils.toLocalized
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.ItemUserBinding
 import dev.kuylar.sakura.ui.fragment.bottomsheet.ProfileBottomSheetFragment
+import io.getstream.avatarview.glide.loadImage
 import kotlinx.coroutines.flow.Flow
 import net.folivo.trixnity.client.store.RoomUser
 import net.folivo.trixnity.client.store.UserPresence
@@ -83,19 +81,19 @@ class UserListRecyclerAdapter(val fragment: Fragment, val roomId: String, val cl
 		@OptIn(ExperimentalTime::class)
 		fun bind(userModel: UserModel, roomId: String) {
 			userModel.snapshot?.let { user ->
-				Glide.with(binding.root)
-					.load(user.avatarUrl)
-					.into(binding.avatar)
+				binding.avatar.loadImage(user.avatarUrl, true)
 				binding.name.text = user.name
 			}
 			val presence = userModel.presence ?: UserPresence(
 				Presence.OFFLINE,
 				Instant.fromEpochMilliseconds(0)
 			)
+
+			binding.avatar.indicatorColor =
+				presence.presence.getIndicatorColor(binding.root.context)
 			binding.status.visibility =
-				if (presence.presence == Presence.OFFLINE) View.GONE else View.VISIBLE
+				if (presence.statusMessage.isNullOrBlank()) View.GONE else View.VISIBLE
 			binding.status.text = presence.statusMessage?.replace("\n", "\t")
-				?: presence.presence.toLocalized(binding.status.context)
 			binding.root.setOnClickListener {
 				val f = ProfileBottomSheetFragment()
 				f.arguments = Bundle().apply {

@@ -10,16 +10,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.widget.addTextChangedListener
-import com.bumptech.glide.Glide
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import dagger.hilt.android.AndroidEntryPoint
 import dev.kuylar.sakura.R
+import dev.kuylar.sakura.Utils.getIndicatorColor
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.UserNoteEventContent
 import dev.kuylar.sakura.client.request.ExtendedGetProfile
 import dev.kuylar.sakura.databinding.FragmentProfileBottomSheetBinding
 import dev.kuylar.sakura.ui.activity.MainActivity
+import io.getstream.avatarview.glide.loadImage
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import net.folivo.trixnity.client.room
@@ -195,12 +196,13 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 		binding.status.visibility =
 			if (presence.statusMessage.isNullOrBlank()) View.GONE else View.VISIBLE
 		binding.status.text = presence.statusMessage
+		context?.let {
+			binding.avatar.indicatorColor = presence.presence.getIndicatorColor(it)
+		}
 	}
 
 	private fun updateMember(member: MemberEventContent) {
-		Glide.with(this)
-			.load(member.avatarUrl)
-			.into(binding.avatar)
+		binding.avatar.loadImage(member.avatarUrl, true)
 		binding.displayname.text = member.displayName
 		if (member.displayName == userId.full) {
 			binding.username.visibility = View.GONE
@@ -246,7 +248,11 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 
 	private fun updateUserNote(note: UserNoteEventContent) {
 		noteEvent = note
-		binding.note.editText?.editableText?.replace(0, binding.note.editText?.editableText?.length ?: 0, note.notes?.get(userId) ?: "")
+		binding.note.editText?.editableText?.replace(
+			0,
+			binding.note.editText?.editableText?.length ?: 0,
+			note.notes?.get(userId) ?: ""
+		)
 	}
 
 	private fun updateRoom(room: Room) {

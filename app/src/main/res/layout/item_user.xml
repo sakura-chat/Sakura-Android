@@ -7,13 +7,20 @@
 	android:paddingHorizontal="16dp"
 	android:paddingVertical="8dp">
 
-	<com.google.android.material.imageview.ShapeableImageView
+	<io.getstream.avatarview.AvatarView
 		android:id="@+id/avatar"
 		android:layout_width="40dp"
 		android:layout_height="40dp"
-		android:background="?colorSecondaryContainer"
 		android:scaleType="centerCrop"
-		app:shapeAppearanceOverlay="@style/circleImageView"
+		app:avatarViewBorderWidth="0dp"
+		app:avatarViewIndicatorBorderColor="?colorSurface"
+		app:avatarViewIndicatorBorderSizeCriteria="9"
+		app:avatarViewIndicatorColor="@color/status_offline"
+		app:avatarViewIndicatorEnabled="true"
+		app:avatarViewIndicatorPosition="bottomRight"
+		app:avatarViewIndicatorSizeCriteria="6"
+		app:avatarViewInitialsTextStyle="bold"
+		app:avatarViewShape="circle"
 		tools:src="@tools:sample/avatars" />
 
 	<LinearLayout

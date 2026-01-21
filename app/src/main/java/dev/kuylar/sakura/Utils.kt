@@ -7,13 +7,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import java.time.Instant
 import java.time.ZoneId
-import kotlin.concurrent.thread
 
 object Utils {
 	fun suspendThread(block: suspend (() -> Unit)): Job {
@@ -64,4 +62,12 @@ object Utils {
 			else -> return content.javaClass.name
 		}
 	}
+
+	fun Presence.getIndicatorColor(context: Context): Int = context.getColor(
+		when (this) {
+			Presence.ONLINE -> R.color.status_online
+			Presence.OFFLINE -> R.color.status_offline
+			Presence.UNAVAILABLE -> R.color.status_unavailable
+		}
+	)
 }
