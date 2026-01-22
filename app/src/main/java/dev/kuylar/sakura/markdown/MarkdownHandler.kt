@@ -99,7 +99,7 @@ class MarkdownHandler @Inject constructor() {
 					"**${node.text()}**"
 				}
 
-				"em" -> {
+				"em", "i" -> {
 					"*${node.text()}*"
 				}
 
