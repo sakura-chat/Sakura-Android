@@ -77,4 +77,5 @@ dependencies {
 	ksp(libs.dagger.hilt.compiler)
 	implementation(libs.commonmark)
 	implementation(libs.avatarview)
+	implementation(libs.jsoup)
 }

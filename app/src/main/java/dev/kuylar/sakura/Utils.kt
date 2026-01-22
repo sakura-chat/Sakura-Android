@@ -10,6 +10,8 @@ import kotlinx.coroutines.launch
 import net.folivo.trixnity.client.store.TimelineEvent
 import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.bodyWithoutFallback
+import net.folivo.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
 import java.time.Instant
 import java.time.ZoneId
 
@@ -57,7 +59,7 @@ object Utils {
 		val content = event.content?.getOrNull() ?: return event.javaClass.name
 		when (content) {
 			// TODO: Fill every single one of these
-			is RoomMessageEventContent.TextBased.Text -> return content.body
+			is RoomMessageEventContent.TextBased -> return content.formattedBodyWithoutFallback ?: content.bodyWithoutFallback
 
 			else -> return content.javaClass.name
 		}

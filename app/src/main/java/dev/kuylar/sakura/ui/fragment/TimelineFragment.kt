@@ -52,6 +52,9 @@ import androidx.recyclerview.widget.RecyclerView
 import dev.kuylar.sakura.emoji.CustomEmojiModel
 import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
 import dev.kuylar.sakura.markdown.MarkdownHandler
+import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.bodyWithoutFallback
+import net.folivo.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -111,7 +114,13 @@ class TimelineFragment : Fragment(), MenuProvider {
 			Lifecycle.State.RESUMED
 		)
 
-		timelineAdapter = TimelineRecyclerAdapter(this, roomId, binding.timelineRecycler, client)
+		timelineAdapter = TimelineRecyclerAdapter(
+			this,
+			roomId,
+			binding.timelineRecycler,
+			client,
+			markdown
+		)
 		binding.timelineRecycler.layoutManager =
 			LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, true)
 		binding.timelineRecycler.addOnScrollListener(object :
@@ -307,8 +316,13 @@ class TimelineFragment : Fragment(), MenuProvider {
 			"/reinit" -> {
 				Log.i("TimelineFragment", "Reinitializing the recycler adapter")
 				timelineAdapter.dispose()
-				timelineAdapter =
-					TimelineRecyclerAdapter(this, roomId, binding.timelineRecycler, client)
+				timelineAdapter = TimelineRecyclerAdapter(
+					this,
+					roomId,
+					binding.timelineRecycler,
+					client,
+					markdown
+				)
 				true
 			}
 
@@ -353,7 +367,10 @@ class TimelineFragment : Fragment(), MenuProvider {
 					binding.editIndicator.visibility = View.VISIBLE
 					binding.input.editableText?.clear()
 					// TODO: Handle spans for this
-					binding.input.editableText?.insert(0, Utils.getEventBodyText(event))
+					(event.content?.getOrNull() as? RoomMessageEventContent.TextBased)?.let {
+						val str = it.formattedBodyWithoutFallback ?: it.bodyWithoutFallback
+						binding.input.editableText?.insert(0, markdown.htmlToMarkdown(str))
+					}
 				}
 			}
 		}

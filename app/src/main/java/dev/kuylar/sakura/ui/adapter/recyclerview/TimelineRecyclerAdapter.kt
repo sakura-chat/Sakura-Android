@@ -31,6 +31,7 @@ import dev.kuylar.sakura.databinding.ItemMessageBinding
 import dev.kuylar.sakura.databinding.ItemReactionBinding
 import dev.kuylar.sakura.databinding.ItemSpaceListDividerBinding
 import dev.kuylar.sakura.databinding.LayoutErrorBinding
+import dev.kuylar.sakura.markdown.MarkdownHandler
 import dev.kuylar.sakura.ui.fragment.TimelineFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.EventBottomSheetFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.ProfileBottomSheetFragment
@@ -59,13 +60,16 @@ import net.folivo.trixnity.core.model.events.m.ReactionEventContent
 import net.folivo.trixnity.core.model.events.m.RelationType
 import net.folivo.trixnity.core.model.events.m.room.RedactionEventContent
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import net.folivo.trixnity.core.model.events.m.room.bodyWithoutFallback
+import net.folivo.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
 import java.util.concurrent.CopyOnWriteArrayList
 
 class TimelineRecyclerAdapter(
 	val fragment: Fragment,
 	val roomId: String,
 	val recycler: RecyclerView,
-	val client: Matrix
+	val client: Matrix,
+	val markdown: MarkdownHandler
 ) : RecyclerView.Adapter<TimelineRecyclerAdapter.TimelineViewHolder>() {
 	private lateinit var room: Room
 	private val layoutInflater = fragment.layoutInflater
@@ -150,7 +154,8 @@ class TimelineRecyclerAdapter(
 			holder.bind(
 				eventModels[realPosition],
 				eventModels.getOrNull(realPosition + 1),
-				eventModels.getOrNull(realPosition - 1)
+				eventModels.getOrNull(realPosition - 1),
+				markdown
 			)
 		} else if (holder is ErrorViewHolder) {
 			holder.bind(ex)
@@ -207,9 +212,16 @@ class TimelineRecyclerAdapter(
 		if (eventModels.any { snapshot.eventId == it.eventId }) return snapshot
 		fragment.activity?.runOnUiThread {
 			if (index == null) {
-				eventModels.add(EventModel(snapshot.roomId, snapshot.eventId, event, client, snapshot) {
-					updateEventById(snapshot.eventId)
-				})
+				eventModels.add(
+					EventModel(
+						snapshot.roomId,
+						snapshot.eventId,
+						event,
+						client,
+						snapshot
+					) {
+						updateEventById(snapshot.eventId)
+					})
 				if (notify) {
 					val index = eventModels.size - 1
 					notifyItemInserted(index)
@@ -380,7 +392,8 @@ class TimelineRecyclerAdapter(
 	}
 
 	open class TimelineViewHolder(binding: ViewBinding) : RecyclerView.ViewHolder(binding.root)
-	open class EventViewHolder(val binding: ItemMessageBinding, val client: Matrix) : TimelineViewHolder(binding) {
+	open class EventViewHolder(val binding: ItemMessageBinding, val client: Matrix) :
+		TimelineViewHolder(binding) {
 		private val layoutInflater =
 			binding.root.context.getSystemService<LayoutInflater>() as LayoutInflater
 		private var lastEventId: EventId? = null
@@ -388,7 +401,8 @@ class TimelineRecyclerAdapter(
 		fun bind(
 			eventModel: EventModel,
 			lastEventModel: EventModel? = null,
-			nextEventModel: EventModel? = null
+			nextEventModel: EventModel? = null,
+			markdown: MarkdownHandler
 		) {
 			val event = eventModel.snapshot ?: return
 			val lastEvent = lastEventModel?.snapshot
@@ -465,17 +479,9 @@ class TimelineRecyclerAdapter(
 			when (content) {
 				is RoomMessageEventContent.TextBased.Text -> {
 					if (content.formattedBody != null) {
-						// Extremely hacky way!! No one likes this!!!
-						// Make this better!!!!!
-						val split =
-							content.formattedBody?.split("</mx-reply>", limit = 2)
-								?: emptyList()
-						binding.body.text = Html.fromHtml(
-							split.last(),
-							Html.FROM_HTML_MODE_COMPACT
-						)
+						markdown.setTextView(binding.body, content.formattedBodyWithoutFallback)
 					} else {
-						binding.body.text = content.body
+						binding.body.text = content.bodyWithoutFallback
 					}
 				}
 
