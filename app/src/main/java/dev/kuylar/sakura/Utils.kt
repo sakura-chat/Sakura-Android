@@ -12,8 +12,11 @@ import net.folivo.trixnity.core.model.events.m.Presence
 import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import net.folivo.trixnity.core.model.events.m.room.bodyWithoutFallback
 import net.folivo.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
+import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 object Utils {
 	fun suspendThread(block: suspend (() -> Unit)): Job {
@@ -25,8 +28,10 @@ object Utils {
 	fun Long.toTimestamp(context: Context): String {
 		val now = System.currentTimeMillis()
 		return if (withinSameDay(now)) {
-			DateUtils.getRelativeTimeSpanString(this, now, DateUtils.SECOND_IN_MILLIS)
-				.toString()
+			val pattern =
+				if (DateFormat.is24HourFormat(context)) "HH:mm" else "hh:mm a"
+			val formatter = SimpleDateFormat(pattern, Locale.getDefault())
+			return formatter.format(this)
 		} else {
 			DateUtils.getRelativeDateTimeString(
 				context,
