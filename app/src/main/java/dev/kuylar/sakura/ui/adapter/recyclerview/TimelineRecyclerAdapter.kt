@@ -452,7 +452,7 @@ class TimelineRecyclerAdapter(
 					lastClick = now
 				}
 			}
-			if (lastEvent?.sender == event.sender && lastEvent.originTimestamp - event.originTimestamp > 5 * 60 * 1000) {
+			if (lastEvent?.sender == event.sender && event.originTimestamp - lastEvent.originTimestamp < 5 * 60 * 1000) {
 				binding.avatar.visibility = View.GONE
 				binding.messageInfo.visibility = View.GONE
 			}
