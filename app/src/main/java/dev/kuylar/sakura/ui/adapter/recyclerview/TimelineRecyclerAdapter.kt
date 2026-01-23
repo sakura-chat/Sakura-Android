@@ -29,6 +29,7 @@ import dev.kuylar.sakura.databinding.AttachmentImageBinding
 import dev.kuylar.sakura.databinding.ItemLoadingSpinnerBinding
 import dev.kuylar.sakura.databinding.ItemMessageBinding
 import dev.kuylar.sakura.databinding.ItemReactionBinding
+import dev.kuylar.sakura.databinding.ItemReactionSelectedBinding
 import dev.kuylar.sakura.databinding.ItemSpaceListDividerBinding
 import dev.kuylar.sakura.databinding.LayoutErrorBinding
 import dev.kuylar.sakura.markdown.MarkdownHandler
@@ -572,14 +573,29 @@ class TimelineRecyclerAdapter(
 				.sortedBy { -it.value.minBy { e -> e.originTimestamp }.originTimestamp }
 				.forEach { (key, list) ->
 					val weReacted = list.firstOrNull { it.sender == client.userId }
-					val reactionBinding =
+					val reactionView = if (weReacted != null) {
+						ItemReactionSelectedBinding.inflate(layoutInflater, binding.reactions, false)
+					} else {
 						ItemReactionBinding.inflate(layoutInflater, binding.reactions, false)
+					}
+					val reactionBinding =
+						ItemReactionBinding.bind(reactionView.root)
 					val shortcode = list
 						.mapNotNull { it.content?.getOrNull() as? ShortcodeReactionEventContent }
 						.groupBy { (it.shortcode ?: it.beeperShortcode)?.trim(':') }
 						.entries.maxByOrNull { it.value.size }?.key
-					reactionBinding.root.text = "${shortcode ?: key} ${list.size}"
-					reactionBinding.root.isSelected = weReacted != null
+					if (key.startsWith("mxc://")) {
+						reactionBinding.emojiImage.visibility = View.VISIBLE
+						reactionBinding.emojiUnicode.visibility = View.GONE
+						Glide.with(binding.root)
+							.load(key)
+							.into(reactionBinding.emojiImage)
+					} else {
+						reactionBinding.emojiImage.visibility = View.GONE
+						reactionBinding.emojiUnicode.visibility = View.VISIBLE
+						reactionBinding.emojiUnicode.text = key
+					}
+					reactionBinding.counter.text = list.size.toString()
 					if (weReacted == null) {
 						reactionBinding.root.setOnClickListener {
 							reactionBinding.root.setOnClickListener(null)

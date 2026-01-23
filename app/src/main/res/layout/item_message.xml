@@ -5,7 +5,8 @@
 	android:layout_width="match_parent"
 	android:layout_height="wrap_content"
 	android:layout_marginBottom="8dp"
-	android:orientation="vertical">
+	android:orientation="vertical"
+	tools:background="?colorSurfaceContainer">
 
 	<LinearLayout
 		android:id="@+id/date_separator"
@@ -217,10 +218,11 @@
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
 		android:layout_marginStart="64dp"
+		android:layout_marginTop="8dp"
 		android:layout_marginEnd="16dp"
 		android:visibility="gone"
 		app:chipSpacingHorizontal="4dp"
-		app:chipSpacingVertical="-12dp"
+		app:chipSpacingVertical="4dp"
 		tools:visibility="visible">
 
 		<include layout="@layout/item_reaction" />
