@@ -1,21 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
 	xmlns:tools="http://schemas.android.com/tools"
 	android:layout_width="match_parent"
 	android:layout_height="wrap_content"
 	android:background="?selectableItemBackground"
 	android:clickable="true"
-	android:focusable="true"
-	android:gravity="center">
-
-	<View
-		android:id="@+id/unread_indicator"
-		android:layout_width="4dp"
-		android:layout_height="24dp"
-		android:background="?colorPrimary"
-		android:visibility="invisible"
-		tools:visibility="visible" />
+	android:focusable="true">
 
 	<LinearLayout
 		android:id="@+id/container"
@@ -24,49 +15,64 @@
 		android:background="?colorSecondaryContainer"
 		android:gravity="center">
 
-		<FrameLayout
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:layout_marginHorizontal="8dp">
-
-			<ImageView
-				android:layout_width="32dp"
-				android:layout_height="32dp"
-				android:layout_gravity="center"
-				app:srcCompat="@drawable/ic_room" />
-
-			<com.google.android.material.imageview.ShapeableImageView
-				android:id="@+id/icon"
-				android:layout_width="40dp"
-				android:layout_height="40dp"
-				android:background="?colorSecondaryContainer"
-				android:scaleType="centerCrop" />
-		</FrameLayout>
+		<View
+			android:id="@+id/unread_indicator"
+			android:layout_width="4dp"
+			android:layout_height="8dp"
+			android:background="@drawable/space_indicator"
+			android:visibility="invisible"
+			tools:visibility="visible" />
 
 		<LinearLayout
-			android:layout_width="0dp"
-			android:layout_height="48dp"
-			android:layout_weight="1"
-			android:gravity="center_vertical"
-			android:orientation="vertical">
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:baselineAligned="false"
+			android:gravity="center">
 
-			<TextView
-				android:id="@+id/title"
-				style="?textAppearanceListItem"
-				android:layout_width="match_parent"
+			<FrameLayout
+				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
-				android:ellipsize="end"
-				android:maxLines="1"
-				tools:text="Test Room" />
+				android:layout_marginHorizontal="8dp">
 
-			<TextView
-				android:id="@+id/subtitle"
-				style="?textAppearanceListItemSecondary"
-				android:layout_width="match_parent"
-				android:layout_height="wrap_content"
-				android:ellipsize="end"
-				android:maxLines="1"
-				tools:text="!abcdefghijkl:kuylar.dev" />
+				<ImageView
+					android:layout_width="32dp"
+					android:layout_height="32dp"
+					android:layout_gravity="center"
+					app:srcCompat="@drawable/ic_room" />
+
+				<com.google.android.material.imageview.ShapeableImageView
+					android:id="@+id/icon"
+					android:layout_width="40dp"
+					android:layout_height="40dp"
+					android:background="?colorSecondaryContainer"
+					android:scaleType="centerCrop" />
+			</FrameLayout>
+
+			<LinearLayout
+				android:layout_width="0dp"
+				android:layout_height="48dp"
+				android:layout_weight="1"
+				android:gravity="center_vertical"
+				android:orientation="vertical">
+
+				<TextView
+					android:id="@+id/title"
+					style="?textAppearanceListItem"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content"
+					android:ellipsize="end"
+					android:maxLines="1"
+					tools:text="Test Room" />
+
+				<TextView
+					android:id="@+id/subtitle"
+					style="?textAppearanceListItemSecondary"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content"
+					android:ellipsize="end"
+					android:maxLines="1"
+					tools:text="!abcdefghijkl:kuylar.dev" />
+			</LinearLayout>
 		</LinearLayout>
 	</LinearLayout>
-</LinearLayout>
+</FrameLayout>

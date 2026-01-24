@@ -8,9 +8,9 @@
 	<View
 		android:id="@+id/unread_indicator"
 		android:layout_width="4dp"
-		android:layout_height="24dp"
+		android:layout_height="8dp"
 		android:layout_gravity="center"
-		android:background="?colorPrimary"
+		android:background="@drawable/space_indicator"
 		android:visibility="invisible"
 		tools:visibility="visible" />
 

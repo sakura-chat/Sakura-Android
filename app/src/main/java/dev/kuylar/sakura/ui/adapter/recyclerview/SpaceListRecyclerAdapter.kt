@@ -49,18 +49,23 @@ class SpaceListRecyclerAdapter(
 	class DividerViewModel(binding: ItemSpaceListDividerBinding) : SpaceListViewModel(binding)
 	class HomeViewModel(val binding: ItemSpaceHomeBinding) : SpaceListViewModel(binding) {
 		fun bind(space: MatrixSpace) {
+			val isSelected =
+				(bindingAdapter as SpaceListRecyclerAdapter).selectedSpaceId == space.parent?.roomId?.full
 			binding.icon.post {
 				binding.icon.shapeAppearanceModel =
-					if ((bindingAdapter as SpaceListRecyclerAdapter).selectedSpaceId == space.parent?.roomId?.full) {
-						ShapeAppearanceModel.builder().setAllCornerSizes(binding.icon.height / 4f)
-							.build()
-					} else {
-						ShapeAppearanceModel.builder().setAllCornerSizes(binding.icon.height / 2f)
-							.build()
-					}
+					ShapeAppearanceModel.builder()
+						.setAllCornerSizes(if (isSelected) binding.icon.height / 4f else binding.icon.height / 2f)
+						.build()
+				val lp = binding.unreadIndicator.layoutParams
+				val eightDp = (8 * binding.root.context.resources.displayMetrics.density).toInt()
+				lp.height = if (isSelected) binding.icon.height - eightDp else eightDp
+				binding.unreadIndicator.post {
+					binding.unreadIndicator.layoutParams = lp
+					binding.unreadIndicator.invalidate()
+				}
 			}
 			binding.unreadIndicator.visibility =
-				if (space.isUnread) View.VISIBLE else View.INVISIBLE
+				if (space.isUnread || isSelected) View.VISIBLE else View.INVISIBLE
 			binding.root.setOnClickListener {
 				(bindingAdapter as SpaceListRecyclerAdapter).openSpaceTree(space)
 			}
@@ -69,19 +74,27 @@ class SpaceListRecyclerAdapter(
 
 	class SpaceViewModel(val binding: ItemSpaceBinding) : SpaceListViewModel(binding) {
 		fun bind(space: MatrixSpace) {
+			val isSelected =
+				(bindingAdapter as SpaceListRecyclerAdapter).selectedSpaceId == space.parent?.roomId?.full
 			binding.icon.post {
 				binding.icon.shapeAppearanceModel =
-					if ((bindingAdapter as SpaceListRecyclerAdapter).selectedSpaceId == space.parent?.roomId?.full) {
+					if (isSelected) {
 						ShapeAppearanceModel.builder().setAllCornerSizes(binding.icon.height / 4f)
 							.build()
 					} else {
 						ShapeAppearanceModel.builder().setAllCornerSizes(binding.icon.height / 2f)
 							.build()
 					}
+				val lp = binding.unreadIndicator.layoutParams
+				val eightDp = (8 * binding.root.context.resources.displayMetrics.density).toInt()
+				lp.height = if (isSelected) binding.icon.height - eightDp else eightDp
+				binding.unreadIndicator.post {
+					binding.unreadIndicator.layoutParams = lp
+					binding.unreadIndicator.invalidate()
+				}
 			}
-			// TODO: Doesn't update
 			binding.unreadIndicator.visibility =
-				if (space.isUnread) View.VISIBLE else View.INVISIBLE
+				if (space.isUnread || isSelected) View.VISIBLE else View.INVISIBLE
 
 			Glide.with(binding.root).load(space.parent?.avatarUrl).into(binding.icon)
 			binding.root.setOnClickListener {
