@@ -14,7 +14,7 @@ import dev.kuylar.sakura.databinding.ItemSpaceBinding
 import dev.kuylar.sakura.databinding.ItemSpaceHomeBinding
 import dev.kuylar.sakura.databinding.ItemSpaceListDividerBinding
 import dev.kuylar.sakura.ui.activity.MainActivity
-import net.folivo.trixnity.client.room
+import de.connect2x.trixnity.client.room
 
 @SuppressLint("NotifyDataSetChanged")
 class SpaceListRecyclerAdapter(val activity: MainActivity, var client: Matrix, var selectedSpaceId: String? = null) :

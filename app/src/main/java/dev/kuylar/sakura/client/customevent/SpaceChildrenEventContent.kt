@@ -1,7 +1,7 @@
 package dev.kuylar.sakura.client.customevent
 
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.model.events.StateEventContent
+import de.connect2x.trixnity.core.model.events.StateEventContent
 
 @Serializable
 class SpaceChildrenEventContent(override val externalUrl: String?) : StateEventContent {

@@ -6,8 +6,8 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.data.DataFetcher
 import dev.kuylar.sakura.client.Matrix
 import kotlinx.coroutines.runBlocking
-import net.folivo.trixnity.client.media
-import net.folivo.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
+import de.connect2x.trixnity.client.media
+import de.connect2x.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import okhttp3.OkHttpClient
 import java.nio.ByteBuffer
 

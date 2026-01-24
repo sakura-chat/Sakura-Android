@@ -10,14 +10,14 @@ import androidx.core.os.postDelayed
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.bumptech.glide.Glide
+import de.connect2x.trixnity.client.store.Room
+import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.MatrixSpace
 import dev.kuylar.sakura.databinding.ItemRoomBinding
 import dev.kuylar.sakura.databinding.ItemRoomCategoryBinding
 import dev.kuylar.sakura.ui.activity.MainActivity
-import net.folivo.trixnity.client.store.Room
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
 import com.google.android.material.R as MaterialR
 
 @SuppressLint("NotifyDataSetChanged")
@@ -137,7 +137,7 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 			} else {
 				binding.subtitle.visibility = View.GONE
 			}
-			val isUnread = room.unreadMessageCount > 0
+			val isUnread = false // FIXME
 			binding.unreadIndicator.visibility = if (isUnread) View.VISIBLE else View.INVISIBLE
 			if (room.avatarUrl == null) {
 				binding.icon.visibility = View.GONE

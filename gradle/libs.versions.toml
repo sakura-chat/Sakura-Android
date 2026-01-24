@@ -1,7 +1,7 @@
 [versions]
-agp = "8.13.2"
-kotlin = "2.2.0"
-ksp = "2.2.20-2.0.4"
+agp = "9.0.0"
+kotlin = "2.3.0"
+ksp = "2.3.2"
 coreKtx = "1.17.0"
 junit = "4.13.2"
 junitVersion = "1.3.0"
@@ -10,7 +10,8 @@ appcompat = "1.7.1"
 material = "1.13.0"
 activity = "1.12.2"
 constraintlayout = "2.2.1"
-trixnity = "4.22.7"
+trixnity = "5.0.1"
+lognity = "1.2.1"
 ktor = "3.3.3"
 kotlinx-serialization-json = "1.9.0"
 recyclerviewbuilder = "1.0.1"
@@ -36,9 +37,12 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
-trixnity-client = { group = "net.folivo", name = "trixnity-client", version.ref = "trixnity" }
-trixnity-client-repository-room = { group = "net.folivo", name = "trixnity-client-repository-room", version.ref = "trixnity" }
-trixnity-client-media-okio = { group = "net.folivo", name = "trixnity-client-media-okio", version.ref = "trixnity" }
+trixnity-client = { group = "de.connect2x.trixnity", name = "trixnity-client", version.ref = "trixnity" }
+trixnity-client-repository-room = { group = "de.connect2x.trixnity", name = "trixnity-client-repository-room", version.ref = "trixnity" }
+trixnity-client-media-okio = { group = "de.connect2x.trixnity", name = "trixnity-client-media-okio", version.ref = "trixnity" }
+trixnity-client-cryptodriver-vodozemac = { group = "de.connect2x.trixnity", name = "trixnity-client-cryptodriver-vodozemac", version.ref = "trixnity" }
+lognity-api-android = { group = "de.connect2x.lognity", name = "lognity-api-android", version.ref = "lognity" }
+lognity-core-android = { group = "de.connect2x.lognity", name = "lognity-core-android", version.ref = "lognity" }
 ktor = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
 ktor-resources = { group = "io.ktor", name = "ktor-resources", version.ref = "ktor" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
@@ -57,6 +61,7 @@ dagger-hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", ve
 commonmark = { group = "org.commonmark", name = "commonmark", version.ref = "commonmark" }
 avatarview = { group = "io.getstream", name = "avatarview-glide", version.ref = "avatarview" }
 jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
+kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

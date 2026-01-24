@@ -14,7 +14,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
-import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
+import de.connect2x.trixnity.core.model.events.GlobalAccountDataEventContent
 
 @Serializable
 data class RecentEmoji(

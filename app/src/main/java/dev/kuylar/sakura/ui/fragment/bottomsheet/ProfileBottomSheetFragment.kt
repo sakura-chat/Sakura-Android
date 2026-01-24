@@ -12,6 +12,16 @@ import android.view.ViewGroup
 import androidx.core.widget.addTextChangedListener
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import dagger.hilt.android.AndroidEntryPoint
+import de.connect2x.trixnity.client.room
+import de.connect2x.trixnity.client.room.getState
+import de.connect2x.trixnity.client.store.Room
+import de.connect2x.trixnity.client.store.UserPresence
+import de.connect2x.trixnity.client.user
+import de.connect2x.trixnity.client.user.PowerLevel
+import de.connect2x.trixnity.client.user.getAccountData
+import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.UserId
+import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.getIndicatorColor
 import dev.kuylar.sakura.Utils.suspendThread
@@ -23,16 +33,6 @@ import dev.kuylar.sakura.ui.activity.MainActivity
 import io.getstream.avatarview.glide.loadImage
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import net.folivo.trixnity.client.room
-import net.folivo.trixnity.client.room.getState
-import net.folivo.trixnity.client.store.Room
-import net.folivo.trixnity.client.store.UserPresence
-import net.folivo.trixnity.client.user
-import net.folivo.trixnity.client.user.PowerLevel
-import net.folivo.trixnity.client.user.getAccountData
-import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.m.room.MemberEventContent
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -41,8 +41,8 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 	private lateinit var binding: FragmentProfileBottomSheetBinding
-	private lateinit var userId: UserId
-	private lateinit var roomId: RoomId
+	private val userId: UserId by lazy { UserId(arguments?.getString("userId") ?: "") }
+	private val roomId: RoomId by lazy { RoomId(arguments?.getString("roomId") ?: "") }
 
 	@Inject
 	lateinit var client: Matrix
@@ -55,14 +55,6 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 	private var roomJob: Job? = null
 	private var changeNoteJob: Job? = null
 	private var noteEvent: UserNoteEventContent? = null
-
-	override fun onCreate(savedInstanceState: Bundle?) {
-		super.onCreate(savedInstanceState)
-		arguments?.let {
-			userId = UserId(it.getString("userId") ?: "")
-			roomId = RoomId(it.getString("roomId") ?: "")
-		}
-	}
 
 	override fun onCreateView(
 		inflater: LayoutInflater, container: ViewGroup?,
@@ -108,6 +100,7 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 			}
 		}
 		profileJob = suspendThread {
+			// TODO: Update to the new extensible profile API
 			client.client.api.baseClient.request(ExtendedGetProfile(userId)).getOrNull()
 				?.let { profile ->
 					activity?.runOnUiThread {

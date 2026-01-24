@@ -3,19 +3,18 @@ package dev.kuylar.sakura
 import android.content.Context
 import android.text.format.DateFormat
 import android.text.format.DateUtils
+import de.connect2x.trixnity.client.store.TimelineEvent
+import de.connect2x.trixnity.core.model.events.m.Presence
+import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
+import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.core.model.events.m.Presence
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.model.events.m.room.bodyWithoutFallback
-import net.folivo.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 object Utils {
@@ -43,7 +42,7 @@ object Utils {
 		}
 	}
 
-	fun Long.toTimestampDate(context: Context) =
+	fun Long.toTimestampDate(context: Context): String? =
 		DateFormat.getMediumDateFormat(context).format(this)
 
 
@@ -62,11 +61,11 @@ object Utils {
 	fun Presence.toLocalized(context: Context): String = context.getString(toLocalized())
 	fun getEventBodyText(event: TimelineEvent): CharSequence {
 		val content = event.content?.getOrNull() ?: return event.javaClass.name
-		when (content) {
+		return when (content) {
 			// TODO: Fill every single one of these
-			is RoomMessageEventContent.TextBased -> return content.formattedBodyWithoutFallback ?: content.bodyWithoutFallback
+			is RoomMessageEventContent.TextBased -> content.formattedBodyWithoutFallback ?: content.bodyWithoutFallback
 
-			else -> return content.javaClass.name
+			else -> content.javaClass.name
 		}
 	}
 

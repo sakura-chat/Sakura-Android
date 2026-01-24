@@ -7,14 +7,14 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.room
-import net.folivo.trixnity.client.room.TimelineEventAggregation
-import net.folivo.trixnity.client.room.getTimelineEventReactionAggregation
-import net.folivo.trixnity.client.room.getTimelineEventReplaceAggregation
-import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.core.model.EventId
-import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
+import de.connect2x.trixnity.client.room
+import de.connect2x.trixnity.client.room.TimelineEventAggregation
+import de.connect2x.trixnity.client.room.getTimelineEventReactionAggregation
+import de.connect2x.trixnity.client.room.getTimelineEventReplaceAggregation
+import de.connect2x.trixnity.client.store.TimelineEvent
+import de.connect2x.trixnity.core.model.EventId
+import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class EventModel(

@@ -7,8 +7,67 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.util.Log
+import de.connect2x.trixnity.client.CryptoDriverModule
+import de.connect2x.trixnity.client.MatrixClient
+import de.connect2x.trixnity.client.MatrixClientConfiguration
+import de.connect2x.trixnity.client.MatrixClientImpl
+import de.connect2x.trixnity.client.MediaStoreModule
+import de.connect2x.trixnity.client.RepositoriesModule
+import de.connect2x.trixnity.client.create
+import de.connect2x.trixnity.client.cryptodriver.vodozemac.vodozemac
+import de.connect2x.trixnity.client.flattenValues
+import de.connect2x.trixnity.client.media.okio.okio
+import de.connect2x.trixnity.client.room
+import de.connect2x.trixnity.client.room.getAccountData
+import de.connect2x.trixnity.client.room.getAllState
+import de.connect2x.trixnity.client.store.AccountStore
+import de.connect2x.trixnity.client.store.Room
+import de.connect2x.trixnity.client.store.RoomUser
+import de.connect2x.trixnity.client.store.TimelineEvent
+import de.connect2x.trixnity.client.store.repository.room.TrixnityRoomDatabase
+import de.connect2x.trixnity.client.store.repository.room.room
+import de.connect2x.trixnity.client.store.type
+import de.connect2x.trixnity.client.user
+import de.connect2x.trixnity.client.user.getAccountData
+import de.connect2x.trixnity.client.verification
+import de.connect2x.trixnity.client.verification.ActiveDeviceVerification
+import de.connect2x.trixnity.client.verification.ActiveUserVerification
+import de.connect2x.trixnity.client.verification.ActiveVerification
+import de.connect2x.trixnity.client.verification.ActiveVerificationState
+import de.connect2x.trixnity.clientserverapi.client.MatrixClientAuthProviderData
+import de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
+import de.connect2x.trixnity.clientserverapi.client.SyncState
+import de.connect2x.trixnity.clientserverapi.client.classicLogin
+import de.connect2x.trixnity.clientserverapi.model.authentication.IdentifierType
+import de.connect2x.trixnity.clientserverapi.model.authentication.LoginType
+import de.connect2x.trixnity.clientserverapi.model.push.PusherData
+import de.connect2x.trixnity.clientserverapi.model.push.SetPushers
+import de.connect2x.trixnity.core.model.EventId
+import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.UserId
+import de.connect2x.trixnity.core.model.events.m.DirectEventContent
+import de.connect2x.trixnity.core.model.events.m.RelatesTo
+import de.connect2x.trixnity.core.model.events.m.room.CreateEventContent
+import de.connect2x.trixnity.core.model.events.m.room.Membership
+import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
+import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappingsBuilder
+import de.connect2x.trixnity.core.serialization.events.default
+import de.connect2x.trixnity.core.serialization.events.globalAccountDataOf
+import de.connect2x.trixnity.core.serialization.events.messageOf
+import de.connect2x.trixnity.core.serialization.events.roomAccountDataOf
+import de.connect2x.trixnity.core.serialization.events.stateOf
 import dev.kuylar.sakura.Utils.suspendThread
-import dev.kuylar.sakura.client.customevent.*
+import dev.kuylar.sakura.client.customevent.ElementRecentEmojiEventContent
+import dev.kuylar.sakura.client.customevent.EmoteRoomsEventContent
+import dev.kuylar.sakura.client.customevent.RecentEmoji
+import dev.kuylar.sakura.client.customevent.RoomImagePackEventContent
+import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
+import dev.kuylar.sakura.client.customevent.SpaceChildrenEventContent
+import dev.kuylar.sakura.client.customevent.SpaceOrderEventContent
+import dev.kuylar.sakura.client.customevent.SpaceParentEventContent
+import dev.kuylar.sakura.client.customevent.UserImagePackEventContent
+import dev.kuylar.sakura.client.customevent.UserNoteEventContent
 import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
 import dev.kuylar.sakura.emoji.RoomEmojiCategoryModel
 import dev.kuylar.sakura.emojipicker.model.CategoryModel
@@ -22,50 +81,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.MatrixClient
-import net.folivo.trixnity.client.MatrixClientConfiguration
-import net.folivo.trixnity.client.MatrixClientImpl
-import net.folivo.trixnity.client.flattenValues
-import net.folivo.trixnity.client.fromStore
-import net.folivo.trixnity.client.login
-import net.folivo.trixnity.client.media.okio.createOkioMediaStoreModule
-import net.folivo.trixnity.client.room
-import net.folivo.trixnity.client.room.getAccountData
-import net.folivo.trixnity.client.room.getAllState
-import net.folivo.trixnity.client.store.AccountStore
-import net.folivo.trixnity.client.store.Room
-import net.folivo.trixnity.client.store.RoomUser
-import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.repository.room.TrixnityRoomDatabase
-import net.folivo.trixnity.client.store.repository.room.createRoomRepositoriesModule
-import net.folivo.trixnity.client.store.type
-import net.folivo.trixnity.client.user
-import net.folivo.trixnity.client.user.getAccountData
-import net.folivo.trixnity.client.verification
-import net.folivo.trixnity.client.verification.ActiveDeviceVerification
-import net.folivo.trixnity.client.verification.ActiveUserVerification
-import net.folivo.trixnity.client.verification.ActiveVerification
-import net.folivo.trixnity.client.verification.ActiveVerificationState
-import net.folivo.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
-import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
-import net.folivo.trixnity.clientserverapi.model.push.PusherData
-import net.folivo.trixnity.clientserverapi.model.push.SetPushers
-import net.folivo.trixnity.core.model.EventId
-import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.m.DirectEventContent
-import net.folivo.trixnity.core.model.events.m.RelatesTo
-import net.folivo.trixnity.core.model.events.m.room.CreateEventContent
-import net.folivo.trixnity.core.model.events.m.room.Membership
-import net.folivo.trixnity.core.model.events.m.room.RoomMessageEventContent
-import net.folivo.trixnity.core.serialization.events.DefaultEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.EventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.createEventContentSerializerMappings
-import net.folivo.trixnity.core.serialization.events.globalAccountDataOf
-import net.folivo.trixnity.core.serialization.events.messageOf
-import net.folivo.trixnity.core.serialization.events.roomAccountDataOf
-import net.folivo.trixnity.core.serialization.events.stateOf
 import okio.Path.Companion.toPath
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -80,6 +95,7 @@ import androidx.room.Room as AndroidRoom
 class Matrix {
 	val userId: UserId
 		get() = client.userId
+
 	@Inject
 	lateinit var markdown: MarkdownHandler
 	private val context: Context
@@ -111,13 +127,13 @@ class Matrix {
 		}
 		Log.i("MatrixClient", "MatrixClient initialized from $from")
 		val (repo, media) = getModules(context, type)
-		client = MatrixClient.fromStore(
+		client = MatrixClient.create(
 			repositoriesModule = repo,
 			mediaStoreModule = media,
-			onSoftLogin = null,
+			cryptoDriverModule = CryptoDriverModule.vodozemac(),
 			coroutineContext = Dispatchers.Default,
 			configuration = ::prepClient
-		).getOrThrow()!!
+		).getOrThrow()
 
 		// Update filters if required.
 		updateFilters()
@@ -132,14 +148,19 @@ class Matrix {
 		type: String = "main"
 	) {
 		val (repo, media) = getModules(context, type)
-		client = MatrixClient.login(
-			baseUrl = Url(homeserver),
-			identifier = id,
-			password = password,
-			initialDeviceDisplayName = "Sakura",
+		client = MatrixClient.create(
 			repositoriesModule = repo,
 			mediaStoreModule = media,
-			configuration = ::prepClient,
+			cryptoDriverModule = CryptoDriverModule.vodozemac(),
+			authProviderData = MatrixClientAuthProviderData.classicLogin(
+				baseUrl = Url(homeserver),
+				identifier = id,
+				password = password,
+				loginType = LoginType.Password,
+				initialDeviceDisplayName = "Sakura"
+			).getOrThrow(),
+			coroutineContext = Dispatchers.Default,
+			configuration = ::prepClient
 		).getOrThrow()
 	}
 
@@ -715,15 +736,18 @@ class Matrix {
 				.filterNot { it.endsWith("-wal") || it.endsWith("-shm") }
 		}
 
-		private fun getModules(context: Context, type: String = "main"): Pair<Module, Module> {
-			val repositoriesModule = createRoomRepositoriesModule(
+		private fun getModules(
+			context: Context,
+			type: String = "main"
+		): Pair<RepositoriesModule, MediaStoreModule> {
+			val repositoriesModule = RepositoriesModule.room(
 				AndroidRoom.databaseBuilder(
 					context,
 					TrixnityRoomDatabase::class.java,
 					"trixnity-$type"
 				)
 			)
-			val mediaStoreModule = createOkioMediaStoreModule(
+			val mediaStoreModule = MediaStoreModule.okio(
 				Path(
 					context.filesDir.absolutePath,
 					"mediaStore-$type"
@@ -733,7 +757,7 @@ class Matrix {
 		}
 
 		private fun prepModules(): Module {
-			val customMappings = createEventContentSerializerMappings {
+			val customMappings = EventContentSerializerMappingsBuilder().apply {
 				stateOf<SpaceParentEventContent>("m.space.parent")
 				stateOf<SpaceChildrenEventContent>("m.space.child")
 				stateOf<RoomImagePackEventContent>("im.ponies.room_emotes")
@@ -743,11 +767,11 @@ class Matrix {
 				globalAccountDataOf<EmoteRoomsEventContent>("im.ponies.emote_rooms")
 				globalAccountDataOf<UserImagePackEventContent>("im.ponies.user_emotes")
 				globalAccountDataOf<UserNoteEventContent>("dev.kuylar.sakura.user_notes")
-			}
+			}.build()
 
 			return module {
 				single<EventContentSerializerMappings> {
-					DefaultEventContentSerializerMappings + customMappings
+					EventContentSerializerMappings.default + customMappings
 				}
 			}
 		}

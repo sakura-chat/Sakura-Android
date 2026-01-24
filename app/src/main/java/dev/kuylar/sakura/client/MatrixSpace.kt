@@ -1,6 +1,6 @@
 package dev.kuylar.sakura.client
 
-import net.folivo.trixnity.client.store.Room
+import de.connect2x.trixnity.client.store.Room
 
 data class MatrixSpace(
 	// This is nullable because we can also return all the rooms without a parent here
@@ -10,5 +10,5 @@ data class MatrixSpace(
 	val order: Long
 ) {
 	val isUnread: Boolean
-		get() = children.any { it.unreadMessageCount > 0 } || childSpaces.any { it.isUnread }
+		get() = false // FIXME
 }

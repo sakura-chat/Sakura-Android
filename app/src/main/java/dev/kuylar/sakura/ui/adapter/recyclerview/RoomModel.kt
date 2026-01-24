@@ -1,19 +1,15 @@
 package dev.kuylar.sakura.ui.adapter.recyclerview
 
+import de.connect2x.trixnity.client.room
+import de.connect2x.trixnity.client.store.Room
+import de.connect2x.trixnity.client.store.TimelineEvent
+import de.connect2x.trixnity.client.store.eventId
+import de.connect2x.trixnity.core.model.RoomId
 import dev.kuylar.sakura.client.Matrix
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.room
-import net.folivo.trixnity.client.room.getAccountData
-import net.folivo.trixnity.client.store.Room
-import net.folivo.trixnity.client.store.RoomUserReceipts
-import net.folivo.trixnity.client.store.TimelineEvent
-import net.folivo.trixnity.client.store.eventId
-import net.folivo.trixnity.client.user
-import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.events.m.FullyReadEventContent
 
 class RoomModel(
 	val id: RoomId,

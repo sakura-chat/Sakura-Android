@@ -3,9 +3,9 @@ package dev.kuylar.sakura.client.customevent
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import net.folivo.trixnity.core.model.events.MessageEventContent
-import net.folivo.trixnity.core.model.events.m.Mentions
-import net.folivo.trixnity.core.model.events.m.RelatesTo
+import de.connect2x.trixnity.core.model.events.MessageEventContent
+import de.connect2x.trixnity.core.model.events.m.Mentions
+import de.connect2x.trixnity.core.model.events.m.RelatesTo
 
 @Serializable
 data class ShortcodeReactionEventContent(

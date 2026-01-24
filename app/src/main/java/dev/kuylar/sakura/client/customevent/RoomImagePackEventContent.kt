@@ -2,8 +2,8 @@ package dev.kuylar.sakura.client.customevent
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.model.events.StateEventContent
-import net.folivo.trixnity.core.model.events.m.room.ImageInfo
+import de.connect2x.trixnity.core.model.events.StateEventContent
+import de.connect2x.trixnity.core.model.events.m.room.ImageInfo
 
 @Serializable
 class RoomImagePackEventContent(override val externalUrl: String?) : StateEventContent {

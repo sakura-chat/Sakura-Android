@@ -11,8 +11,8 @@ import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentVerificationStartBinding
 import kotlinx.coroutines.flow.first
-import net.folivo.trixnity.client.verification.ActiveDeviceVerification
-import net.folivo.trixnity.client.verification.ActiveVerificationState
+import de.connect2x.trixnity.client.verification.ActiveDeviceVerification
+import de.connect2x.trixnity.client.verification.ActiveVerificationState
 import javax.inject.Inject
 
 @AndroidEntryPoint

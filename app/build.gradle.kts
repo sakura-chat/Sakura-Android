@@ -34,11 +34,11 @@ android {
 		}
 	}
 	compileOptions {
-		sourceCompatibility = JavaVersion.VERSION_11
-		targetCompatibility = JavaVersion.VERSION_11
+		sourceCompatibility = JavaVersion.VERSION_17
+		targetCompatibility = JavaVersion.VERSION_17
 	}
 	kotlin {
-		jvmToolchain(11)
+		jvmToolchain(17)
 	}
 	buildFeatures {
 		viewBinding = true
@@ -61,6 +61,9 @@ dependencies {
 	implementation(libs.trixnity.client)
 	implementation(libs.trixnity.client.repository.room)
 	implementation(libs.trixnity.client.media.okio)
+	implementation(libs.trixnity.client.cryptodriver.vodozemac)
+	implementation(libs.lognity.api.android)
+	implementation(libs.lognity.core.android)
 	implementation(libs.ktor)
 	implementation(libs.ktor.resources)
 	implementation(libs.kotlinx.serialization.json)
@@ -78,4 +81,5 @@ dependencies {
 	implementation(libs.commonmark)
 	implementation(libs.avatarview)
 	implementation(libs.jsoup)
+	implementation(libs.kotlin.reflect)
 }

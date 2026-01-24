@@ -35,10 +35,10 @@ import dev.kuylar.sakura.ui.adapter.recyclerview.SpaceTreeRecyclerAdapter
 import dev.kuylar.sakura.ui.fragment.RoomInfoPanelFragment
 import dev.kuylar.sakura.ui.fragment.verification.VerificationBottomSheetFragment
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.store.Room
-import net.folivo.trixnity.client.verification.ActiveDeviceVerification
-import net.folivo.trixnity.clientserverapi.client.SyncState
-import net.folivo.trixnity.core.model.RoomId
+import de.connect2x.trixnity.client.store.Room
+import de.connect2x.trixnity.client.verification.ActiveDeviceVerification
+import de.connect2x.trixnity.clientserverapi.client.SyncState
+import de.connect2x.trixnity.core.model.RoomId
 import javax.inject.Inject
 import kotlin.math.max
 

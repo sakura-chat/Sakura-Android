@@ -1,7 +1,7 @@
 package dev.kuylar.sakura.client.customevent
 
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.model.events.GlobalAccountDataEventContent
+import de.connect2x.trixnity.core.model.events.GlobalAccountDataEventContent
 
 @Serializable
 class EmoteRoomsEventContent() : GlobalAccountDataEventContent {

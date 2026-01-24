@@ -2,7 +2,7 @@ package dev.kuylar.sakura.emoji
 
 import com.google.android.material.tabs.TabLayout
 import dev.kuylar.sakura.emojipicker.model.CategoryModel
-import net.folivo.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.RoomId
 
 class RoomEmojiCategoryModel(val roomId: RoomId, val stateKey: String, name: String) :
 	CategoryModel(name) {

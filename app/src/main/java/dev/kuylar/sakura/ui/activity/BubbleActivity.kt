@@ -18,8 +18,8 @@ import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.ActivityBubbleBinding
 import dev.kuylar.sakura.ui.fragment.verification.VerificationBottomSheetFragment
 import kotlinx.coroutines.launch
-import net.folivo.trixnity.client.verification.ActiveDeviceVerification
-import net.folivo.trixnity.clientserverapi.client.SyncState
+import de.connect2x.trixnity.client.verification.ActiveDeviceVerification
+import de.connect2x.trixnity.clientserverapi.client.SyncState
 import javax.inject.Inject
 import com.google.android.material.R as MaterialR
 

@@ -3,12 +3,12 @@ package dev.kuylar.sakura.client.request
 import io.ktor.resources.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import net.folivo.trixnity.core.Auth
-import net.folivo.trixnity.core.AuthRequired
-import net.folivo.trixnity.core.HttpMethod
-import net.folivo.trixnity.core.HttpMethodType.GET
-import net.folivo.trixnity.core.MatrixEndpoint
-import net.folivo.trixnity.core.model.UserId
+import de.connect2x.trixnity.core.Auth
+import de.connect2x.trixnity.core.AuthRequired
+import de.connect2x.trixnity.core.HttpMethod
+import de.connect2x.trixnity.core.HttpMethodType.GET
+import de.connect2x.trixnity.core.MatrixEndpoint
+import de.connect2x.trixnity.core.model.UserId
 
 @Serializable
 @Resource("/_matrix/client/v3/profile/{userId}")

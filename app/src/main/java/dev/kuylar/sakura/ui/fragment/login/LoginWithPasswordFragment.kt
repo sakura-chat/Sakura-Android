@@ -12,7 +12,7 @@ import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentLoginWithPasswordBinding
-import net.folivo.trixnity.clientserverapi.model.authentication.IdentifierType
+import de.connect2x.trixnity.clientserverapi.model.authentication.IdentifierType
 import javax.inject.Inject
 
 @AndroidEntryPoint

@@ -12,13 +12,13 @@ import dev.kuylar.sakura.databinding.ItemUserBinding
 import dev.kuylar.sakura.ui.fragment.bottomsheet.ProfileBottomSheetFragment
 import io.getstream.avatarview.glide.loadImage
 import kotlinx.coroutines.flow.Flow
-import net.folivo.trixnity.client.store.RoomUser
-import net.folivo.trixnity.client.store.UserPresence
-import net.folivo.trixnity.client.store.avatarUrl
-import net.folivo.trixnity.client.user
-import net.folivo.trixnity.core.model.RoomId
-import net.folivo.trixnity.core.model.UserId
-import net.folivo.trixnity.core.model.events.m.Presence
+import de.connect2x.trixnity.client.store.RoomUser
+import de.connect2x.trixnity.client.store.UserPresence
+import de.connect2x.trixnity.client.store.avatarUrl
+import de.connect2x.trixnity.client.user
+import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.UserId
+import de.connect2x.trixnity.core.model.events.m.Presence
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
