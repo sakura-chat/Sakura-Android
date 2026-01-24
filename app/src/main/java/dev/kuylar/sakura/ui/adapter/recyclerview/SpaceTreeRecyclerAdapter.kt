@@ -175,7 +175,7 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 
 		// Remove/add items accordingly
 		currentSpace.childSpaces.find { it.parent?.roomId?.full == id }?.let { childSpace ->
-			val spaceIndex = items.indexOf(childSpace)
+			val spaceIndex = items.indexOfFirst { it is SpaceModel && it.snapshot.parent?.roomId?.full == id }
 			if (spaceIndex != -1) {
 				if (wasExpanded) {
 					// Was expanded, now collapsing
