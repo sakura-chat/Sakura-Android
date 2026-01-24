@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.bumptech.glide.Glide
 import com.google.android.material.shape.ShapeAppearanceModel
+import de.connect2x.trixnity.client.room
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.MatrixSpace
@@ -14,10 +15,13 @@ import dev.kuylar.sakura.databinding.ItemSpaceBinding
 import dev.kuylar.sakura.databinding.ItemSpaceHomeBinding
 import dev.kuylar.sakura.databinding.ItemSpaceListDividerBinding
 import dev.kuylar.sakura.ui.activity.MainActivity
-import de.connect2x.trixnity.client.room
 
 @SuppressLint("NotifyDataSetChanged")
-class SpaceListRecyclerAdapter(val activity: MainActivity, var client: Matrix, var selectedSpaceId: String? = null) :
+class SpaceListRecyclerAdapter(
+	val activity: MainActivity,
+	var client: Matrix,
+	var selectedSpaceId: String? = null
+) :
 	RecyclerView.Adapter<SpaceListRecyclerAdapter.SpaceListViewModel>() {
 	var layoutInflater = activity.layoutInflater
 	var spaceTree: Map<String, MatrixSpace> = emptyMap()
@@ -35,6 +39,7 @@ class SpaceListRecyclerAdapter(val activity: MainActivity, var client: Matrix, v
 							openSpaceTree(it)
 						}
 					notifyDataSetChanged()
+					rebindUpdateListeners()
 				}
 			}
 		}
@@ -136,5 +141,11 @@ class SpaceListRecyclerAdapter(val activity: MainActivity, var client: Matrix, v
 			notifyItemChanged(spaceTree.keys.indexOf(selectedSpaceId) + 1)
 		notifyItemChanged(spaceTree.keys.indexOf(lastSelectedSpaceId) + 1)
 		activity.openSpaceTree(space)
+	}
+
+	private fun rebindUpdateListeners() {
+		spaceTree.forEach { (k, v) ->
+			v.onChange = { notifyItemChanged(spaceTree.keys.indexOf(k) + 1) }
+		}
 	}
 }

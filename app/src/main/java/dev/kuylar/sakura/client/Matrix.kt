@@ -46,10 +46,12 @@ import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.m.DirectEventContent
+import de.connect2x.trixnity.core.model.events.m.PushRulesEventContent
 import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.room.CreateEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import de.connect2x.trixnity.core.model.push.PushRuleSet
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappingsBuilder
 import de.connect2x.trixnity.core.serialization.events.default
@@ -73,6 +75,7 @@ import dev.kuylar.sakura.emoji.RoomEmojiCategoryModel
 import dev.kuylar.sakura.emojipicker.model.CategoryModel
 import dev.kuylar.sakura.emojipicker.model.EmojiModel
 import dev.kuylar.sakura.markdown.MarkdownHandler
+import dev.kuylar.sakura.ui.adapter.recyclerview.RoomModel
 import io.ktor.http.Url
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -105,6 +108,7 @@ class Matrix {
 	private var recentEmojiCache: List<RecentEmoji> = emptyList()
 	private var loadedRecentEmoji = false
 	private var syncStarted = false
+	lateinit var pushRules: Flow<PushRuleSet>
 
 	constructor(context: Context, from: String) {
 		this.context = context
@@ -139,6 +143,7 @@ class Matrix {
 		updateFilters()
 		// Load this beforehand so we always have a list of recent emojis in hand
 		getRecentEmojis()
+		listenForPushRules()
 	}
 
 	suspend fun login(
@@ -162,6 +167,8 @@ class Matrix {
 			coroutineContext = Dispatchers.Default,
 			configuration = ::prepClient
 		).getOrThrow()
+		getRecentEmojis()
+		listenForPushRules()
 	}
 
 	suspend fun getRoom(roomId: String): Room? {
@@ -212,7 +219,8 @@ class Matrix {
 				null,
 				unownedRooms.values
 					.sortedByDescending { it.lastRelevantEventTimestamp?.toEpochMilliseconds() }
-					.toList(),
+					.toList()
+					.map { RoomModel(it.roomId, it, this) },
 				emptyList(),
 				Long.MIN_VALUE
 			)
@@ -225,14 +233,14 @@ class Matrix {
 			val childrenIds = childrenState?.map { RoomId(it.stateKey) }
 				?: parentToChildren[space.roomId.toString()]
 				?: emptyList()
-			val children = mutableListOf<Room>()
+			val children = mutableListOf<RoomModel>()
 			val childSpaces = mutableListOf<MatrixSpace>()
 
 			childrenIds.forEach { childId ->
 				unownedRooms.remove(childId)?.let { child ->
 					if (child.type == CreateEventContent.RoomType.Space)
 						childSpaces.add(buildSpaceTree(child))
-					else children.add(child)
+					else children.add(RoomModel(child.roomId, child, this))
 				}
 			}
 
@@ -289,7 +297,8 @@ class Matrix {
 						null,
 						unownedRooms.values
 							.sortedByDescending { it.lastRelevantEventTimestamp?.toEpochMilliseconds() }
-							.toList(),
+							.toList()
+							.map { RoomModel(it.roomId, it, this@Matrix) },
 						emptyList(),
 						Long.MIN_VALUE
 					)
@@ -305,14 +314,14 @@ class Matrix {
 					val childrenIds = childrenState?.map { RoomId(it.stateKey) }
 						?: parentToChildren[space.roomId.toString()]
 						?: emptyList()
-					val children = mutableListOf<Room>()
+					val children = mutableListOf<RoomModel>()
 					val childSpaces = mutableListOf<MatrixSpace>()
 
 					childrenIds.forEach { childId ->
 						unownedRooms.remove(childId)?.let { child ->
 							if (child.type == CreateEventContent.RoomType.Space)
 								childSpaces.add(buildSpaceTree(child))
-							else children.add(child)
+							else children.add(RoomModel(child.roomId, child, this@Matrix))
 						}
 					}
 
@@ -577,6 +586,18 @@ class Matrix {
 		if (!loadedRecentEmoji) {
 			suspendThread {
 				updateRecentEmojiCache()
+			}
+		}
+	}
+
+	private fun listenForPushRules() {
+		pushRules = flow {
+			client.user.getAccountData<PushRulesEventContent>().collect {
+				it?.let { event ->
+					event.global?.let { set ->
+						emit(set)
+					}
+				}
 			}
 		}
 	}

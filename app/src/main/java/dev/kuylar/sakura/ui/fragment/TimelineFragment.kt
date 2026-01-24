@@ -148,9 +148,9 @@ class TimelineFragment : Fragment(), MenuProvider {
 								isLoadingMore = false
 							}
 						} else {
-							Log.d("TimelineFragment", "Marking room as read")
 							timelineAdapter.lastEventId?.let {
 								if (it == lastReadEvent) return@let
+								Log.d("TimelineFragment", "Marking room as read")
 								lastReadEvent = it
 								suspendThread {
 									client.client.api.room.setReceipt(RoomId(roomId), it)

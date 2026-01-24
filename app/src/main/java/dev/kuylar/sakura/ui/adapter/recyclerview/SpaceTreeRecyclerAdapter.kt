@@ -61,14 +61,15 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 
 		// Add all children first
 		items.addAll(currentSpace.children.map {
-			RoomModel(it.roomId, it, client) {
+			it.onChange = {
 				activity.runOnUiThread {
-					val index = items.indexOfFirst { e -> (e as? RoomModel)?.id == it.roomId }
+					val index = items.indexOfFirst { e -> (e as? RoomModel)?.id == it.id }
 					if (index >= 0) {
 						notifyItemChanged(index)
 					}
 				}
 			}
+			it
 		})
 
 		// Add childSpaces and their expanded children
@@ -77,15 +78,16 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 			val childSpaceId = childSpace.parent?.roomId?.full
 			if (childSpaceId != null && (expandedRooms[childSpaceId] ?: true)) {
 				items.addAll(childSpace.children.map {
-					RoomModel(it.roomId, it, client) {
+					it.onChange = {
 						activity.runOnUiThread {
 							val index =
-								items.indexOfFirst { e -> (e as? RoomModel)?.id == it.roomId }
+								items.indexOfFirst { e -> (e as? RoomModel)?.id == it.id }
 							if (index >= 0) {
 								notifyItemChanged(index)
 							}
 						}
 					}
+					it
 				})
 			}
 		}
@@ -130,14 +132,15 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 		fun bind(model: RoomModel) {
 			val room = model.snapshot
 			val lastMessage = model.lastMessage
+			val isUnread = model.isUnread
 
 			binding.title.text = room.name?.explicitName ?: "null"
 			if (room.isDirect) {
 				binding.subtitle.text = (lastMessage?.content?.getOrNull() as? RoomMessageEventContent.TextBased)?.body
+				binding.subtitle.visibility = View.VISIBLE
 			} else {
 				binding.subtitle.visibility = View.GONE
 			}
-			val isUnread = false // FIXME
 			binding.unreadIndicator.visibility = if (isUnread) View.VISIBLE else View.INVISIBLE
 			if (room.avatarUrl == null) {
 				binding.icon.visibility = View.GONE

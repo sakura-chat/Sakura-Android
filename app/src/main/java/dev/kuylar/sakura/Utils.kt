@@ -42,6 +42,13 @@ object Utils {
 		}
 	}
 
+	fun Long.toTimestamp(context: Context, nothing: Boolean): String {
+		val now = System.currentTimeMillis()
+		val pattern = "M/dd, HH:mm:SSS"
+		val formatter = SimpleDateFormat(pattern, Locale.getDefault())
+		return formatter.format(this)
+	}
+
 	fun Long.toTimestampDate(context: Context): String? =
 		DateFormat.getMediumDateFormat(context).format(this)
 
