@@ -37,7 +37,7 @@
 			android:paddingHorizontal="16dp"
 			android:paddingVertical="4dp"
 			android:text="@string/typing_indicator_more"
-			android:textColor="?colorOnPrimaryContainer" />
+			android:textColor="?colorOnSurface" />
 	</LinearLayout>
 
 	<LinearLayout
