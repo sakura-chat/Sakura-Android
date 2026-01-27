@@ -63,6 +63,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
+import java.util.concurrent.CancellationException
 import java.util.concurrent.CopyOnWriteArrayList
 
 class TimelineRecyclerAdapter(
@@ -382,6 +383,9 @@ class TimelineRecyclerAdapter(
 	}
 
 	private fun handleError(e: Throwable) {
+		if (e is CancellationException) {
+			return
+		}
 		eventModels.clear()
 		Log.e("TimelineRecyclerAdapter", "An error has occurred", e)
 		ex = e
