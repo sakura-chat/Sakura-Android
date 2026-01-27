@@ -7,6 +7,13 @@
 	android:orientation="vertical"
 	tools:context=".ui.fragment.TimelineFragment">
 
+	<com.google.android.material.progressindicator.LinearProgressIndicator
+		android:id="@+id/loading"
+		android:visibility="gone"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:indeterminate="true" />
+
 	<androidx.recyclerview.widget.RecyclerView
 		android:id="@+id/timeline_recycler"
 		android:layout_width="match_parent"

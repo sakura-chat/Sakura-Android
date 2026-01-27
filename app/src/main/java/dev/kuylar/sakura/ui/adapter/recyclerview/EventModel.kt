@@ -22,7 +22,7 @@ class EventModel(
 	val eventId: EventId,
 	val flow: Flow<TimelineEvent>,
 	val client: Matrix,
-	var snapshot: TimelineEvent? = null,
+	var snapshot: TimelineEvent,
 	var onChange: (() -> Unit)? = null
 ) {
 	var repliedSnapshot: TimelineEvent? = null

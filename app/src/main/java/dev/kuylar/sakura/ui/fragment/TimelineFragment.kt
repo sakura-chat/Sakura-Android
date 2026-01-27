@@ -120,53 +120,17 @@ class TimelineFragment : Fragment(), MenuProvider {
 			binding.timelineRecycler,
 			client,
 			markdown
-		)
+		) {
+			binding.loading.visibility = if (it.first || it.second) View.VISIBLE else View.GONE
+			checkAndLoadMoreIfNeeded(binding.timelineRecycler)
+		}
 		binding.timelineRecycler.layoutManager =
 			LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, true)
 		binding.timelineRecycler.addOnScrollListener(object :
 			RecyclerView.OnScrollListener() {
-			override fun onScrolled(
-				recyclerView: RecyclerView,
-				dx: Int,
-				dy: Int
-			) {
+			override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
 				super.onScrolled(recyclerView, dx, dy)
-				val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-				val firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
-				val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
-				val totalItemCount = layoutManager.itemCount
-
-				if (dy == 0 || totalItemCount == 0) return
-				if (!isLoadingMore && timelineAdapter.isReady) {
-					if (firstVisibleItem == 0) {
-						if (timelineAdapter.canLoadMoreForward()) {
-							Log.d("TimelineFragment", "Loading more messages (forward)")
-							isLoadingMore = true
-							suspendThread {
-								timelineAdapter.loadMoreForwards()
-								Log.d("TimelineFragment", "Loading complete")
-								isLoadingMore = false
-							}
-						} else {
-							timelineAdapter.lastEventId?.let {
-								if (it == lastReadEvent) return@let
-								Log.d("TimelineFragment", "Marking room as read")
-								lastReadEvent = it
-								suspendThread {
-									client.client.api.room.setReceipt(RoomId(roomId), it)
-								}
-							}
-						}
-					} else if (lastVisibleItem == totalItemCount - 1) {
-						Log.d("TimelineFragment", "Loading more messages (backward)")
-						isLoadingMore = true
-						suspendThread {
-							timelineAdapter.loadMoreBackwards()
-							Log.d("TimelineFragment", "Loading complete")
-							isLoadingMore = false
-						}
-					}
-				}
+				checkAndLoadMoreIfNeeded(recyclerView)
 			}
 		})
 
@@ -418,6 +382,62 @@ class TimelineFragment : Fragment(), MenuProvider {
 			onKeyboardOpened()
 			(binding.emojiPicker.layoutParams as LinearLayout.LayoutParams).height =
 				max(resources.displayMetrics.density.toInt() * 300, bottom)
+		}
+	}
+
+	private fun checkAndLoadMoreIfNeeded(recyclerView: RecyclerView) {
+		val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+		val firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
+		val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
+		val totalItemCount = layoutManager.itemCount
+
+		if (totalItemCount == 0) return
+		if (!isLoadingMore && timelineAdapter.isReady) {
+			// Check if RecyclerView can scroll - if not, we need to load more items
+			val canScrollVertically = recyclerView.canScrollVertically(1) || recyclerView.canScrollVertically(-1)
+			
+			if (firstVisibleItem == 0) {
+				if (timelineAdapter.canLoadMoreForward()) {
+					Log.d("TimelineFragment", "Loading more messages (forward)")
+					isLoadingMore = true
+					suspendThread {
+						timelineAdapter.loadMoreForwards()
+						Log.d("TimelineFragment", "Loading complete")
+						isLoadingMore = false
+						// Check again after loading to see if we need even more items
+						activity?.runOnUiThread {
+							if (!recyclerView.canScrollVertically(1) && !recyclerView.canScrollVertically(-1) 
+								&& timelineAdapter.canLoadMoreForward()) {
+								checkAndLoadMoreIfNeeded(recyclerView)
+							}
+						}
+					}
+				} else {
+					timelineAdapter.lastEventId?.let {
+						if (it == lastReadEvent) return@let
+						Log.d("TimelineFragment", "Marking room as read")
+						lastReadEvent = it
+						suspendThread {
+							client.client.api.room.setReceipt(RoomId(roomId), it)
+						}
+					}
+				}
+			} else if (lastVisibleItem >= totalItemCount - 5 || !canScrollVertically) {
+				Log.d("TimelineFragment", "Loading more messages (backward)")
+				isLoadingMore = true
+				suspendThread {
+					timelineAdapter.loadMoreBackwards()
+					Log.d("TimelineFragment", "Loading complete")
+					isLoadingMore = false
+					// Check again after loading to see if we need even more items
+					activity?.runOnUiThread {
+						if (!recyclerView.canScrollVertically(1) && !recyclerView.canScrollVertically(-1) 
+							&& timelineAdapter.canLoadMoreBackward()) {
+							checkAndLoadMoreIfNeeded(recyclerView)
+						}
+					}
+				}
+			}
 		}
 	}
 

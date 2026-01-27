@@ -8,9 +8,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.content.getSystemService
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.bumptech.glide.Glide
@@ -19,7 +21,9 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import de.connect2x.trixnity.client.room
-import de.connect2x.trixnity.client.room.getTimelineEventsAround
+import de.connect2x.trixnity.client.room.Timeline
+import de.connect2x.trixnity.client.room.TimelineState
+import de.connect2x.trixnity.client.room.TimelineStateChange
 import de.connect2x.trixnity.client.store.Room
 import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.client.store.avatarUrl
@@ -28,7 +32,6 @@ import de.connect2x.trixnity.client.store.originTimestamp
 import de.connect2x.trixnity.client.store.relatesTo
 import de.connect2x.trixnity.client.store.roomId
 import de.connect2x.trixnity.client.store.sender
-import de.connect2x.trixnity.clientserverapi.model.room.GetEvents
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.RedactedEventContent
@@ -56,28 +59,25 @@ import dev.kuylar.sakura.markdown.MarkdownHandler
 import dev.kuylar.sakura.ui.fragment.TimelineFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.EventBottomSheetFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.ProfileBottomSheetFragment
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.launch
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.time.Duration
 
 class TimelineRecyclerAdapter(
 	val fragment: Fragment,
 	val roomId: String,
 	val recycler: RecyclerView,
 	val client: Matrix,
-	val markdown: MarkdownHandler
+	val markdown: MarkdownHandler,
+	val loadIndicator: ((Pair<Boolean, Boolean>) -> Unit)? = null
 ) : RecyclerView.Adapter<TimelineRecyclerAdapter.TimelineViewHolder>() {
+	private lateinit var timeline: Timeline<EventModel>
+	private lateinit var timelineState: TimelineState<EventModel>
 	private lateinit var room: Room
 	private val layoutInflater = fragment.layoutInflater
 	private var eventModels = CopyOnWriteArrayList<EventModel>()
-	private var hasOlderMessages = true
-	private var hasNewerMessages = false
 	private var getRecentJob: Job? = null
 	private var ex: Throwable? = null
 	var lastEventId: EventId? = null
@@ -92,20 +92,31 @@ class TimelineRecyclerAdapter(
 		suspendThread {
 			client.getRoom(roomId)?.let {
 				room = it
-				try {
-					val first = client.client.room.getLastTimelineEvents(
-						RoomId(roomId),
-					) {
-						this.maxSize = 50
-						this.fetchSize = 50
-					}.first()?.toList() ?: emptyList()
-					first.forEach { event ->
-						insertEvent(event)
+				timeline = client.client.room.getTimeline<EventModel>(::handleStateChange) { flow ->
+					val snapshot = flow.first()
+					if (snapshot.originTimestamp > lastEventTimestamp) {
+						lastEventTimestamp = snapshot.originTimestamp
+						lastEventId = snapshot.eventId
 					}
-					startListeningToEvents()
-				} catch (e: Exception) {
-					handleError(e)
+					if (snapshot.originTimestamp < firstEventTimestamp) {
+						firstEventTimestamp = snapshot.originTimestamp
+						firstEventId = snapshot.eventId
+					}
+					EventModel(snapshot.roomId, snapshot.eventId, flow, client, snapshot) {
+						updateEventById(snapshot.eventId)
+					}
 				}
+				Log.i(
+					"TimelineRecyclerAdapter",
+					"init from ${(room.lastRelevantEventId ?: room.lastEventId ?: EventId("")).full}"
+				)
+				val change = timeline.init(
+					RoomId(roomId),
+					room.lastRelevantEventId ?: room.lastEventId ?: EventId(""),
+					{},
+					{},
+					{})
+				Log.i("TimelineRecyclerAdapter", "init: $change")
 				isReady = true
 			}
 		}
@@ -139,9 +150,8 @@ class TimelineRecyclerAdapter(
 	}
 
 	override fun getItemViewType(position: Int): Int {
-		return if (ex != null && position == 0) 3
-		else if (hasNewerMessages && position == 0) 2
-		else if (hasOlderMessages && position == eventModels.size) 2
+		return if (!this::timelineState.isInitialized || !timelineState.isInitialized) 2
+		else if (ex != null && position == 0) 3
 		else 1
 	}
 
@@ -149,14 +159,12 @@ class TimelineRecyclerAdapter(
 		holder: TimelineViewHolder,
 		position: Int
 	) {
-		var realPosition = position
-		if (hasNewerMessages) realPosition--
 		if (holder is EventViewHolder) {
 			if (position >= eventModels.size) return
 			holder.bind(
-				eventModels[realPosition],
-				eventModels.getOrNull(realPosition + 1),
-				eventModels.getOrNull(realPosition - 1),
+				eventModels[position],
+				eventModels.getOrNull(position + 1),
+				eventModels.getOrNull(position - 1),
 				markdown
 			)
 		} else if (holder is ErrorViewHolder) {
@@ -166,16 +174,11 @@ class TimelineRecyclerAdapter(
 
 	override fun getItemCount(): Int {
 		if (ex != null) return 1
-		var size = eventModels.size
-		if (hasOlderMessages) size++
-		if (hasNewerMessages) size++
-		return size
+		return eventModels.size
 	}
 
 	override fun getItemId(position: Int): Long {
-		var realPosition = position
-		if (hasNewerMessages) realPosition--
-		return eventModels.getOrNull(realPosition)?.eventId?.hashCode()?.toLong() ?: 0L
+		return eventModels.getOrNull(position)?.eventId?.hashCode()?.toLong() ?: 0L
 	}
 
 	private fun updateEventById(eventId: EventId) {
@@ -189,175 +192,47 @@ class TimelineRecyclerAdapter(
 			}
 	}
 
-	private suspend fun insertEvent(
-		event: Flow<TimelineEvent>,
-		index: Int? = null,
-		notify: Boolean = true
-	): TimelineEvent {
-		val snapshot = event.first()
-
-		if (lastEventTimestamp < snapshot.originTimestamp) {
-			lastEventId = snapshot.nextEventId ?: snapshot.eventId
-			lastEventTimestamp = snapshot.originTimestamp
-		}
-		if (firstEventTimestamp > snapshot.originTimestamp) {
-			firstEventId = snapshot.previousEventId
-			firstEventTimestamp = snapshot.originTimestamp
-		}
-
-		if (snapshot.relatesTo?.relationType == RelationType.Replace) return snapshot
-		if (snapshot.content?.getOrNull() is RedactionEventContent ||
-			snapshot.content?.getOrNull() is RedactedEventContent ||
-			snapshot.content?.getOrNull() is ReactionEventContent ||
-			snapshot.content?.getOrNull() is ShortcodeReactionEventContent
-		) return snapshot
-		if (eventModels.any { snapshot.eventId == it.eventId }) return snapshot
-		fragment.activity?.runOnUiThread {
-			if (index == null) {
-				eventModels.add(
-					EventModel(
-						snapshot.roomId,
-						snapshot.eventId,
-						event,
-						client,
-						snapshot
-					) {
-						updateEventById(snapshot.eventId)
-					})
-				if (notify) {
-					val index = eventModels.size - 1
-					notifyItemInserted(index)
-					if (index > 0) notifyItemChanged(index - 1)
-				}
-			} else {
-				eventModels.add(
-					index,
-					EventModel(snapshot.roomId, snapshot.eventId, event, client, snapshot) {
-						updateEventById(snapshot.eventId)
-					})
-				if (notify) {
-					notifyItemInserted(index)
-					if (index > 0) notifyItemChanged(index - 1)
-					if (index < eventModels.size - 1) notifyItemChanged(index + 1)
-				}
-			}
-		}
-		return snapshot
+	private fun shouldDisplayEvent(event: TimelineEvent): Boolean {
+		return (event.relatesTo?.relationType == RelationType.Replace ||
+				event.content?.getOrNull() is RedactionEventContent ||
+				event.content?.getOrNull() is RedactedEventContent ||
+				event.content?.getOrNull() is ReactionEventContent ||
+				event.content?.getOrNull() is ShortcodeReactionEventContent).not()
 	}
 
-	suspend fun loadMoreBackwards() {
-		if (!this::room.isInitialized) return
-		if (!hasOlderMessages) return
-		val events = client.client.room.getTimelineEvents(
-			room.roomId,
-			firstEventId ?: eventModels.lastOrNull()?.eventId ?: EventId(""),
-			GetEvents.Direction.BACKWARDS
-		) {
-			this.maxSize = 50
-			this.fetchSize = 50
-		}.toList()
-		Log.i("TimelineRecyclerAdapter", "backwards: ${events.size}")
-		if (events.isEmpty()) {
-			hasOlderMessages = false
-			Handler(fragment.requireContext().mainLooper!!).post {
-				notifyItemRemoved(eventModels.size)
-			}
-		} else events.forEach {
-			val e = insertEvent(it)
-			if (e.previousEventId == null) {
-				hasOlderMessages = false
-				Handler(fragment.requireContext().mainLooper!!).post {
-					notifyItemRemoved(eventModels.size)
-				}
-			}
-		}
+	fun canLoadMoreBackward(): Boolean {
+		return this::timelineState.isInitialized && timelineState.canLoadBefore
 	}
 
 	fun canLoadMoreForward(): Boolean {
-		return hasNewerMessages && getRecentJob == null
+		return this::timelineState.isInitialized && timelineState.canLoadAfter && getRecentJob == null
+	}
+
+	suspend fun loadMoreBackwards() {
+		if (!this::room.isInitialized || !this::timelineState.isInitialized) return
+		if (!timelineState.canLoadBefore) return
+		loadIndicator?.invoke(Pair(true, false))
+		timeline.loadBefore {
+			this.minSize = 0
+			this.maxSize = PAGINATION_MAX_SIZE
+			this.fetchSize = PAGINATION_FETCH_SIZE
+		}
 	}
 
 	suspend fun loadMoreForwards() {
-		if (!this::room.isInitialized) return
-		if (!hasNewerMessages) return
-		// If getRecentJob isn't null, that means that we're constantly
-		// loading the most recent message, and this method shouldn't
-		// be called
-		if (getRecentJob != null) return
-		Log.i(
-			"TimelineRecyclerAdapter",
-			"Loading more messages from ${lastEventId?.full} OR ${eventModels.firstOrNull()?.eventId?.full}"
-		)
-		val events = client.client.room.getTimelineEvents(
-			room.roomId,
-			eventModels.firstOrNull()?.eventId ?: EventId(""),
-			GetEvents.Direction.FORWARDS
-		) {
+		if (!this::room.isInitialized || !this::timelineState.isInitialized) return
+		if (!timelineState.canLoadAfter) return
+		loadIndicator?.invoke(Pair(false, true))
+		timeline.loadAfter {
 			this.minSize = 0
-			this.maxSize = 50
-			this.fetchSize = 50
-		}.toList()
-		events.forEach {
-			val snapshot = insertEvent(it, 0)
-			if (snapshot.nextEventId == null) {
-				startListeningToEvents()
-			}
+			this.maxSize = PAGINATION_MAX_SIZE
+			this.fetchSize = PAGINATION_FETCH_SIZE
 		}
 	}
 
 	suspend fun loadAroundEvent(eventId: EventId) {
-		if (!this::room.isInitialized) return
-		var itemCount = eventModels.size
-		if (hasOlderMessages) itemCount++
-		if (hasNewerMessages) itemCount++
-		hasOlderMessages = false
-		hasNewerMessages = false
-		lastEventId = null
-		firstEventId = null
-		lastEventTimestamp = 0
-		firstEventTimestamp = Long.MAX_VALUE
-		Handler(fragment.requireContext().mainLooper!!).post {
-			notifyItemRangeRemoved(0, itemCount)
-			eventModels.clear()
-		}
-		val events = client.client.room.getTimelineEventsAround(
-			room.roomId,
-			eventId
-		) {
-			this.maxSize = 50
-			this.fetchSize = 50
-		}.toList()
-		events.forEach {
-			insertEvent(it, index = 0, notify = false)
-		}
-		hasOlderMessages = true
-		hasNewerMessages = true
-		Handler(fragment.requireContext().mainLooper!!).post {
-			notifyDataSetChanged()
-		}
-	}
-
-	fun startListeningToEvents() {
-		if (hasNewerMessages) {
-			hasNewerMessages = false
-			Handler(fragment.requireContext().mainLooper!!).post {
-				notifyItemRemoved(0)
-			}
-		}
-		getRecentJob?.cancel()
-		getRecentJob = CoroutineScope(Dispatchers.Main).launch {
-			try {
-				client.client.room.getTimelineEvents(
-					RoomId(roomId),
-					lastEventId ?: EventId(""),
-					GetEvents.Direction.FORWARDS
-				).collect { newEvent ->
-					insertEvent(newEvent, 0)
-				}
-			} catch (e: Exception) {
-				handleError(e)
-			}
-		}
+		if (!this::room.isInitialized || !this::timelineState.isInitialized) return
+		timeline.init(RoomId(roomId), eventId, {}, {}, {})
 	}
 
 	fun scrollToEventId(eventId: EventId) {
@@ -365,7 +240,7 @@ class TimelineRecyclerAdapter(
 		if (index >= 0) {
 			recycler.smoothScrollToPosition(index)
 		} else {
-			notifyItemRangeRemoved(if (hasOlderMessages) 1 else 0, eventModels.size)
+			notifyItemRangeRemoved(0, eventModels.size)
 			getRecentJob?.cancel()
 			getRecentJob = null
 			suspendThread {
@@ -391,7 +266,57 @@ class TimelineRecyclerAdapter(
 		ex = e
 		fragment.context?.let {
 			Handler(it.mainLooper).post {
-				notifyDataSetChanged()
+				notifyItemRangeRemoved(0, itemCount)
+				notifyItemInserted(0)
+			}
+		}
+	}
+
+	suspend fun handleStateChange(delta: TimelineStateChange<EventModel>) {
+		if (delta.addedElements.isEmpty() && delta.removedElements.isEmpty()) return
+		Log.i("TimelineRecyclerAdapter", "onStateChange $delta")
+		timelineState = timeline.state.first()
+
+		// We use a reversed LinearLayoutManager
+		val newEventModels = delta.elementsAfterChange
+			.filter { shouldDisplayEvent(it.snapshot) }
+			.sortedByDescending { it.snapshot.originTimestamp }
+
+		// Dispose all unused EventModels
+		delta.removedElements.forEach {
+			it.dispose()
+		}
+
+		// Calculate diff
+		val diffCallback = TimelineDiffCallback(eventModels.toList(), newEventModels)
+		val diffResult = DiffUtil.calculateDiff(diffCallback)
+
+		if (!timelineState.canLoadAfter && getRecentJob == null) {
+			startListeningToRecentMessages()
+		}
+
+		Handler(recycler.context.mainLooper).post {
+			eventModels.clear()
+			eventModels.addAll(newEventModels)
+			loadIndicator?.invoke(Pair(timelineState.isLoadingBefore, timelineState.isLoadingAfter && getRecentJob == null))
+			diffResult.dispatchUpdatesTo(this@TimelineRecyclerAdapter)
+		}
+	}
+
+	private fun startListeningToRecentMessages() {
+		Handler(recycler.context.mainLooper).post {
+			Toast.makeText(recycler.context, "startListeningToRecentMessages", Toast.LENGTH_LONG).show()
+		}
+		getRecentJob?.cancel()
+		getRecentJob = suspendThread {
+			while (true) {
+				timeline.loadAfter {
+					this.minSize = 2 /* because minSize = 1 returns the lastEvent */
+					this.maxSize = 5
+					this.fetchSize = 1
+					this.allowReplaceContent = true
+					this.fetchTimeout = Duration.INFINITE
+				}
 			}
 		}
 	}
@@ -409,7 +334,7 @@ class TimelineRecyclerAdapter(
 			nextEventModel: EventModel? = null,
 			markdown: MarkdownHandler
 		) {
-			val event = eventModel.snapshot ?: return
+			val event = eventModel.snapshot
 			val lastEvent = lastEventModel?.snapshot
 			val nextEvent = nextEventModel?.snapshot
 			val repliedEvent = eventModel.repliedSnapshot
@@ -454,6 +379,7 @@ class TimelineRecyclerAdapter(
 					if (now - lastClick < ViewConfiguration.getDoubleTapTimeout()) {
 						(adapter.fragment as? TimelineFragment)?.handleReply(event.eventId)
 					}
+					@Suppress("AssignedValueIsNeverRead")
 					lastClick = now
 				}
 			}
@@ -578,7 +504,11 @@ class TimelineRecyclerAdapter(
 				.forEach { (key, list) ->
 					val weReacted = list.firstOrNull { it.sender == client.userId }
 					val reactionView = if (weReacted != null) {
-						ItemReactionSelectedBinding.inflate(layoutInflater, binding.reactions, false)
+						ItemReactionSelectedBinding.inflate(
+							layoutInflater,
+							binding.reactions,
+							false
+						)
 					} else {
 						ItemReactionBinding.inflate(layoutInflater, binding.reactions, false)
 					}
@@ -708,5 +638,10 @@ class TimelineRecyclerAdapter(
 				binding.details.setText(R.string.error_no_details)
 			}
 		}
+	}
+
+	companion object {
+		private const val PAGINATION_MAX_SIZE = 20L
+		private const val PAGINATION_FETCH_SIZE = 20L
 	}
 }
