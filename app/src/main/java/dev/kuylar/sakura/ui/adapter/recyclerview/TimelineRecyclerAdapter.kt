@@ -8,7 +8,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.content.getSystemService
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
@@ -65,6 +64,7 @@ import kotlinx.coroutines.flow.first
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 class TimelineRecyclerAdapter(
 	val fragment: Fragment,
@@ -222,11 +222,13 @@ class TimelineRecyclerAdapter(
 	suspend fun loadMoreBackwards() {
 		if (!this::room.isInitialized || !this::timelineState.isInitialized) return
 		if (!timelineState.canLoadBefore) return
+		getRecentJob?.cancel()
 		loadIndicator?.invoke(Pair(true, false))
 		timeline.loadBefore {
 			this.minSize = 0
 			this.maxSize = PAGINATION_MAX_SIZE
 			this.fetchSize = PAGINATION_FETCH_SIZE
+			this.fetchTimeout = 5.seconds
 		}
 	}
 
@@ -238,6 +240,7 @@ class TimelineRecyclerAdapter(
 			this.minSize = 0
 			this.maxSize = PAGINATION_MAX_SIZE
 			this.fetchSize = PAGINATION_FETCH_SIZE
+			this.fetchTimeout = 5.seconds
 		}
 	}
 
@@ -302,7 +305,7 @@ class TimelineRecyclerAdapter(
 		val diffCallback = TimelineDiffCallback(eventModels.toList(), newEventModels)
 		val diffResult = DiffUtil.calculateDiff(diffCallback)
 
-		if (!timelineState.canLoadAfter && getRecentJob == null) {
+		if (!timelineState.canLoadAfter && (getRecentJob == null || getRecentJob?.isCancelled == true)) {
 			startListeningToRecentMessages()
 		}
 
@@ -320,10 +323,6 @@ class TimelineRecyclerAdapter(
 	}
 
 	private fun startListeningToRecentMessages() {
-		Handler(recycler.context.mainLooper).post {
-			Toast.makeText(recycler.context, "startListeningToRecentMessages", Toast.LENGTH_LONG)
-				.show()
-		}
 		getRecentJob?.cancel()
 		getRecentJob = suspendThread {
 			while (true) {
