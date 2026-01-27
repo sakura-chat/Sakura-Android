@@ -32,6 +32,7 @@ import de.connect2x.trixnity.client.store.originTimestamp
 import de.connect2x.trixnity.client.store.relatesTo
 import de.connect2x.trixnity.client.store.roomId
 import de.connect2x.trixnity.client.store.sender
+import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.RedactedEventContent
@@ -79,6 +80,8 @@ class TimelineRecyclerAdapter(
 	private val layoutInflater = fragment.layoutInflater
 	private var eventModels = CopyOnWriteArrayList<EventModel>()
 	private var getRecentJob: Job? = null
+	private var getReceiptJob: Job? = null
+	private var unreadEventId: EventId? = null
 	private var ex: Throwable? = null
 	var lastEventId: EventId? = null
 	var lastEventTimestamp = 0L
@@ -106,17 +109,24 @@ class TimelineRecyclerAdapter(
 						updateEventById(snapshot.eventId)
 					}
 				}
-				Log.i(
-					"TimelineRecyclerAdapter",
-					"init from ${(room.lastRelevantEventId ?: room.lastEventId ?: EventId("")).full}"
-				)
 				val change = timeline.init(
 					RoomId(roomId),
 					room.lastRelevantEventId ?: room.lastEventId ?: EventId(""),
 					{},
 					{},
 					{})
-				Log.i("TimelineRecyclerAdapter", "init: $change")
+				getReceiptJob = suspendThread {
+					client.client.user.getReceiptsById(RoomId(roomId), client.userId)
+						.collect { receipt ->
+							val lastReceipt =
+								receipt?.receipts?.maxBy { r -> r.value.receipt.timestamp }
+									?: return@collect
+							val oldUnread = unreadEventId
+							unreadEventId = lastReceipt.value.eventId
+							oldUnread?.let { id -> updateEventById(id) }
+							unreadEventId?.let { id -> updateEventById(id) }
+						}
+				}
 				isReady = true
 			}
 		}
@@ -165,7 +175,8 @@ class TimelineRecyclerAdapter(
 				eventModels[position],
 				eventModels.getOrNull(position + 1),
 				eventModels.getOrNull(position - 1),
-				markdown
+				markdown,
+				unreadEventId
 			)
 		} else if (holder is ErrorViewHolder) {
 			holder.bind(ex)
@@ -255,6 +266,7 @@ class TimelineRecyclerAdapter(
 		}
 		eventModels.clear()
 		getRecentJob?.cancel()
+		getReceiptJob?.cancel()
 	}
 
 	private fun handleError(e: Throwable) {
@@ -274,7 +286,6 @@ class TimelineRecyclerAdapter(
 
 	suspend fun handleStateChange(delta: TimelineStateChange<EventModel>) {
 		if (delta.addedElements.isEmpty() && delta.removedElements.isEmpty()) return
-		Log.i("TimelineRecyclerAdapter", "onStateChange $delta")
 		timelineState = timeline.state.first()
 
 		// We use a reversed LinearLayoutManager
@@ -298,14 +309,20 @@ class TimelineRecyclerAdapter(
 		Handler(recycler.context.mainLooper).post {
 			eventModels.clear()
 			eventModels.addAll(newEventModels)
-			loadIndicator?.invoke(Pair(timelineState.isLoadingBefore, timelineState.isLoadingAfter && getRecentJob == null))
+			loadIndicator?.invoke(
+				Pair(
+					timelineState.isLoadingBefore,
+					timelineState.isLoadingAfter && getRecentJob == null
+				)
+			)
 			diffResult.dispatchUpdatesTo(this@TimelineRecyclerAdapter)
 		}
 	}
 
 	private fun startListeningToRecentMessages() {
 		Handler(recycler.context.mainLooper).post {
-			Toast.makeText(recycler.context, "startListeningToRecentMessages", Toast.LENGTH_LONG).show()
+			Toast.makeText(recycler.context, "startListeningToRecentMessages", Toast.LENGTH_LONG)
+				.show()
 		}
 		getRecentJob?.cancel()
 		getRecentJob = suspendThread {
@@ -330,9 +347,10 @@ class TimelineRecyclerAdapter(
 
 		fun bind(
 			eventModel: EventModel,
-			lastEventModel: EventModel? = null,
-			nextEventModel: EventModel? = null,
-			markdown: MarkdownHandler
+			lastEventModel: EventModel?,
+			nextEventModel: EventModel?,
+			markdown: MarkdownHandler,
+			unreadEventId: EventId?
 		) {
 			val event = eventModel.snapshot
 			val lastEvent = lastEventModel?.snapshot
@@ -354,6 +372,8 @@ class TimelineRecyclerAdapter(
 			if (eventModel.eventId != lastEventId) {
 				resetBindingState()
 			}
+			binding.unreadSeparator.visibility =
+				if (event.eventId == unreadEventId && nextEvent != null) View.VISIBLE else View.GONE
 
 			(bindingAdapter as? TimelineRecyclerAdapter)?.let { adapter ->
 				binding.root.setOnLongClickListener {

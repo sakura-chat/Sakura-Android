@@ -89,4 +89,5 @@
 	<string name="power_level_moderator">Moderator</string>
 	<string name="power_level_user">User</string>
 	<string name="user_about_title">About Me</string>
+	<string name="unread_messages">New Messages</string>
 </resources>
