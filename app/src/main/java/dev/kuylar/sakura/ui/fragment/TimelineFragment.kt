@@ -1,6 +1,8 @@
 package dev.kuylar.sakura.ui.fragment
 
 import android.app.NotificationManager
+import android.content.ClipData
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.util.Size
@@ -18,8 +20,11 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.getSystemService
+import androidx.core.view.ContentInfoCompat
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
+import androidx.core.view.OnReceiveContentListener
+import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
@@ -91,12 +96,8 @@ class TimelineFragment : Fragment(), MenuProvider {
 		}
 		visualMediaPicker =
 			registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-				if (uri != null) {
-					context?.let {
-						attachment = AttachmentInfo.from(uri, it)
-						updateAttachment()
-					}
-				}
+				if (uri != null)
+					loadAttachmentFromUri(uri)
 			}
 	}
 
@@ -202,6 +203,11 @@ class TimelineFragment : Fragment(), MenuProvider {
 				client.client.api.room.setTyping(RoomId(roomId), client.userId, !it.isNullOrBlank())
 			}
 		}
+		ViewCompat.setOnReceiveContentListener(
+			binding.input,
+			AttachmentReceiver.MIME_TYPES,
+			AttachmentReceiver(::loadAttachmentFromUri)
+		)
 		typingUsersJob = CoroutineScope(Dispatchers.Main).launch {
 			client.client.room.usersTyping.collect {
 				val thisRoom = it[RoomId(roomId)] ?: return@collect
@@ -515,6 +521,21 @@ class TimelineFragment : Fragment(), MenuProvider {
 		visualMediaPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
 	}
 
+	private fun loadAttachmentFromUri(uri: Uri) {
+		context?.let {
+			attachment =
+				if (uri.scheme?.startsWith("http") == true) {
+					AttachmentInfo.HttpUri(uri)
+				} else AttachmentInfo.ContentUri(uri, it)
+			attachment?.onUpdate = {
+				activity?.runOnUiThread {
+					updateAttachment()
+				}
+			}
+			updateAttachment()
+		}
+	}
+
 	private fun updateAttachment() {
 		if (attachment == null) {
 			binding.attachment.thumbnail.setImageDrawable(null)
@@ -524,15 +545,43 @@ class TimelineFragment : Fragment(), MenuProvider {
 		} else {
 			binding.attachment.root.visibility = View.VISIBLE
 			binding.attachment.name.text = attachment!!.name
-			binding.attachment.size.text = attachment!!.size.bytesToString()
-			binding.attachment.thumbnail.setImageBitmap(
-				requireContext().contentResolver.loadThumbnail(
-					attachment!!.contentUri,
-					Size(640, 640),
-					null
+			binding.attachment.size.text =
+				if (attachment!!.ready) attachment!!.size.bytesToString() else getString(R.string.loading)
+			if (attachment!!.contentUri.scheme == "content")
+				binding.attachment.thumbnail.setImageBitmap(
+					requireContext().contentResolver.loadThumbnail(
+						attachment!!.contentUri,
+						Size(640, 640),
+						null
+					)
 				)
-			)
 		}
 	}
 
+	class AttachmentReceiver(val handler: (Uri) -> Unit) : OnReceiveContentListener {
+		override fun onReceiveContent(
+			view: View,
+			contentInfo: ContentInfoCompat
+		): ContentInfoCompat? {
+			try {
+				val split = contentInfo.partition { item: ClipData.Item -> item.uri != null }
+				val uriContent = split.first
+				val remaining = split.second
+				uriContent?.let { content ->
+					(content.linkUri
+						?: if (content.clip.itemCount > 0) content.clip.getItemAt(0).uri else null)?.let { uri ->
+						handler.invoke(uri)
+					}
+				}
+				return remaining
+			} catch (e: Exception) {
+				Log.e("TimelineFragment", "Failed to paste image", e)
+				return contentInfo
+			}
+		}
+
+		companion object {
+			val MIME_TYPES = arrayOf("image/*", "video/*")
+		}
+	}
 }

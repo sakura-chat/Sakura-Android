@@ -119,4 +119,15 @@ object Utils {
 			lm.findLastCompletelyVisibleItemPosition() == lm.itemCount - 1
 		}
 	}
+
+	fun getMimeTypeFromExtension(lastPathSegment: String?): String {
+		val extension = lastPathSegment?.substringAfterLast('.')?.substringBefore('?')
+		return when (extension) {
+			"gif" -> "image/gif"
+			"jpeg", "jpg" -> "image/jpeg"
+			"png" -> "image/png"
+			"webp" -> "image/webp"
+			else -> "application/octet-stream"
+		}
+	}
 }

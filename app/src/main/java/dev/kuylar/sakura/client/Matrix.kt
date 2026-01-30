@@ -185,6 +185,7 @@ class Matrix {
 		}
 		return client.room.getById(roomId).first()
 	}
+
 	suspend fun getRoom(roomId: String) = getRoom(RoomId(roomId))
 
 	suspend fun getRooms(): List<Room> {
@@ -408,13 +409,14 @@ class Matrix {
 		}
 		client.room.sendMessage(RoomId(roomId)) {
 			replyTo?.let { reply(it, null) }
-			if (attachment != null) {
+			val attachmentFlow = attachment?.getAsFlow(context)
+			if (attachmentFlow != null) {
 				when (attachment.contentType.split('/')[0]) {
 					"image" -> image(
 						body = markdown.inputToPlaintext(msg),
 						format = "org.matrix.custom.html",
 						formattedBody = markdown.inputToHtml(msg),
-						image = attachment.getAsFlow(context),
+						image = attachmentFlow,
 						fileName = attachment.name,
 						type = ContentType.parse(attachment.contentType),
 						size = attachment.size
@@ -424,7 +426,7 @@ class Matrix {
 						body = markdown.inputToPlaintext(msg),
 						format = "org.matrix.custom.html",
 						formattedBody = markdown.inputToHtml(msg),
-						video = attachment.getAsFlow(context),
+						video = attachmentFlow,
 						fileName = attachment.name,
 						type = ContentType.parse(attachment.contentType),
 						size = attachment.size
@@ -435,7 +437,7 @@ class Matrix {
 						body = markdown.inputToPlaintext(msg),
 						format = "org.matrix.custom.html",
 						formattedBody = markdown.inputToHtml(msg),
-						file = attachment.getAsFlow(context),
+						file = attachmentFlow,
 						fileName = attachment.name,
 						type = ContentType.parse(attachment.contentType),
 						size = attachment.size
