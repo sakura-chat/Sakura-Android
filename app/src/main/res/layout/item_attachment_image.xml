@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:layout_marginHorizontal="16dp"
+	android:layout_marginVertical="8dp"
+	android:gravity="center_vertical">
+
+	<com.google.android.material.imageview.ShapeableImageView
+		android:id="@+id/thumbnail"
+		android:layout_width="80dp"
+		android:layout_height="80dp"
+		android:background="?colorSurfaceContainerLow"
+		app:shapeAppearanceOverlay="@style/roundedImageView" />
+
+	<LinearLayout
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:layout_marginStart="8dp"
+		android:layout_weight="1"
+		android:orientation="vertical">
+
+		<TextView
+			android:id="@+id/name"
+			style="?textAppearanceTitleSmall"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			tools:text="File Name" />
+
+		<TextView
+			android:id="@+id/size"
+			style="?textAppearanceLabelMedium"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginVertical="4dp"
+			tools:text="123 MB" />
+	</LinearLayout>
+
+	<com.google.android.material.button.MaterialButton
+		android:id="@+id/button_remove"
+		style="?materialIconButtonOutlinedStyle"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		app:icon="@drawable/ic_cancel" />
+</LinearLayout>

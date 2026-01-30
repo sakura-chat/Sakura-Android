@@ -11,7 +11,11 @@ import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallba
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
@@ -63,7 +67,8 @@ object Utils {
 		val content = event.content?.getOrNull() ?: return event.javaClass.name
 		return when (content) {
 			// TODO: Fill every single one of these
-			is RoomMessageEventContent.TextBased -> content.formattedBodyWithoutFallback ?: content.bodyWithoutFallback
+			is RoomMessageEventContent.TextBased -> content.formattedBodyWithoutFallback
+				?: content.bodyWithoutFallback
 
 			else -> content.javaClass.name
 		}
@@ -76,4 +81,30 @@ object Utils {
 			Presence.UNAVAILABLE -> R.color.status_unavailable
 		}
 	)
+
+	fun InputStream.asFlow(bufferSize: Int = DEFAULT_BUFFER_SIZE): Flow<ByteArray> = flow {
+		withContext(Dispatchers.IO) {
+			val buffer = ByteArray(bufferSize)
+			var bytesRead: Int
+
+			while (read(buffer).also { bytesRead = it } != -1) {
+				emit(buffer.copyOf(bytesRead))
+			}
+		}
+	}
+
+	fun Long.bytesToString(): String {
+		if (this < 1024) return "$this B"
+
+		val units = listOf("KB", "MB", "GB")
+		var value = this.toDouble()
+		var unitIndex = -1
+
+		do {
+			value /= 1024
+			unitIndex++
+		} while (value >= 1024 && unitIndex < units.lastIndex)
+
+		return String.format(Locale.getDefault(), "%.2f %s", value, units[unitIndex])
+	}
 }

@@ -3,6 +3,7 @@ package dev.kuylar.sakura.ui.fragment
 import android.app.NotificationManager
 import android.os.Bundle
 import android.util.Log
+import android.util.Size
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -12,6 +13,9 @@ import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.getSystemService
 import androidx.core.view.MenuHost
@@ -37,6 +41,7 @@ import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
 import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
 import dev.kuylar.sakura.R
+import dev.kuylar.sakura.Utils.bytesToString
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentTimelineBinding
@@ -48,6 +53,7 @@ import dev.kuylar.sakura.emojipicker.model.CategoryModel
 import dev.kuylar.sakura.emojipicker.model.EmojiModel
 import dev.kuylar.sakura.markdown.MarkdownHandler
 import dev.kuylar.sakura.ui.adapter.listadapter.TimelineListAdapter
+import dev.kuylar.sakura.ui.models.AttachmentInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -64,21 +70,33 @@ class TimelineFragment : Fragment(), MenuProvider {
 
 	@Inject
 	lateinit var client: Matrix
+
 	@Inject
 	lateinit var markdown: MarkdownHandler
 	private lateinit var timelineAdapter: TimelineListAdapter
+	private lateinit var visualMediaPicker: ActivityResultLauncher<PickVisualMediaRequest>
 	private var isLoadingMore = false
 	private var editingEvent: EventId? = null
 	private var replyingEvent: EventId? = null
 	private var typingUsersJob: Job? = null
 	private var lastReadEvent: EventId? = null
 	private var clearCacheUnlocked = false
+	private var attachment: AttachmentInfo? = null
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		arguments?.getString("roomId")?.let {
 			roomId = it
 		}
+		visualMediaPicker =
+			registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+				if (uri != null) {
+					context?.let {
+						attachment = AttachmentInfo.from(uri, it)
+						updateAttachment()
+					}
+				}
+			}
 	}
 
 	override fun onCreateView(
@@ -150,6 +168,14 @@ class TimelineFragment : Fragment(), MenuProvider {
 			}
 		}
 
+		binding.attachment.buttonRemove.setOnClickListener {
+			attachment = null
+			updateAttachment()
+		}
+		binding.buttonAttachment.setOnClickListener {
+			pickAttachment()
+		}
+
 		setFragmentResultListener("timeline_action") { _, bundle ->
 			val action = bundle.getString("action")
 			val eventId = bundle.getString("eventId")?.let { EventId(it) }
@@ -208,7 +234,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 
 	private fun sendMessage() {
 		val msg = binding.input.getValue()
-		if (msg.isBlank()) return
+		if (msg.isBlank() && attachment == null) return
 		if (msg.startsWith('/')) {
 			val commandExecuted = tryExecuteCommand(msg)
 			if (commandExecuted) {
@@ -229,7 +255,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 		}
 		if (replyingEvent != null) {
 			suspendThread {
-				client.sendMessage(roomId, msg, replyTo = replyingEvent)
+				client.sendMessage(roomId, msg, requireContext(), replyTo = replyingEvent, attachment = attachment)
 				activity?.runOnUiThread {
 					handleReply(null)
 					binding.input.editableText.clear()
@@ -241,10 +267,12 @@ class TimelineFragment : Fragment(), MenuProvider {
 		binding.buttonSend.isEnabled = false
 		suspendThread {
 			try {
-				client.sendMessage(roomId, msg)
+				client.sendMessage(roomId, msg, requireContext(), attachment = attachment)
 				activity?.runOnUiThread {
 					binding.buttonSend.isEnabled = true
 					binding.input.editableText.clear()
+					attachment = null
+					updateAttachment()
 				}
 			} catch (e: Exception) {
 				Log.e("TimelineFragment", "Error sending message", e)
@@ -311,7 +339,10 @@ class TimelineFragment : Fragment(), MenuProvider {
 	}
 
 	fun handleEdit(eventId: EventId?) {
-		if (replyingEvent != null) replyingEvent = null
+		if (replyingEvent != null) {
+			replyingEvent = null
+			binding.replyIndicator.visibility = View.GONE
+		}
 		if (eventId == null) {
 			editingEvent = null
 			binding.editIndicator.visibility = View.GONE
@@ -339,7 +370,10 @@ class TimelineFragment : Fragment(), MenuProvider {
 	}
 
 	fun handleReply(eventId: EventId?) {
-		if (editingEvent != null) editingEvent = null
+		if (editingEvent != null) {
+			editingEvent = null
+			binding.editIndicator.visibility = View.GONE
+		}
 		if (eventId == null) {
 			replyingEvent = null
 			binding.replyIndicator.visibility = View.GONE
@@ -393,7 +427,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 		if (!isLoadingMore && timelineAdapter.isReady) {
 			// Check if RecyclerView can scroll - if not, we need to load more items
 			val canScrollVertically = recyclerView.canScrollVertically(1) || recyclerView.canScrollVertically(-1)
-			
+
 			if (lastVisibleItem >= totalItemCount - 5 || !canScrollVertically) {
 				if (timelineAdapter.canLoadMoreForward()) {
 					Log.d("TimelineFragment", "Loading more messages (forward)")
@@ -404,7 +438,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 						isLoadingMore = false
 						// Check again after loading to see if we need even more items
 						activity?.runOnUiThread {
-							if (!recyclerView.canScrollVertically(1) && !recyclerView.canScrollVertically(-1) 
+							if (!recyclerView.canScrollVertically(1) && !recyclerView.canScrollVertically(-1)
 								&& timelineAdapter.canLoadMoreForward()) {
 								checkAndLoadMoreIfNeeded(recyclerView)
 							}
@@ -429,7 +463,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 					isLoadingMore = false
 					// Check again after loading to see if we need even more items
 					activity?.runOnUiThread {
-						if (!recyclerView.canScrollVertically(1) && !recyclerView.canScrollVertically(-1) 
+						if (!recyclerView.canScrollVertically(1) && !recyclerView.canScrollVertically(-1)
 							&& timelineAdapter.canLoadMoreBackward()) {
 							checkAndLoadMoreIfNeeded(recyclerView)
 						}
@@ -486,4 +520,34 @@ class TimelineFragment : Fragment(), MenuProvider {
 			}
 		}
 	}
+
+	private fun pickAttachment() {
+		// TODO: Support more than image/video
+		pickImage()
+	}
+
+	private fun pickImage() {
+		visualMediaPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+	}
+
+	private fun updateAttachment() {
+		if (attachment == null) {
+			binding.attachment.thumbnail.setImageDrawable(null)
+			binding.attachment.name.text = null
+			binding.attachment.size.text = null
+			binding.attachment.root.visibility = View.GONE
+		} else {
+			binding.attachment.root.visibility = View.VISIBLE
+			binding.attachment.name.text = attachment!!.name
+			binding.attachment.size.text = attachment!!.size.bytesToString()
+			binding.attachment.thumbnail.setImageBitmap(
+				requireContext().contentResolver.loadThumbnail(
+					attachment!!.contentUri,
+					Size(640, 640),
+					null
+				)
+			)
+		}
+	}
+
 }

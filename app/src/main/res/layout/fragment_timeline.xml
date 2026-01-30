@@ -110,6 +110,12 @@
 			app:icon="@drawable/ic_cancel" />
 	</LinearLayout>
 
+	<include
+		android:id="@+id/attachment"
+		layout="@layout/item_attachment_image"
+		android:visibility="gone"
+		tools:visibility="visible" />
+
 	<LinearLayout
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"

@@ -20,6 +20,11 @@ import de.connect2x.trixnity.client.media.okio.okio
 import de.connect2x.trixnity.client.room
 import de.connect2x.trixnity.client.room.getAccountData
 import de.connect2x.trixnity.client.room.getAllState
+import de.connect2x.trixnity.client.room.message.file
+import de.connect2x.trixnity.client.room.message.image
+import de.connect2x.trixnity.client.room.message.reply
+import de.connect2x.trixnity.client.room.message.text
+import de.connect2x.trixnity.client.room.message.video
 import de.connect2x.trixnity.client.store.AccountStore
 import de.connect2x.trixnity.client.store.Room
 import de.connect2x.trixnity.client.store.RoomUser
@@ -76,6 +81,8 @@ import dev.kuylar.sakura.emojipicker.model.CategoryModel
 import dev.kuylar.sakura.emojipicker.model.EmojiModel
 import dev.kuylar.sakura.markdown.MarkdownHandler
 import dev.kuylar.sakura.ui.adapter.model.RoomModel
+import dev.kuylar.sakura.ui.models.AttachmentInfo
+import io.ktor.http.ContentType
 import io.ktor.http.Url
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -388,23 +395,59 @@ class Matrix {
 	suspend fun getEvent(roomId: String, eventId: String) =
 		getEvent(RoomId(roomId), EventId(eventId))
 
-	suspend fun sendMessage(roomId: String, msg: String, replyTo: EventId? = null) {
+	suspend fun sendMessage(
+		roomId: String,
+		msg: String,
+		context: Context,
+		replyTo: EventId? = null,
+		attachment: AttachmentInfo? = null,
+	) {
 		if (!this::client.isInitialized) {
 			Log.w("MatrixClient", "sendMessage() called before client was initialized.")
 			return
 		}
 		client.room.sendMessage(RoomId(roomId)) {
-			val relatesTo = replyTo?.let {
-				RelatesTo.Reply(RelatesTo.ReplyTo(it))
-			}
-			content(
-				RoomMessageEventContent.TextBased.Text(
-					markdown.inputToPlaintext(msg),
+			replyTo?.let { reply(it, null) }
+			if (attachment != null) {
+				when (attachment.contentType.split('/')[0]) {
+					"image" -> image(
+						body = markdown.inputToPlaintext(msg),
+						format = "org.matrix.custom.html",
+						formattedBody = markdown.inputToHtml(msg),
+						image = attachment.getAsFlow(context),
+						fileName = attachment.name,
+						type = ContentType.parse(attachment.contentType),
+						size = attachment.size
+					)
+
+					"video" -> video(
+						body = markdown.inputToPlaintext(msg),
+						format = "org.matrix.custom.html",
+						formattedBody = markdown.inputToHtml(msg),
+						video = attachment.getAsFlow(context),
+						fileName = attachment.name,
+						type = ContentType.parse(attachment.contentType),
+						size = attachment.size
+						// TODO: Thumbnail
+					)
+
+					else -> file(
+						body = markdown.inputToPlaintext(msg),
+						format = "org.matrix.custom.html",
+						formattedBody = markdown.inputToHtml(msg),
+						file = attachment.getAsFlow(context),
+						fileName = attachment.name,
+						type = ContentType.parse(attachment.contentType),
+						size = attachment.size
+					)
+				}
+			} else {
+				text(
+					body = markdown.inputToPlaintext(msg),
 					format = "org.matrix.custom.html",
-					formattedBody = markdown.inputToMarkdown(msg),
-					relatesTo = relatesTo
+					formattedBody = markdown.inputToHtml(msg)
 				)
-			)
+			}
 		}
 	}
 
@@ -418,13 +461,13 @@ class Matrix {
 				RoomMessageEventContent.TextBased.Text(
 					"* ${markdown.inputToPlaintext(msg)}",
 					format = "org.matrix.custom.html",
-					formattedBody = markdown.inputToMarkdown(msg),
+					formattedBody = markdown.inputToHtml(msg),
 					relatesTo = RelatesTo.Replace(
 						eventId,
 						newContent = RoomMessageEventContent.TextBased.Text(
 							markdown.inputToPlaintext(msg),
 							format = "org.matrix.custom.html",
-							formattedBody = markdown.inputToMarkdown(msg)
+							formattedBody = markdown.inputToHtml(msg)
 						)
 					)
 				)

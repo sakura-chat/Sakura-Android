@@ -34,7 +34,7 @@ class MarkdownHandler @Inject constructor() {
 		lineBreakRendering(LineBreakRendering.SEPARATE_BLOCKS)
 	}.build()
 
-	fun inputToMarkdown(input: String): String {
+	fun inputToHtml(input: String): String {
 		return htmlRenderer.render(parser.parse(input.replace("\n", "<br/>")))
 	}
 
