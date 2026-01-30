@@ -171,13 +171,14 @@ class Matrix {
 		listenForPushRules()
 	}
 
-	suspend fun getRoom(roomId: String): Room? {
+	suspend fun getRoom(roomId: RoomId): Room? {
 		if (!this::client.isInitialized) {
 			Log.w("MatrixClient", "getRoom() called before client was initialized.")
 			return null
 		}
-		return client.room.getById(RoomId(roomId)).first()
+		return client.room.getById(roomId).first()
 	}
+	suspend fun getRoom(roomId: String) = getRoom(RoomId(roomId))
 
 	suspend fun getRooms(): List<Room> {
 		if (!this::client.isInitialized) {

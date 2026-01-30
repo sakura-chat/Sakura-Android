@@ -90,4 +90,5 @@
 	<string name="power_level_user">User</string>
 	<string name="user_about_title">About Me</string>
 	<string name="unread_messages">New Messages</string>
+	<string name="sending">Sending…</string>
 </resources>

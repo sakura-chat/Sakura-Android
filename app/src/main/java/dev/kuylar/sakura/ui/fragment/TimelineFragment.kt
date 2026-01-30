@@ -47,7 +47,7 @@ import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
 import dev.kuylar.sakura.emojipicker.model.CategoryModel
 import dev.kuylar.sakura.emojipicker.model.EmojiModel
 import dev.kuylar.sakura.markdown.MarkdownHandler
-import dev.kuylar.sakura.ui.adapter.recyclerview.TimelineRecyclerAdapter
+import dev.kuylar.sakura.ui.adapter.listadapter.TimelineListAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -66,7 +66,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 	lateinit var client: Matrix
 	@Inject
 	lateinit var markdown: MarkdownHandler
-	private lateinit var timelineAdapter: TimelineRecyclerAdapter
+	private lateinit var timelineAdapter: TimelineListAdapter
 	private var isLoadingMore = false
 	private var editingEvent: EventId? = null
 	private var replyingEvent: EventId? = null
@@ -114,9 +114,9 @@ class TimelineFragment : Fragment(), MenuProvider {
 			Lifecycle.State.RESUMED
 		)
 
-		timelineAdapter = TimelineRecyclerAdapter(
+		timelineAdapter = TimelineListAdapter(
 			this,
-			roomId,
+			RoomId(roomId),
 			binding.timelineRecycler,
 			client,
 			markdown
@@ -124,8 +124,6 @@ class TimelineFragment : Fragment(), MenuProvider {
 			binding.loading.visibility = if (it.first || it.second) View.VISIBLE else View.GONE
 			checkAndLoadMoreIfNeeded(binding.timelineRecycler)
 		}
-		binding.timelineRecycler.layoutManager =
-			LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, true)
 		binding.timelineRecycler.addOnScrollListener(object :
 			RecyclerView.OnScrollListener() {
 			override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -280,9 +278,9 @@ class TimelineFragment : Fragment(), MenuProvider {
 			"/reinit" -> {
 				Log.i("TimelineFragment", "Reinitializing the recycler adapter")
 				timelineAdapter.dispose()
-				timelineAdapter = TimelineRecyclerAdapter(
+				timelineAdapter = TimelineListAdapter(
 					this,
-					roomId,
+					RoomId(roomId),
 					binding.timelineRecycler,
 					client,
 					markdown
@@ -396,7 +394,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 			// Check if RecyclerView can scroll - if not, we need to load more items
 			val canScrollVertically = recyclerView.canScrollVertically(1) || recyclerView.canScrollVertically(-1)
 			
-			if (firstVisibleItem == 0) {
+			if (lastVisibleItem >= totalItemCount - 5 || !canScrollVertically) {
 				if (timelineAdapter.canLoadMoreForward()) {
 					Log.d("TimelineFragment", "Loading more messages (forward)")
 					isLoadingMore = true
@@ -422,7 +420,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 						}
 					}
 				}
-			} else if (lastVisibleItem >= totalItemCount - 5 || !canScrollVertically) {
+			} else if (firstVisibleItem == 0) {
 				Log.d("TimelineFragment", "Loading more messages (backward)")
 				isLoadingMore = true
 				suspendThread {

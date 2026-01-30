@@ -1,45 +1,50 @@
-package dev.kuylar.sakura.ui.adapter.recyclerview
+package dev.kuylar.sakura.ui.adapter.model
 
-import dev.kuylar.sakura.client.Matrix
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
 import de.connect2x.trixnity.client.room
 import de.connect2x.trixnity.client.room.TimelineEventAggregation
 import de.connect2x.trixnity.client.room.getTimelineEventReactionAggregation
 import de.connect2x.trixnity.client.room.getTimelineEventReplaceAggregation
+import de.connect2x.trixnity.client.store.RoomUser
 import de.connect2x.trixnity.client.store.TimelineEvent
+import de.connect2x.trixnity.client.store.sender
+import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import dev.kuylar.sakura.Utils.suspendThread
+import dev.kuylar.sakura.client.Matrix
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class EventModel(
-	val roomId: RoomId,
-	val eventId: EventId,
+	override val roomId: RoomId,
+	override val eventId: EventId,
 	val flow: Flow<TimelineEvent>,
 	val client: Matrix,
 	var snapshot: TimelineEvent,
 	var onChange: (() -> Unit)? = null
-) {
+) : TimelineModel {
 	var repliedSnapshot: TimelineEvent? = null
+	var userSnapshot: RoomUser? = null
 	var reactions: TimelineEventAggregation.Reaction? = null
 	var replaces: TimelineEventAggregation.Replace? = null
 	private var collectJob: Job? = null
 	private var reactionsJob: Job? = null
 	private var replacesJob: Job? = null
 	private var replyJob: Job? = null
+	private var userJob: Job? = null
+	override val type: Int
+		get() = TimelineModel.Companion.TYPE_EVENT
 
 	init {
-		collectJob = CoroutineScope(Dispatchers.Main).launch {
+		collectJob = suspendThread {
 			flow.collect {
 				snapshot = it
 				onChange?.invoke()
 				if (replyJob == null && (it.content?.getOrNull() as? RoomMessageEventContent)?.relatesTo?.replyTo?.eventId != null) {
-					replyJob = CoroutineScope(Dispatchers.Main).launch {
+					replyJob = suspendThread {
 						client.client.room.getTimelineEvent(
 							roomId,
 							(it.content?.getOrNull() as RoomMessageEventContent).relatesTo?.replyTo?.eventId!!
@@ -49,23 +54,30 @@ class EventModel(
 						}
 					}
 				}
+
 			}
 		}
-		reactionsJob = CoroutineScope(Dispatchers.Main).launch {
+		reactionsJob = suspendThread {
 			client.client.room.getTimelineEventReactionAggregation(roomId, eventId).collect {
 				reactions = it
 				onChange?.invoke()
 			}
 		}
-		replacesJob = CoroutineScope(Dispatchers.Main).launch {
+		replacesJob = suspendThread {
 			client.client.room.getTimelineEventReplaceAggregation(roomId, eventId).collect {
 				replaces = it
 				onChange?.invoke()
 			}
 		}
+		userJob = suspendThread {
+			client.client.user.getById(roomId, snapshot.sender).collect { snapshot ->
+				userSnapshot = snapshot
+				onChange?.invoke()
+			}
+		}
 	}
 
-	fun dispose() {
+	override fun dispose() {
 		collectJob?.cancel()
 		collectJob = null
 		reactionsJob?.cancel()
@@ -74,5 +86,7 @@ class EventModel(
 		replacesJob = null
 		replyJob?.cancel()
 		replyJob = null
+		userJob?.cancel()
+		userJob = null
 	}
 }
