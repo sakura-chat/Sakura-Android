@@ -27,6 +27,7 @@ import de.connect2x.trixnity.core.model.events.RedactedEventContent
 import de.connect2x.trixnity.core.model.events.m.ReactionEventContent
 import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.room.RedactionEventContent
+import dev.kuylar.sakura.Utils.isAtBottom
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
@@ -70,6 +71,7 @@ class TimelineListAdapter(
 	private var getOutboxJob: Job? = null
 
 	private var unreadEventId: EventId? = null
+	private var scrollingToEventId: EventId? = null
 	var isReady = false
 		private set
 
@@ -112,17 +114,20 @@ class TimelineListAdapter(
 				notifyDataSetChanged()
 			}
 		}
-		recycler.layoutManager = LinearLayoutManager(recycler.context)
+		recycler.layoutManager =
+			LinearLayoutManager(recycler.context, LinearLayoutManager.VERTICAL, true)
 		recycler.adapter = this
 	}
 
 	override fun getItem(position: Int) =
 		if (position !in 0..<itemCount) null else super.getItem(position)
 
-	override fun getItemCount(): Int {
-		if (!isReady) return 0
-		return super.getItemCount()
-	}
+	override fun getItemCount() = if (isReady) super.getItemCount() else 0
+
+	override fun submitList(list: List<TimelineModel?>?) = super.submitList(list?.reversed())
+
+	override fun submitList(list: List<TimelineModel?>?, commitCallback: Runnable?) =
+		super.submitList(list?.reversed(), commitCallback)
 
 	override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TimelineViewHolder {
 		return when (viewType) {
@@ -166,8 +171,8 @@ class TimelineListAdapter(
 				val item = getItem(position) as? EventModel ?: return
 				holder.bind(
 					item,
-					getItem(position - 1) as? EventModel,
 					getItem(position + 1) as? EventModel,
+					getItem(position - 1) as? EventModel,
 					unreadEventId
 				)
 			}
@@ -246,6 +251,7 @@ class TimelineListAdapter(
 				val existingModels = outboxModels.associateBy { it.eventId }.toMutableMap()
 				val newOutboxModels = outbox.mapNotNull { msg ->
 					val snapshot = msg.first() ?: return@mapNotNull null
+					if (snapshot.sentAt != null) return@mapNotNull null
 					val eventId = snapshot.eventId ?: EventId(snapshot.transactionId)
 					return@mapNotNull existingModels.remove(eventId) ?: OutboxModel(
 						msg,
@@ -254,7 +260,14 @@ class TimelineListAdapter(
 					) { updateEventById(eventId) }
 				}.toList()
 				existingModels.values.forEach { m -> m.dispose() }
-				submitList(timelineState.elements.filter { shouldDisplayEvent(it.snapshot) } + newOutboxModels)
+				submitList(
+					timelineState.elements.filter { shouldDisplayEvent(it.snapshot) } + newOutboxModels,
+					::handlePostSubmitScroll
+				)
+				synchronized(outboxModels) {
+					outboxModels.clear()
+					outboxModels.addAll(newOutboxModels)
+				}
 			}
 		}
 	}
@@ -267,6 +280,13 @@ class TimelineListAdapter(
 			.filter { shouldDisplayEvent(it.snapshot) }
 			.sortedBy { it.snapshot.originTimestamp }
 
+		val toRemoveOutbox = arrayListOf<Int>()
+		outboxModels.forEachIndexed { i, it ->
+			if (it.snapshot.sentAt != null)
+				toRemoveOutbox.add(i)
+		}
+		toRemoveOutbox.forEach { outboxModels.removeAt(it) }
+
 		delta.removedElements.forEach {
 			it.dispose()
 		}
@@ -275,7 +295,7 @@ class TimelineListAdapter(
 			startListeningToRecentMessages()
 		}
 
-		submitList(newEventModels + outboxModels)
+		submitList(newEventModels + outboxModels, ::handlePostSubmitScroll)
 		Handler(recycler.context.mainLooper).post {
 			loadIndicator?.invoke(
 				Pair(
@@ -286,12 +306,25 @@ class TimelineListAdapter(
 		}
 	}
 
+	private fun handlePostSubmitScroll() {
+		if (scrollingToEventId != null) {
+			val index = currentList.indexOfFirst { it.eventId == scrollingToEventId }
+			if (index >= 0) {
+				scrollingToEventId = null
+				recycler.scrollToPosition(index)
+			}
+		} else if (recycler.isAtBottom() && getRecentJob != null) {
+			recycler.smoothScrollToPosition(0)
+		}
+	}
+
 	fun scrollToEventId(eventId: EventId) {
 		val index = currentList.indexOfFirst { it.eventId == eventId }
 		if (index >= 0) {
 			recycler.smoothScrollToPosition(index)
 		} else {
 			submitList(emptyList())
+			scrollingToEventId = eventId
 			getRecentJob?.cancel()
 			getRecentJob = null
 			suspendThread {
@@ -309,6 +342,7 @@ class TimelineListAdapter(
 		if (!this::timelineState.isInitialized) return
 		if (!timelineState.canLoadBefore) return
 		getRecentJob?.cancel()
+		getRecentJob = null
 		loadIndicator?.invoke(Pair(true, false))
 		timeline.loadBefore(configPaged)
 	}

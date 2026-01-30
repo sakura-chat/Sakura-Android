@@ -15,7 +15,7 @@ class OutboxModel(
 	flow: Flow<RoomOutboxMessage<*>?>,
 	var snapshot: RoomOutboxMessage<*>,
 	val client: Matrix,
-	var onChange: (() -> Unit)? = null
+	var onChange: ((OutboxModel) -> Unit)? = null
 ) : TimelineModel {
 	var uploadProgress: FileTransferProgress? = null
 	var userSnapshot: RoomUser? = null
@@ -33,7 +33,7 @@ class OutboxModel(
 				flow.collect {
 					it?.let {
 						snapshot = it
-						onChange?.invoke()
+						onChange?.invoke(this)
 					}
 				}
 			})
@@ -42,7 +42,7 @@ class OutboxModel(
 				snapshot.mediaUploadProgress.collect {
 					it?.let {
 						uploadProgress = it
-						onChange?.invoke()
+						onChange?.invoke(this)
 					}
 				}
 			}
@@ -52,7 +52,7 @@ class OutboxModel(
 				client.client.user.getById(roomId, client.userId).collect {
 					it?.let { snapshot ->
 						userSnapshot = snapshot
-						onChange?.invoke()
+						onChange?.invoke(this)
 					}
 				}
 			}

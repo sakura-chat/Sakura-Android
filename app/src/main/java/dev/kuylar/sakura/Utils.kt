@@ -3,6 +3,8 @@ package dev.kuylar.sakura
 import android.content.Context
 import android.text.format.DateFormat
 import android.text.format.DateUtils
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.core.model.events.m.Presence
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
@@ -106,5 +108,15 @@ object Utils {
 		} while (value >= 1024 && unitIndex < units.lastIndex)
 
 		return String.format(Locale.getDefault(), "%.2f %s", value, units[unitIndex])
+	}
+
+	fun RecyclerView.isAtBottom(): Boolean {
+		val lm = layoutManager as? LinearLayoutManager ?: return false
+		if (lm.itemCount == 0) return true
+		return if (lm.reverseLayout) {
+			lm.findFirstCompletelyVisibleItemPosition() == 0
+		} else {
+			lm.findLastCompletelyVisibleItemPosition() == lm.itemCount - 1
+		}
 	}
 }

@@ -79,7 +79,8 @@ class TimelineFragment : Fragment(), MenuProvider {
 	private var editingEvent: EventId? = null
 	private var replyingEvent: EventId? = null
 	private var typingUsersJob: Job? = null
-	private var lastReadEvent: EventId? = null
+	private var lastReadEventId: EventId? = null
+	private var lastReadEventTimestamp: Long = 0
 	private var clearCacheUnlocked = false
 	private var attachment: AttachmentInfo? = null
 
@@ -140,10 +141,9 @@ class TimelineFragment : Fragment(), MenuProvider {
 			markdown
 		) {
 			binding.loading.visibility = if (it.first || it.second) View.VISIBLE else View.GONE
-			checkAndLoadMoreIfNeeded(binding.timelineRecycler)
+			if (!it.first && !it.second) isLoadingMore = false
 		}
-		binding.timelineRecycler.addOnScrollListener(object :
-			RecyclerView.OnScrollListener() {
+		binding.timelineRecycler.addOnScrollListener(object : RecyclerView.OnScrollListener() {
 			override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
 				super.onScrolled(recyclerView, dx, dy)
 				checkAndLoadMoreIfNeeded(recyclerView)
@@ -255,7 +255,13 @@ class TimelineFragment : Fragment(), MenuProvider {
 		}
 		if (replyingEvent != null) {
 			suspendThread {
-				client.sendMessage(roomId, msg, requireContext(), replyTo = replyingEvent, attachment = attachment)
+				client.sendMessage(
+					roomId,
+					msg,
+					requireContext(),
+					replyTo = replyingEvent,
+					attachment = attachment
+				)
 				activity?.runOnUiThread {
 					handleReply(null)
 					binding.input.editableText.clear()
@@ -418,56 +424,35 @@ class TimelineFragment : Fragment(), MenuProvider {
 	}
 
 	private fun checkAndLoadMoreIfNeeded(recyclerView: RecyclerView) {
+		if (isLoadingMore) return
 		val layoutManager = recyclerView.layoutManager as LinearLayoutManager
 		val firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
 		val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
 		val totalItemCount = layoutManager.itemCount
 
-		if (totalItemCount == 0) return
-		if (!isLoadingMore && timelineAdapter.isReady) {
-			// Check if RecyclerView can scroll - if not, we need to load more items
-			val canScrollVertically = recyclerView.canScrollVertically(1) || recyclerView.canScrollVertically(-1)
+		if (totalItemCount == 0 || !timelineAdapter.isReady) return
+		if ((totalItemCount - lastVisibleItem - 1) <= 5 && timelineAdapter.canLoadMoreBackward()) {
+			isLoadingMore = true
+			suspendThread {
+				timelineAdapter.loadMoreBackwards()
+			}
+			return
+		}
 
-			if (lastVisibleItem >= totalItemCount - 5 || !canScrollVertically) {
-				if (timelineAdapter.canLoadMoreForward()) {
-					Log.d("TimelineFragment", "Loading more messages (forward)")
-					isLoadingMore = true
-					suspendThread {
-						timelineAdapter.loadMoreForwards()
-						Log.d("TimelineFragment", "Loading complete")
-						isLoadingMore = false
-						// Check again after loading to see if we need even more items
-						activity?.runOnUiThread {
-							if (!recyclerView.canScrollVertically(1) && !recyclerView.canScrollVertically(-1)
-								&& timelineAdapter.canLoadMoreForward()) {
-								checkAndLoadMoreIfNeeded(recyclerView)
-							}
-						}
-					}
-				} else {
-					timelineAdapter.lastEventId?.let {
-						if (it == lastReadEvent) return@let
-						Log.d("TimelineFragment", "Marking room as read")
-						lastReadEvent = it
-						suspendThread {
-							client.client.api.room.setReceipt(RoomId(roomId), it)
-						}
-					}
-				}
-			} else if (firstVisibleItem == 0) {
-				Log.d("TimelineFragment", "Loading more messages (backward)")
+		if (firstVisibleItem <= 5) {
+			if (timelineAdapter.canLoadMoreForward()) {
 				isLoadingMore = true
 				suspendThread {
-					timelineAdapter.loadMoreBackwards()
-					Log.d("TimelineFragment", "Loading complete")
-					isLoadingMore = false
-					// Check again after loading to see if we need even more items
-					activity?.runOnUiThread {
-						if (!recyclerView.canScrollVertically(1) && !recyclerView.canScrollVertically(-1)
-							&& timelineAdapter.canLoadMoreBackward()) {
-							checkAndLoadMoreIfNeeded(recyclerView)
-						}
-					}
+					timelineAdapter.loadMoreForwards()
+				}
+			}
+			val lastEventId = timelineAdapter.lastEventId ?: return
+			val lastEventTimestamp = timelineAdapter.lastEventTimestamp
+			if (lastReadEventTimestamp < lastEventTimestamp) {
+				lastReadEventId = lastEventId
+				lastReadEventTimestamp = lastEventTimestamp
+				suspendThread {
+					client.client.api.room.setReceipt(RoomId(roomId), lastEventId)
 				}
 			}
 		}

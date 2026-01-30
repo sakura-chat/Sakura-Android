@@ -1,7 +1,6 @@
 package dev.kuylar.sakura.ui.adapter.viewholder
 
 import android.graphics.drawable.Drawable
-import android.os.Handler
 import android.text.Html
 import android.view.View
 import androidx.core.os.bundleOf
@@ -18,7 +17,6 @@ import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
 import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
 import dev.kuylar.sakura.R
-import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.AttachmentImageBinding
 import dev.kuylar.sakura.databinding.ItemMessageBinding
@@ -38,17 +36,6 @@ class OutboxViewHolder(
 	fun bind(eventModel: OutboxModel) {
 		val event = eventModel.snapshot
 
-		suspendThread {
-			val user = client.getUser(client.userId, event.roomId)
-			Handler(binding.root.context.mainLooper).post {
-				user?.let {
-					binding.senderName.text = it.name
-					Glide.with(binding.root)
-						.load(it.avatarUrl)
-						.into(binding.avatar)
-				}
-			}
-		}
 		if (eventModel.eventId != lastEventId) resetBindingState()
 		eventModel.userSnapshot?.let { handleUser(it) }
 
