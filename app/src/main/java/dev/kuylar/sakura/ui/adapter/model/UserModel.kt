@@ -1,15 +1,15 @@
-package dev.kuylar.sakura.ui.adapter.recyclerview
+package dev.kuylar.sakura.ui.adapter.model
 
+import de.connect2x.trixnity.client.store.RoomUser
+import de.connect2x.trixnity.client.store.UserPresence
+import de.connect2x.trixnity.client.user
+import de.connect2x.trixnity.core.model.UserId
 import dev.kuylar.sakura.client.Matrix
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import de.connect2x.trixnity.client.store.RoomUser
-import de.connect2x.trixnity.client.store.UserPresence
-import de.connect2x.trixnity.client.user
-import de.connect2x.trixnity.core.model.UserId
 
 class UserModel(
 	val userId: UserId,

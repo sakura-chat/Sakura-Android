@@ -75,7 +75,7 @@ import dev.kuylar.sakura.emoji.RoomEmojiCategoryModel
 import dev.kuylar.sakura.emojipicker.model.CategoryModel
 import dev.kuylar.sakura.emojipicker.model.EmojiModel
 import dev.kuylar.sakura.markdown.MarkdownHandler
-import dev.kuylar.sakura.ui.adapter.recyclerview.RoomModel
+import dev.kuylar.sakura.ui.adapter.model.RoomModel
 import io.ktor.http.Url
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope

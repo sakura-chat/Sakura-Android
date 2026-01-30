@@ -18,6 +18,8 @@ import dev.kuylar.sakura.client.MatrixSpace
 import dev.kuylar.sakura.databinding.ItemRoomBinding
 import dev.kuylar.sakura.databinding.ItemRoomCategoryBinding
 import dev.kuylar.sakura.ui.activity.MainActivity
+import dev.kuylar.sakura.ui.adapter.model.RoomModel
+import dev.kuylar.sakura.ui.adapter.model.SpaceModel
 import com.google.android.material.R as MaterialR
 
 @SuppressLint("NotifyDataSetChanged")

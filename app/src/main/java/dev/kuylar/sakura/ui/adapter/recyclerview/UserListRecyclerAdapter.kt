@@ -19,6 +19,7 @@ import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.m.Presence
+import dev.kuylar.sakura.ui.adapter.model.UserModel
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 

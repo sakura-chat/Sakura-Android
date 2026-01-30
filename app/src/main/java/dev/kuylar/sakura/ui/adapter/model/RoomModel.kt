@@ -1,4 +1,4 @@
-package dev.kuylar.sakura.ui.adapter.recyclerview
+package dev.kuylar.sakura.ui.adapter.model
 
 import de.connect2x.trixnity.client.room
 import de.connect2x.trixnity.client.store.Room
