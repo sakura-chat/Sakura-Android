@@ -6,12 +6,14 @@ import android.os.Handler
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.core.os.postDelayed
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.bumptech.glide.Glide
 import de.connect2x.trixnity.client.store.Room
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.MatrixSpace
@@ -26,7 +28,7 @@ import com.google.android.material.R as MaterialR
 class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 	RecyclerView.Adapter<SpaceTreeRecyclerAdapter.RoomListViewModel>() {
 	var layoutInflater = activity.layoutInflater
-		private var spaceTree: Map<String, MatrixSpace> = emptyMap()
+	private var spaceTree: Map<String, MatrixSpace> = emptyMap()
 	private var spaceId = "!home:SakuraNative"
 	private var firstLoadComplete = false
 	private var currentSpace = MatrixSpace(null, emptyList(), emptyList(), 0)
@@ -120,13 +122,24 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 	class CategoryViewModel(val binding: ItemRoomCategoryBinding) : RoomListViewModel(binding) {
 		fun bind(model: SpaceModel) {
 			val space = model.snapshot
+			val adapter = (bindingAdapter as SpaceTreeRecyclerAdapter)
 			val url = space.parent?.avatarUrl
 			if (url != null) Glide.with(binding.root).load(url).into(binding.icon)
 			else binding.icon.visibility = View.GONE
 			binding.title.text = space.parent?.name?.explicitName ?: "null"
 			binding.root.setOnClickListener {
-				(bindingAdapter as SpaceTreeRecyclerAdapter).toggleSpace(space.parent?.roomId?.full)
+				handleIndicator(adapter.toggleSpace(space.parent?.roomId?.full))
 			}
+			handleIndicator(adapter.expandedRooms[space.parent?.roomId?.full] ?: true)
+		}
+
+		private fun handleIndicator(expanded: Boolean) {
+			binding.indicator.setImageDrawable(
+				ContextCompat.getDrawable(
+					binding.indicator.context, if (expanded) R.drawable.ic_expanded
+					else R.drawable.ic_collapsed
+				)
+			)
 		}
 	}
 
@@ -137,12 +150,14 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 
 			binding.title.text = room.name?.explicitName ?: "null"
 			if (room.isDirect) {
-				binding.subtitle.text = (lastMessage?.content?.getOrNull() as? RoomMessageEventContent.TextBased)?.body
+				binding.subtitle.text =
+					(lastMessage?.content?.getOrNull() as? RoomMessageEventContent.TextBased)?.body
 				binding.subtitle.visibility = View.VISIBLE
 			} else {
 				binding.subtitle.visibility = View.GONE
 			}
-			binding.unreadIndicator.visibility = if (model.isUnread) View.VISIBLE else View.INVISIBLE
+			binding.unreadIndicator.visibility =
+				if (model.isUnread) View.VISIBLE else View.INVISIBLE
 			val unreadLabel = model.mentions.takeIf { it > 0 }
 			if (unreadLabel != null) {
 				binding.mentions.visibility = View.VISIBLE
@@ -173,15 +188,16 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 		}
 	}
 
-	private fun toggleSpace(id: String?) {
-		if (id == null) return
+	private fun toggleSpace(id: String?): Boolean {
+		if (id == null) return true
 
 		val wasExpanded = expandedRooms[id] ?: true
 		expandedRooms[id] = !wasExpanded
 
 		// Remove/add items accordingly
 		currentSpace.childSpaces.find { it.parent?.roomId?.full == id }?.let { childSpace ->
-			val spaceIndex = items.indexOfFirst { it is SpaceModel && it.snapshot.parent?.roomId?.full == id }
+			val spaceIndex =
+				items.indexOfFirst { it is SpaceModel && it.snapshot.parent?.roomId?.full == id }
 			if (spaceIndex != -1) {
 				if (wasExpanded) {
 					// Was expanded, now collapsing
@@ -198,6 +214,7 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 				}
 			}
 		}
+		return !wasExpanded
 	}
 
 	override fun getItemViewType(position: Int): Int {
