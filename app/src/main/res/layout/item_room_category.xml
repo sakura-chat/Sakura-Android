@@ -36,7 +36,6 @@
 		android:gravity="center_vertical"
 		android:maxLines="1"
 		android:orientation="vertical"
-		android:textColor="?colorSecondary"
 		tools:text="Test Room" />
 
 </LinearLayout>
