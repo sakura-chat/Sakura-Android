@@ -24,7 +24,9 @@ import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.RedactedEventContent
+import de.connect2x.trixnity.core.model.events.RoomEventContent
 import de.connect2x.trixnity.core.model.events.m.ReactionEventContent
+import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.room.RedactionEventContent
 import dev.kuylar.sakura.Utils.isAtBottom
@@ -222,13 +224,19 @@ class TimelineListAdapter(
 		}
 	}
 
-	private fun shouldDisplayEvent(event: TimelineEvent): Boolean {
-		return (event.relatesTo?.relationType == RelationType.Replace ||
-				event.content?.getOrNull() is RedactionEventContent ||
-				event.content?.getOrNull() is RedactedEventContent ||
-				event.content?.getOrNull() is ReactionEventContent ||
-				event.content?.getOrNull() is ShortcodeReactionEventContent).not()
+	private fun shouldDisplayEvent(event: RoomEventContent?, relatesTo: RelatesTo?): Boolean {
+		return (relatesTo?.relationType == RelationType.Replace ||
+				event is RedactionEventContent ||
+				event is RedactedEventContent ||
+				event is ReactionEventContent ||
+				event is ShortcodeReactionEventContent).not()
 	}
+
+	private fun shouldDisplayEvent(event: TimelineEvent) =
+		shouldDisplayEvent(event.content?.getOrNull(), event.relatesTo)
+
+	private fun shouldDisplayEvent(outbox: OutboxModel) =
+		shouldDisplayEvent(outbox.snapshot.content, outbox.snapshot.content.relatesTo)
 
 	private fun listenToReceipts() {
 		getReceiptJob = suspendThread {
@@ -258,7 +266,7 @@ class TimelineListAdapter(
 						snapshot,
 						client
 					) { updateEventById(eventId) }
-				}.toList()
+				}.filter { shouldDisplayEvent(it) }.toList()
 				existingModels.values.forEach { m -> m.dispose() }
 				submitList(
 					timelineState.elements.filter { shouldDisplayEvent(it.snapshot) } + newOutboxModels,
