@@ -816,7 +816,7 @@ class Matrix {
 			)
 			val mediaStoreModule = MediaStoreModule.okio(
 				Path(
-					context.filesDir.absolutePath,
+					context.cacheDir.absolutePath,
 					"mediaStore-$type"
 				).absolutePathString().toPath(true)
 			)
