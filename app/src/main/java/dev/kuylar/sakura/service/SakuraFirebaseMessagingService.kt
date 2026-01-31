@@ -1,6 +1,7 @@
 package dev.kuylar.sakura.service
 
 import android.Manifest
+import android.app.ActivityManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -12,6 +13,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.LocusIdCompat
+import androidx.core.content.getSystemService
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.os.bundleOf
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -79,6 +81,7 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 			"SakuraFirebaseMessagingService",
 			"Received notification: [$roomId/$eventId] ($unread/$missedCalls)"
 		)
+		if (isAppInForeground()) return
 		createNotificationChannel(null)
 		if (eventId != null && roomId != null) {
 			suspendThread {
@@ -268,5 +271,17 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 				}
 			}
 		}
+	}
+
+	private fun isAppInForeground(): Boolean {
+		val activityManager = getSystemService<ActivityManager>() ?: return false
+		val appProcesses = activityManager.runningAppProcesses ?: return false
+		val packageName = packageName
+		for (appProcess in appProcesses) {
+			if (appProcess.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+				&& appProcess.processName == packageName
+			) return true
+		}
+		return false
 	}
 }
