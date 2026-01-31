@@ -91,5 +91,10 @@
 	<string name="user_about_title">About Me</string>
 	<string name="unread_messages">New Messages</string>
 	<string name="sending">Sending…</string>
-	<string name="loading">Attachment loading...</string>
+	<string name="loading">Attachment loading…</string>
+	<string name="notification_rationale_title">Notifications disabled</string>
+	<string name="notification_rationale_message">You will not be able to receive notifications for any new messages, mentions, and other important stuff</string>
+	<string name="notification_rationale_enable">Turn on notifications</string>
+	<string name="notification_rationale_dismiss">Keep notifications disabled</string>
+	<string name="notification_rationale_dismiss_forever">Don\'t remind me again</string>
 </resources>

@@ -1,17 +1,22 @@
 package dev.kuylar.sakura.ui.activity
 
+import android.Manifest
 import android.app.ComponentCaller
+import android.app.NotificationManager
 import android.content.Intent
 import android.graphics.Rect
 import android.os.Bundle
+import android.provider.Settings
+import android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
 import android.util.Log
 import android.util.TypedValue
 import android.view.View
-import dev.kuylar.sakura.ui.fragment.TimelineFragment
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
+import androidx.core.content.getSystemService
 import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -22,9 +27,13 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.discord.panels.OverlappingPanelsLayout
 import com.discord.panels.PanelsChildGestureRegionObserver
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
-import com.google.android.material.R as MaterialR
+import de.connect2x.trixnity.client.store.Room
+import de.connect2x.trixnity.client.verification.ActiveDeviceVerification
+import de.connect2x.trixnity.clientserverapi.client.SyncState
+import de.connect2x.trixnity.core.model.RoomId
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
@@ -33,14 +42,12 @@ import dev.kuylar.sakura.databinding.ActivityMainBinding
 import dev.kuylar.sakura.ui.adapter.recyclerview.SpaceListRecyclerAdapter
 import dev.kuylar.sakura.ui.adapter.recyclerview.SpaceTreeRecyclerAdapter
 import dev.kuylar.sakura.ui.fragment.RoomInfoPanelFragment
+import dev.kuylar.sakura.ui.fragment.TimelineFragment
 import dev.kuylar.sakura.ui.fragment.verification.VerificationBottomSheetFragment
 import kotlinx.coroutines.launch
-import de.connect2x.trixnity.client.store.Room
-import de.connect2x.trixnity.client.verification.ActiveDeviceVerification
-import de.connect2x.trixnity.clientserverapi.client.SyncState
-import de.connect2x.trixnity.core.model.RoomId
 import javax.inject.Inject
 import kotlin.math.max
+import com.google.android.material.R as MaterialR
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.GestureRegionsListener {
@@ -49,6 +56,12 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 	private lateinit var binding: ActivityMainBinding
 	private lateinit var navController: NavController
 	private var autoNavigate = true
+	private val notificationPermissionLauncher =
+		registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+			if (!isGranted) {
+				showNotificationPermissionRationale(shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))
+			}
+		}
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -158,6 +171,9 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 	}
 
 	private fun onClientReady() {
+		if (getSystemService<NotificationManager>()?.areNotificationsEnabled() == false &&
+			getSharedPreferences("main", MODE_PRIVATE).getBoolean("notificationsDismissed", false)
+		) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
 		FirebaseMessaging.getInstance().token.addOnCompleteListener {
 			if (!it.isSuccessful) {
 				Log.e("MainActivity", "Failed to get FCM token", it.exception)
@@ -209,6 +225,28 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 
 	fun getCurrentRoomId(): String? {
 		return navController.currentBackStackEntry?.savedStateHandle?.get<String>("roomId")
+	}
+
+	private fun showNotificationPermissionRationale(canRelaunch: Boolean) {
+		MaterialAlertDialogBuilder(this)
+			.setTitle(R.string.notification_rationale_title)
+			.setMessage(R.string.notification_rationale_message)
+			.setPositiveButton(R.string.notification_rationale_enable) { _, _ ->
+				if (canRelaunch) {
+					notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+				} else {
+					val intent = Intent(ACTION_APP_NOTIFICATION_SETTINGS)
+					intent.putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+					startActivity(intent)
+				}
+			}
+			.setNeutralButton(R.string.notification_rationale_dismiss, null)
+			.setNegativeButton(R.string.notification_rationale_dismiss_forever) { _, _ ->
+				getSharedPreferences("main", MODE_PRIVATE).edit {
+					this.putBoolean("notificationsDismissed", true)
+				}
+			}
+			.show()
 	}
 
 	private fun handleStateChange(state: SyncState) {
