@@ -25,6 +25,7 @@ import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
 import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
 import dev.kuylar.sakura.R
+import dev.kuylar.sakura.Utils.getImageUrl
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.Utils.toTimestamp
 import dev.kuylar.sakura.Utils.toTimestampDate
@@ -163,7 +164,7 @@ class EventViewHolder(
 				).toInt()
 
 				Glide.with(attachmentBinding.root)
-					.load(content.url)
+					.load(content.getImageUrl())
 					.listener(object : RequestListener<Drawable> {
 						override fun onLoadFailed(
 							e: GlideException?,

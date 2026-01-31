@@ -10,6 +10,7 @@ import de.connect2x.trixnity.core.model.events.m.Presence
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
 import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
+import io.ktor.utils.io.charsets.Charset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -17,7 +18,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import java.io.InputStream
+import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
@@ -129,5 +132,15 @@ object Utils {
 			"webp" -> "image/webp"
 			else -> "application/octet-stream"
 		}
+	}
+
+	fun RoomMessageEventContent.FileBased.getImageUrl(): String? {
+		if (this.file != null) {
+			return "mxc://sakuraNative/encrypted?data=" + URLEncoder.encode(
+				Json.encodeToString(this.file),
+				Charset.defaultCharset()
+			)
+		}
+		return this.url
 	}
 }
