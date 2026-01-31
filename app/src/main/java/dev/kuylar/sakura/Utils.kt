@@ -1,15 +1,34 @@
 package dev.kuylar.sakura
 
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import android.content.pm.ShortcutInfo
 import android.text.format.DateFormat
 import android.text.format.DateUtils
+import androidx.core.app.NotificationCompat
+import androidx.core.app.Person
+import androidx.core.app.RemoteInput
+import androidx.core.content.LocusIdCompat
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.graphics.drawable.IconCompat
+import androidx.core.net.toUri
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import de.connect2x.trixnity.client.store.Room
+import de.connect2x.trixnity.client.store.RoomUser
 import de.connect2x.trixnity.client.store.TimelineEvent
+import de.connect2x.trixnity.client.store.eventId
+import de.connect2x.trixnity.client.store.roomId
+import de.connect2x.trixnity.core.model.EventId
+import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.m.Presence
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
 import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
+import dev.kuylar.sakura.service.ReplyReceiver
+import dev.kuylar.sakura.ui.activity.BubbleActivity
+import dev.kuylar.sakura.ui.activity.MainActivity
 import io.ktor.utils.io.charsets.Charset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -142,5 +161,89 @@ object Utils {
 			)
 		}
 		return this.url
+	}
+
+	private fun getBubbleMetadata(context: Context, roomId: RoomId, eventId: EventId? = null): NotificationCompat.BubbleMetadata {
+		val bubbleIntent = Intent(context, BubbleActivity::class.java).apply {
+			flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+			putExtra("roomId", roomId.full)
+			if (eventId != null)
+				putExtra("eventId", eventId.full)
+		}
+
+		val bubblePendingIntent = PendingIntent.getActivity(
+			context,
+			0,
+			bubbleIntent,
+			PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+		)
+		return NotificationCompat.BubbleMetadata.Builder(
+			bubblePendingIntent,
+			// TODO: Room icon
+			IconCompat.createWithResource(context, R.drawable.ic_notification_icon)
+		).apply {
+			setDesiredHeight(600)
+			setAutoExpandBubble(false)
+			setSuppressNotification(false)
+		}.build()
+	}
+
+	fun TimelineEvent.getBubbleMetadata(context: Context) = getBubbleMetadata(context, roomId, eventId)
+	fun Room.getBubbleMetadata(context: Context) = getBubbleMetadata(context, roomId)
+
+	fun TimelineEvent.getIntent(context: Context): Intent {
+		return Intent(context, MainActivity::class.java).apply {
+			flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+			putExtra("roomId", roomId.full)
+			putExtra("eventId", eventId.full)
+		}
+	}
+
+	private fun getReplyIntent(context: Context, roomId: RoomId, eventId: EventId? = null): Pair<RemoteInput, PendingIntent?> {
+		val remoteInput: RemoteInput =
+			RemoteInput.Builder("dev.kuylar.sakura.notification.reply")
+				.run { setLabel(context.resources.getString(R.string.notification_reply_label)) }
+				.build()
+		val replyIntent = Intent(context, ReplyReceiver::class.java).apply {
+			putExtra("roomId", roomId.full)
+			if (eventId != null)
+				putExtra("eventId", eventId.full)
+		}
+		val replyPendingIntent = PendingIntent.getBroadcast(
+			context,
+			0,
+			replyIntent,
+			PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+		)
+
+		return Pair(remoteInput, replyPendingIntent)
+	}
+
+	fun TimelineEvent.getReplyIntent(context: Context) = getReplyIntent(context, roomId, eventId)
+	fun Room.getReplyIntent(context: Context) = getReplyIntent(context, roomId)
+
+	fun Room.toShortcut(context: Context): ShortcutInfoCompat {
+		return ShortcutInfoCompat.Builder(context, roomId.full).apply {
+			setCategories(mutableSetOf(ShortcutInfo.SHORTCUT_CATEGORY_CONVERSATION))
+			setIntent(Intent(Intent.ACTION_VIEW, "dev.kuylar.sakura://room/${roomId.full}".toUri()))
+			setLongLived(true)
+			setLocusId(LocusIdCompat(roomId.full))
+			setShortLabel(name?.explicitName ?: roomId.full)
+		}.build()
+	}
+
+	fun Room.getIntent(context: Context): Intent {
+		return Intent(context, MainActivity::class.java).apply {
+			flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+			putExtra("roomId", roomId.full)
+		}
+	}
+
+	fun RoomUser.toNotificationPerson() : Person {
+		return Person.Builder().apply {
+			setName(name)
+			setKey(userId.full)
+			// TODO: User avatar
+		}.build()
 	}
 }

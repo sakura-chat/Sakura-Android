@@ -7,23 +7,17 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.pm.ShortcutInfo
-import android.content.pm.ShortcutManager
-import android.net.Uri
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.app.Person
-import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
 import androidx.core.content.LocusIdCompat
-import androidx.core.content.getSystemService
-import androidx.core.graphics.drawable.IconCompat
+import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.os.bundleOf
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import dagger.hilt.android.AndroidEntryPoint
-import de.connect2x.trixnity.client.room
+import de.connect2x.trixnity.client.notification
 import de.connect2x.trixnity.client.store.Room
 import de.connect2x.trixnity.client.store.RoomUser
 import de.connect2x.trixnity.client.store.TimelineEvent
@@ -35,13 +29,18 @@ import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
+import de.connect2x.trixnity.core.model.events.m.Presence
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils
+import dev.kuylar.sakura.Utils.getBubbleMetadata
+import dev.kuylar.sakura.Utils.getIntent
+import dev.kuylar.sakura.Utils.getReplyIntent
 import dev.kuylar.sakura.Utils.suspendThread
+import dev.kuylar.sakura.Utils.toNotificationPerson
+import dev.kuylar.sakura.Utils.toShortcut
 import dev.kuylar.sakura.client.Matrix
-import dev.kuylar.sakura.ui.activity.BubbleActivity
 import dev.kuylar.sakura.ui.activity.MainActivity
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 import kotlin.io.path.Path
@@ -49,7 +48,8 @@ import kotlin.io.path.writeText
 
 @AndroidEntryPoint
 class SakuraFirebaseMessagingService : FirebaseMessagingService() {
-	@Inject lateinit var client: Matrix
+	@Inject
+	lateinit var client: Matrix
 
 	override fun onNewToken(token: String) {
 		super.onNewToken(token)
@@ -85,13 +85,18 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 				Log.d("SakuraFirebaseMessagingService", "Loading client")
 				Log.d("SakuraFirebaseMessagingService", "Loading event")
 				val notificationEvent =
-					client.getEvent(roomId, eventId, retryCount = 3) ?: return@suspendThread
+					if (client.client.notification.onPush(roomId, eventId)) {
+						client.getEvent(roomId, eventId) ?: return@suspendThread
+					} else {
+						client.client.syncOnce(presence = Presence.OFFLINE)
+						client.getEvent(roomId, eventId, retryCount = 3) ?: return@suspendThread
+					}
 				Log.d("SakuraFirebaseMessagingService", "Loading user")
-				val senderUser = (senderUserId ?: notificationEvent.sender)?.let {
-					client.client.user.getById(roomId, it).first()
+				val senderUser = (senderUserId ?: notificationEvent.sender).let {
+					client.client.user.getById(roomId, it).firstOrNull()
 				} ?: return@suspendThread
 				Log.d("SakuraFirebaseMessagingService", "Loading room")
-				val room = client.client.room.getById(roomId).first() ?: return@suspendThread
+				val room = client.getRoom(roomId) ?: return@suspendThread
 				Log.d(
 					"SakuraFirebaseMessagingService",
 					"Creating and sending the notification (event=${notificationEvent.eventId.full}, room=${room.roomId.full}, senderUser=${senderUser.userId.full})"
@@ -118,25 +123,12 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 		val channel = "dev.kuylar.sakura.room.${event.roomId}"
 		createNotificationChannel(room)
 		val notification = NotificationCompat.Builder(applicationContext, channel).apply {
-			val person = Person.Builder().apply {
-				setName(sender.name)
-				setKey(sender.userId.full)
-				// TODO: User avatar
-			}.build()
+			val person = sender.toNotificationPerson()
 
-			val bubbleIntent = Intent(applicationContext, BubbleActivity::class.java).apply {
-				flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-				putExtra("roomId", event.roomId.full)
-				putExtra("eventId", event.eventId.full)
-			}
-
-			val shortcut = ShortcutInfo.Builder(applicationContext, room.roomId.full)
-				.setCategories(mutableSetOf(ShortcutInfo.SHORTCUT_CATEGORY_CONVERSATION))
-				.setIntent(Intent(Intent.ACTION_VIEW, Uri.parse("dev.kuylar.sakura://room/${room.roomId.full}")))
-				.setLongLived(true)
-				.setShortLabel(room.name?.explicitName ?: room.roomId.full)
-				.build()
-			getSystemService<ShortcutManager>()?.addDynamicShortcuts(listOf(shortcut))
+			val shortcut = room.toShortcut(applicationContext)
+			val shortcuts = ShortcutManagerCompat.getDynamicShortcuts(applicationContext)
+			if (ShortcutManagerCompat.getMaxShortcutCountPerActivity(applicationContext) > shortcuts.size)
+				ShortcutManagerCompat.addDynamicShortcuts(applicationContext, listOf(shortcut))
 
 			val style = NotificationCompat.MessagingStyle(person)
 			style.isGroupConversation = !room.isDirect
@@ -155,70 +147,37 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 			}
 			style.addMessage(Utils.getEventBodyText(event), event.originTimestamp, person)
 			style.setConversationTitle(room.name?.explicitName ?: room.roomId.full)
-
-			val bubblePendingIntent = PendingIntent.getActivity(
-				applicationContext,
-				0,
-				bubbleIntent,
-				PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-			)
-			val bubbleMetadata = NotificationCompat.BubbleMetadata.Builder(
-				bubblePendingIntent,
-				// TODO: Room icon
-				IconCompat.createWithResource(applicationContext, R.drawable.ic_notification_icon)
-			).apply {
-				setDesiredHeight(600)
-				setAutoExpandBubble(false)
-				setSuppressNotification(false)
-			}.build()
-
-			val intent = Intent(applicationContext, MainActivity::class.java).apply {
-				flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-				putExtra("roomId", event.roomId.full)
-				putExtra("eventId", event.eventId.full)
-			}
-
-			val remoteInput: RemoteInput =
-				RemoteInput.Builder("dev.kuylar.sakura.notification.reply")
-					.run { setLabel(resources.getString(R.string.notification_reply_label)) }
-					.build()
-			val replyIntent = Intent(applicationContext, ReplyReceiver::class.java).apply {
-				putExtra("roomId", event.roomId.full)
-				putExtra("eventId", event.eventId.full)
-			}
-			val replyPendingIntent = PendingIntent.getBroadcast(
-				applicationContext,
-				0,
-				replyIntent,
-				PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-			)
+			style.messages
+				.mapNotNull { it.person }
+				.distinctBy { it.key }.forEach {
+					addPerson(it)
+				}
 
 			setContentTitle(room.name?.explicitName ?: room.roomId.full)
 			setContentText(Utils.getEventBodyText(event))
 			setContentIntent(
 				PendingIntent.getActivity(
-					applicationContext, 0, intent,
+					applicationContext, 0, event.getIntent(applicationContext),
 					PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
 				)
 			)
 			setStyle(style)
 			setShortcutId(shortcut.id)
-			addPerson(person)
-			setBubbleMetadata(bubbleMetadata)
+			setBubbleMetadata(event.getBubbleMetadata(applicationContext))
 			setLocusId(LocusIdCompat(event.roomId.full))
 			setPriority(if (isHighPriority) NotificationCompat.PRIORITY_MAX else NotificationCompat.PRIORITY_HIGH)
 			setSmallIcon(R.drawable.ic_notification_icon)
 			setCategory(NotificationCompat.CATEGORY_MESSAGE)
-			setGroup("dev.kuylar.sakura.messages")
 			setAutoCancel(true)
 
 			// Don't spam alerts, only alert every 3 minutes
-			val alertInterval = 3 * 60 * 1000 // 3 minutes in milliseconds
+			val alertInterval = 3 * 60 * 1000
 			val shouldAlert =
 				existingNotification?.postTime?.let { System.currentTimeMillis() - it > alertInterval }
 					?: true
 			setOnlyAlertOnce(!shouldAlert)
 
+			val (remoteInput, replyPendingIntent) = event.getReplyIntent(applicationContext)
 			NotificationCompat.Action.Builder(null, remoteInput.label, replyPendingIntent)
 				.addRemoteInput(remoteInput)
 				.addExtras(bundleOf("roomId" to event.roomId.full))
@@ -232,7 +191,7 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 	private fun buildNotification(
 		isHighPriority: Boolean,
 		unread: Int,
-		missedCalls: Int
+		@Suppress("unused") missedCalls: Int
 	) {
 		val channel = "dev.kuylar.sakura.other"
 		createNotificationChannel()
