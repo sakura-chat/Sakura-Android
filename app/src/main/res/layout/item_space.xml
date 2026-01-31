@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
 	xmlns:tools="http://schemas.android.com/tools"
 	android:layout_width="wrap_content"
 	android:layout_height="wrap_content"
@@ -9,7 +10,7 @@
 		android:id="@+id/unread_indicator"
 		android:layout_width="4dp"
 		android:layout_height="8dp"
-		android:layout_gravity="center"
+		android:layout_gravity="center|start"
 		android:background="@drawable/space_indicator"
 		android:visibility="invisible"
 		tools:visibility="visible" />
@@ -18,8 +19,24 @@
 		android:id="@+id/icon"
 		android:layout_width="48dp"
 		android:layout_height="48dp"
-		android:layout_marginStart="8dp"
+		android:layout_marginStart="12dp"
 		android:background="?colorSecondaryContainer"
-		android:scaleType="centerCrop" />
+		android:scaleType="centerCrop"
+		app:shapeAppearanceOverlay="@style/circleImageView" />
 
-</LinearLayout>
+	<TextView
+		android:id="@+id/mentions"
+		style="?textAppearanceLabelLarge"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_gravity="end"
+		android:layout_marginStart="32dp"
+		android:layout_marginTop="32dp"
+		android:background="@drawable/background_text_badge"
+		android:paddingHorizontal="4dp"
+		android:textColor="?colorOnError"
+		android:visibility="gone"
+		tools:text="99+"
+		tools:visibility="visible" />
+
+</FrameLayout>

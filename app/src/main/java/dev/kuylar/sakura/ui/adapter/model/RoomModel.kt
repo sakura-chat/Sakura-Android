@@ -9,11 +9,9 @@ import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.m.ReceiptType
 import de.connect2x.trixnity.core.model.push.PushCondition
+import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 
 class RoomModel(
 	val id: RoomId,
@@ -24,13 +22,15 @@ class RoomModel(
 	private var collectJob: Job? = null
 	private var receiptJob: Job? = null
 	private var pushRuleJob: Job? = null
+	private var mentionsJob: Job? = null
 	var readReceipt = Pair(EventId(""), 0L)
 	var lastMessage: TimelineEvent? = null
 	var isUnread = false
+	var mentions = 0
 	var muted = false
 
 	init {
-		collectJob = CoroutineScope(Dispatchers.Main).launch {
+		collectJob = suspendThread {
 			client.client.room.getById(snapshot.roomId).collect {
 				snapshot = it ?: snapshot
 				snapshot.lastRelevantEventId?.let { eventId ->
@@ -40,7 +40,7 @@ class RoomModel(
 			}
 		}
 		// TODO: Handle m.marked_unread
-		receiptJob = CoroutineScope(Dispatchers.Main).launch {
+		receiptJob = suspendThread {
 			client.client.user.getReceiptsById(snapshot.roomId, client.userId).collect {
 				val lastReceipt =
 					it?.receipts?.maxBy { r -> r.value.receipt.timestamp } ?: return@collect
@@ -57,7 +57,7 @@ class RoomModel(
 				updateIsUnread()
 			}
 		}
-		pushRuleJob = CoroutineScope(Dispatchers.Main).launch {
+		pushRuleJob = suspendThread {
 			client.pushRules.collect {
 				val overrideRule = it.override?.firstOrNull { override ->
 					override.conditions?.any { condition ->
@@ -75,11 +75,20 @@ class RoomModel(
 				}
 			}
 		}
+		/*
+		mentionsJob = suspendThread {
+			client.client.notification.getCount(id).collect {
+				mentions = it
+				updateIsUnread()
+			}
+		}
+		 */
 	}
 
 	private fun updateIsUnread() {
 		isUnread = !muted &&
-			readReceipt.second < (snapshot.lastRelevantEventTimestamp?.toEpochMilliseconds() ?: 0)
+				readReceipt.second < (snapshot.lastRelevantEventTimestamp?.toEpochMilliseconds()
+			?: 0)
 		onChange?.invoke()
 	}
 
@@ -90,5 +99,7 @@ class RoomModel(
 		receiptJob = null
 		pushRuleJob?.cancel()
 		pushRuleJob = null
+		mentionsJob?.cancel()
+		mentionsJob = null
 	}
 }

@@ -81,14 +81,15 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 			"SakuraFirebaseMessagingService",
 			"Received notification: [$roomId/$eventId] ($unread/$missedCalls)"
 		)
-		if (isAppInForeground()) return
 		createNotificationChannel(null)
 		if (eventId != null && roomId != null) {
 			suspendThread {
+				val onPush = client.client.notification.onPush(roomId, eventId)
+				if (isAppInForeground()) return@suspendThread
 				Log.d("SakuraFirebaseMessagingService", "Loading client")
 				Log.d("SakuraFirebaseMessagingService", "Loading event")
 				val notificationEvent =
-					if (client.client.notification.onPush(roomId, eventId)) {
+					if (onPush) {
 						client.getEvent(roomId, eventId) ?: return@suspendThread
 					} else {
 						client.client.syncOnce(presence = Presence.OFFLINE)

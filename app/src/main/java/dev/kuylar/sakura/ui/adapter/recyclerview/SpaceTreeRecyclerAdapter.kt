@@ -134,7 +134,6 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 		fun bind(model: RoomModel) {
 			val room = model.snapshot
 			val lastMessage = model.lastMessage
-			val isUnread = model.isUnread
 
 			binding.title.text = room.name?.explicitName ?: "null"
 			if (room.isDirect) {
@@ -143,7 +142,12 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 			} else {
 				binding.subtitle.visibility = View.GONE
 			}
-			binding.unreadIndicator.visibility = if (isUnread) View.VISIBLE else View.INVISIBLE
+			binding.unreadIndicator.visibility = if (model.isUnread) View.VISIBLE else View.INVISIBLE
+			val unreadLabel = model.mentions.takeIf { it > 0 }
+			if (unreadLabel != null) {
+				binding.mentions.visibility = View.VISIBLE
+				binding.mentions.text = unreadLabel.takeIf { it < 100 }?.toString() ?: "99+"
+			} else binding.mentions.visibility = View.GONE
 			if (room.avatarUrl == null) {
 				binding.icon.visibility = View.GONE
 			} else {

@@ -73,6 +73,20 @@
 					android:maxLines="1"
 					tools:text="!abcdefghijkl:kuylar.dev" />
 			</LinearLayout>
+
+			<TextView
+				android:id="@+id/mentions"
+				style="?textAppearanceLabelLarge"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginHorizontal="8dp"
+				android:background="@drawable/background_text_badge"
+				android:paddingHorizontal="4dp"
+				android:textColor="?colorOnError"
+				android:visibility="gone"
+				tools:text="99+"
+				tools:visibility="visible" />
+
 		</LinearLayout>
 	</LinearLayout>
 </FrameLayout>

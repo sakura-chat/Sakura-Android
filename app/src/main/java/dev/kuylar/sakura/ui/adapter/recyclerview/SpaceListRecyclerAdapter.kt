@@ -95,6 +95,11 @@ class SpaceListRecyclerAdapter(
 			}
 			binding.unreadIndicator.visibility =
 				if (space.isUnread || isSelected) View.VISIBLE else View.INVISIBLE
+			val unreadLabel = space.mentions.takeIf { it > 0 }
+			if (unreadLabel != null) {
+				binding.mentions.visibility = View.VISIBLE
+				binding.mentions.text = unreadLabel.takeIf { it < 100 }?.toString() ?: "99+"
+			} else binding.mentions.visibility = View.GONE
 
 			Glide.with(binding.root).load(space.parent?.avatarUrl).into(binding.icon)
 			binding.root.setOnClickListener {

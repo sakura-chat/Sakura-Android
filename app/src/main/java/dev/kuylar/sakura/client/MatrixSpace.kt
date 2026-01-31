@@ -12,6 +12,7 @@ data class MatrixSpace(
 	var onChange: (() -> Unit)? = null
 ) {
 	var isUnread: Boolean = false
+	var mentions: Int = 0
 
 	init {
 		update()
@@ -24,5 +25,6 @@ data class MatrixSpace(
 
 	private fun update() {
 		isUnread = children.any { it.isUnread } || childSpaces.any { it.isUnread }
+		mentions = children.sumOf { it.mentions } + childSpaces.sumOf { it.mentions }
 	}
 }
