@@ -37,6 +37,7 @@ open class AttachmentInfo {
 	) : AttachmentInfo() {
 		init {
 			context.contentResolver.query(contentUri, null, null, null, null)?.use { cursor ->
+				cursor.moveToNext()
 				contentType = cursor.getColumnIndex(MediaStore.Files.FileColumns.MIME_TYPE)
 					.getCursorString(cursor)
 					?: Utils.getMimeTypeFromExtension(contentUri.lastPathSegment)

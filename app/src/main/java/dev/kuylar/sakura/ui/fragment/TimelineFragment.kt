@@ -524,9 +524,8 @@ class TimelineFragment : Fragment(), MenuProvider {
 	private fun loadAttachmentFromUri(uri: Uri) {
 		context?.let {
 			attachment =
-				if (uri.scheme?.startsWith("http") == true) {
-					AttachmentInfo.HttpUri(uri)
-				} else AttachmentInfo.ContentUri(uri, it)
+				if (uri.scheme?.startsWith("http") == true) AttachmentInfo.HttpUri(uri)
+				else AttachmentInfo.ContentUri(uri, it)
 			attachment?.onUpdate = {
 				activity?.runOnUiThread {
 					updateAttachment()
