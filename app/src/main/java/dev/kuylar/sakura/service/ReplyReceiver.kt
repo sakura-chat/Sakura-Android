@@ -12,7 +12,6 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
 import androidx.core.content.LocusIdCompat
-import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.os.bundleOf
 import dagger.hilt.android.AndroidEntryPoint
 import de.connect2x.trixnity.client.room
@@ -66,9 +65,8 @@ class ReplyReceiver : BroadcastReceiver() {
 			val channel = "dev.kuylar.sakura.room.${roomId.full}"
 			val notification =
 				NotificationCompat.Builder(context, channel).apply {
-					val person = replyUser.toNotificationPerson()
+					val person = replyUser.toNotificationPerson(context, matrix)
 					val shortcut = room.toShortcut(context)
-					ShortcutManagerCompat.addDynamicShortcuts(context, listOf(shortcut))
 
 					val style = NotificationCompat.MessagingStyle(person)
 					style.isGroupConversation = !room.isDirect
@@ -102,7 +100,7 @@ class ReplyReceiver : BroadcastReceiver() {
 						)
 					)
 					setStyle(style)
-					setShortcutId(roomId.full)
+					setShortcutId(shortcut.id)
 					setBubbleMetadata(room.getBubbleMetadata(context))
 					setLocusId(LocusIdCompat(room.roomId.full))
 					setPriority(NotificationCompat.PRIORITY_DEFAULT)

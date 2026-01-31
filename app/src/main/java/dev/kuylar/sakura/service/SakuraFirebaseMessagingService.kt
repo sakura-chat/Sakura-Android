@@ -114,7 +114,7 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 		}
 	}
 
-	private fun buildNotification(
+	private suspend fun buildNotification(
 		isHighPriority: Boolean,
 		event: TimelineEvent,
 		room: Room,
@@ -123,7 +123,7 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 		val channel = "dev.kuylar.sakura.room.${event.roomId}"
 		createNotificationChannel(room)
 		val notification = NotificationCompat.Builder(applicationContext, channel).apply {
-			val person = sender.toNotificationPerson()
+			val person = sender.toNotificationPerson(applicationContext, client)
 
 			val shortcut = room.toShortcut(applicationContext)
 			val shortcuts = ShortcutManagerCompat.getDynamicShortcuts(applicationContext)

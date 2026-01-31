@@ -4,28 +4,44 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ShortcutInfo
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.ImageDecoder
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
+import android.graphics.Rect
+import android.graphics.RectF
+import android.net.Uri
 import android.text.format.DateFormat
 import android.text.format.DateUtils
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import androidx.core.app.RemoteInput
+import androidx.core.content.FileProvider
 import androidx.core.content.LocusIdCompat
 import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.net.toUri
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import de.connect2x.trixnity.client.media
 import de.connect2x.trixnity.client.store.Room
 import de.connect2x.trixnity.client.store.RoomUser
 import de.connect2x.trixnity.client.store.TimelineEvent
+import de.connect2x.trixnity.client.store.avatarUrl
 import de.connect2x.trixnity.client.store.eventId
 import de.connect2x.trixnity.client.store.roomId
+import de.connect2x.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.m.Presence
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
 import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
+import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.service.ReplyReceiver
 import dev.kuylar.sakura.ui.activity.BubbleActivity
 import dev.kuylar.sakura.ui.activity.MainActivity
@@ -37,13 +53,23 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.io.File
 import java.io.InputStream
 import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.util.Locale
+import kotlin.io.path.Path
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.createDirectories
+import kotlin.io.path.createFile
+import kotlin.io.path.exists
+import kotlin.io.path.readText
+import kotlin.io.path.writeBytes
+import kotlin.io.path.writeText
 
 object Utils {
 	fun suspendThread(block: suspend (() -> Unit)): Job {
@@ -163,7 +189,11 @@ object Utils {
 		return this.url
 	}
 
-	private fun getBubbleMetadata(context: Context, roomId: RoomId, eventId: EventId? = null): NotificationCompat.BubbleMetadata {
+	private fun getBubbleMetadata(
+		context: Context,
+		roomId: RoomId,
+		eventId: EventId? = null
+	): NotificationCompat.BubbleMetadata {
 		val bubbleIntent = Intent(context, BubbleActivity::class.java).apply {
 			flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
 			putExtra("roomId", roomId.full)
@@ -188,7 +218,9 @@ object Utils {
 		}.build()
 	}
 
-	fun TimelineEvent.getBubbleMetadata(context: Context) = getBubbleMetadata(context, roomId, eventId)
+	fun TimelineEvent.getBubbleMetadata(context: Context) =
+		getBubbleMetadata(context, roomId, eventId)
+
 	fun Room.getBubbleMetadata(context: Context) = getBubbleMetadata(context, roomId)
 
 	fun TimelineEvent.getIntent(context: Context): Intent {
@@ -199,7 +231,11 @@ object Utils {
 		}
 	}
 
-	private fun getReplyIntent(context: Context, roomId: RoomId, eventId: EventId? = null): Pair<RemoteInput, PendingIntent?> {
+	private fun getReplyIntent(
+		context: Context,
+		roomId: RoomId,
+		eventId: EventId? = null
+	): Pair<RemoteInput, PendingIntent?> {
 		val remoteInput: RemoteInput =
 			RemoteInput.Builder("dev.kuylar.sakura.notification.reply")
 				.run { setLabel(context.resources.getString(R.string.notification_reply_label)) }
@@ -239,11 +275,105 @@ object Utils {
 		}
 	}
 
-	fun RoomUser.toNotificationPerson() : Person {
+	fun Bitmap.toCircularBitmap(): Bitmap {
+		val size = minOf(width, height)
+		val output = createBitmap(size, size)
+
+		val canvas = Canvas(output)
+		val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+		val rect = Rect(0, 0, size, size)
+		val rectF = RectF(rect)
+
+		canvas.drawOval(rectF, paint)
+
+		paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+		canvas.drawBitmap(
+			this,
+			Rect(
+				(width - size) / 2,
+				(height - size) / 2,
+				(width + size) / 2,
+				(height + size) / 2
+			),
+			rect,
+			paint
+		)
+
+		return output
+	}
+
+	suspend fun RoomUser.toNotificationPerson(context: Context, client: Matrix): Person {
+		val uri =
+			downloadIconIfNeeded(context, client, avatarUrl, "r${roomId.full}_u${userId.full}")
+		val icon = uri?.let {
+			val bitmap = ImageDecoder.decodeBitmap(
+				ImageDecoder.createSource(
+					context.contentResolver,
+					it
+				)
+			) { decoder, _, _ ->
+				decoder.isMutableRequired = true
+				decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+			}
+			IconCompat.createWithBitmap(bitmap.toCircularBitmap())
+		}
 		return Person.Builder().apply {
 			setName(name)
 			setKey(userId.full)
-			// TODO: User avatar
+			icon?.let { setIcon(it) }
 		}.build()
+	}
+
+	private suspend fun downloadIconIfNeeded(
+		context: Context,
+		client: Matrix,
+		mxcId: String?,
+		key: String
+	): Uri? {
+		if (mxcId == null) return null
+		val rootPath = Path(context.cacheDir.absolutePath, "icons")
+		val filePath = Path(rootPath.absolutePathString(), key)
+		val metaPath = Path(rootPath.absolutePathString(), "$key.meta")
+		rootPath.createDirectories()
+		if (!filePath.exists())
+			filePath.createFile()
+		val uri = FileProvider.getUriForFile(
+			context,
+			"${context.packageName}.iconprovider",
+			File(filePath.absolutePathString())
+		)
+		val meta = IconMeta(mxcId)
+
+		var shouldUpdate = true
+		if (metaPath.exists()) {
+			val savedMeta = Json.decodeFromString<IconMeta>(metaPath.readText())
+			if (savedMeta == meta) shouldUpdate = false
+		}
+
+		Log.d("IconDownloader", "shouldDownload: [$key] $mxcId: $shouldUpdate")
+		if (!shouldUpdate) return uri
+
+		val icon = client.client.media.getThumbnail(mxcId, 128, 128, ThumbnailResizingMethod.SCALE)
+		val data = icon.getOrNull() ?: return uri
+		data.toByteArray()?.let { bytes ->
+			filePath.writeBytes(bytes)
+			metaPath.writeText(Json.encodeToString(meta))
+		}
+		return uri
+	}
+
+	@Serializable
+	private data class IconMeta(
+		val url: String,
+		val version: Int = 1,
+	) {
+		override fun equals(other: Any?): Boolean {
+			return if (other is IconMeta) {
+				this.url == other.url
+			} else false
+		}
+
+		override fun hashCode() = "v=$version;$url".hashCode()
 	}
 }
