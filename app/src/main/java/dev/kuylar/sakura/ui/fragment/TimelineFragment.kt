@@ -429,6 +429,12 @@ class TimelineFragment : Fragment(), MenuProvider {
 		}
 	}
 
+	fun closeKeyboard() {
+		requireContext().getSystemService<InputMethodManager>()
+			?.hideSoftInputFromWindow(binding.input.windowToken, 0)
+		binding.emojiPicker.visibility = View.GONE
+	}
+
 	private fun checkAndLoadMoreIfNeeded(recyclerView: RecyclerView) {
 		if (isLoadingMore) return
 		val layoutManager = recyclerView.layoutManager as LinearLayoutManager

@@ -26,6 +26,7 @@ import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.discord.panels.OverlappingPanelsLayout
+import com.discord.panels.PanelState
 import com.discord.panels.PanelsChildGestureRegionObserver
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.messaging.FirebaseMessaging
@@ -50,7 +51,8 @@ import kotlin.math.max
 import com.google.android.material.R as MaterialR
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.GestureRegionsListener {
+class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.GestureRegionsListener,
+	OverlappingPanelsLayout.PanelStateListener {
 	@Inject
 	lateinit var client: Matrix
 	private lateinit var binding: ActivityMainBinding
@@ -134,6 +136,7 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 
 		binding.roomsPanel.spacesRecycler.layoutManager = LinearLayoutManager(this)
 		binding.roomsPanel.roomsRecycler.layoutManager = LinearLayoutManager(this)
+		binding.overlappingPanels.registerStartPanelStateListeners(this)
 
 		handleStateChange(SyncState.STOPPED)
 		suspendThread {
@@ -341,5 +344,15 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 
 	override fun onGestureRegionsUpdate(gestureRegions: List<Rect>) {
 		binding.overlappingPanels.setChildGestureRegions(gestureRegions)
+	}
+
+	override fun onPanelStateChange(panelState: PanelState) {
+		val navHostFragment =
+			supportFragmentManager.findFragmentById(binding.navHostFragment.id) as NavHostFragment
+		navHostFragment.childFragmentManager.fragments.forEach { fragment ->
+			if (fragment is TimelineFragment) {
+				fragment.closeKeyboard()
+			}
+		}
 	}
 }
