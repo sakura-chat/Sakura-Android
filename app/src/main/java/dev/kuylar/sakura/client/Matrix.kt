@@ -75,10 +75,10 @@ import dev.kuylar.sakura.client.customevent.SpaceOrderEventContent
 import dev.kuylar.sakura.client.customevent.SpaceParentEventContent
 import dev.kuylar.sakura.client.customevent.UserImagePackEventContent
 import dev.kuylar.sakura.client.customevent.UserNoteEventContent
+import dev.kuylar.sakura.emoji.CustomEmojiModel
 import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
 import dev.kuylar.sakura.emoji.RoomEmojiCategoryModel
 import dev.kuylar.sakura.emojipicker.model.CategoryModel
-import dev.kuylar.sakura.emojipicker.model.EmojiModel
 import dev.kuylar.sakura.markdown.MarkdownHandler
 import dev.kuylar.sakura.ui.adapter.model.RoomModel
 import dev.kuylar.sakura.ui.models.AttachmentInfo
@@ -676,7 +676,7 @@ class Matrix {
 		}, userId)
 	}
 
-	suspend fun getRoomEmoji(roomId: RoomId): Map<RoomEmojiCategoryModel, List<EmojiModel>> {
+	suspend fun getRoomEmoji(roomId: RoomId): Map<RoomEmojiCategoryModel, List<CustomEmojiModel>> {
 		startUpdatingRecentEmojiCache()
 		val packs = client.room.getAllState<RoomImagePackEventContent>(roomId).firstOrNull()
 			?.map { it.value.first() }
@@ -699,11 +699,11 @@ class Matrix {
 		}.toMap()
 	}
 
-	suspend fun getAccountEmoji(): Map<CategoryModel, List<EmojiModel>> {
+	suspend fun getAccountEmoji(): Map<CategoryModel, List<CustomEmojiModel>> {
 		startUpdatingRecentEmojiCache()
 		val roomEmojis =
 			client.user.getAccountData<EmoteRoomsEventContent>().firstOrNull() ?: return emptyMap()
-		val res = mutableMapOf<CategoryModel, List<EmojiModel>>()
+		val res = mutableMapOf<CategoryModel, List<CustomEmojiModel>>()
 		roomEmojis.rooms?.forEach { (roomId, packs) ->
 			val roomEmojis = getRoomEmoji(RoomId(roomId))
 			if (packs.isEmpty()) res.putAll(roomEmojis)

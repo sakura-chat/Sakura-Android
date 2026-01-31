@@ -12,17 +12,14 @@ import com.bumptech.glide.request.transition.Transition
 import dev.kuylar.mentionsedittext.ImageMentionSpan
 import dev.kuylar.mentionsedittext.MentionSpan
 import dev.kuylar.sakura.R
-import dev.kuylar.sakura.emojipicker.model.EmojiModel
 
-class RoomCustomEmojiModel(val uri: String, val shortcode: String) : EmojiModel(":$shortcode:") {
+class RoomCustomEmojiModel(val uri: String, val shortcode: String) : CustomEmojiModel(":$shortcode:") {
 	override fun bind(view: View) {
 		view.findViewById<TextView>(R.id.text).visibility = View.GONE
 		val iv = view.findViewById<ImageView>(R.id.image)
 		iv.visibility = View.VISIBLE
-		Glide.with(view)
-			.load(uri)
-			.into(iv)
 		iv.contentDescription = shortcode
+		Glide.with(view).load(uri).into(iv)
 		view.setOnLongClickListener {
 			Toast.makeText(view.context, shortcode, Toast.LENGTH_SHORT).show()
 			true

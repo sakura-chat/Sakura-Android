@@ -55,7 +55,6 @@ import dev.kuylar.sakura.emoji.CustomEmojiModel
 import dev.kuylar.sakura.emoji.EmojiManager
 import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
 import dev.kuylar.sakura.emojipicker.model.CategoryModel
-import dev.kuylar.sakura.emojipicker.model.EmojiModel
 import dev.kuylar.sakura.markdown.MarkdownHandler
 import dev.kuylar.sakura.ui.adapter.listadapter.TimelineListAdapter
 import dev.kuylar.sakura.ui.models.AttachmentInfo
@@ -490,11 +489,11 @@ class TimelineFragment : Fragment(), MenuProvider {
 			val recent = client.getRecentEmojis().take(24)
 			EmojiManager.getInstance(requireContext()).getEmojiByCategory().let { map ->
 				activity?.runOnUiThread {
-					val items = emptyMap<CategoryModel, List<EmojiModel>>().toMutableMap()
+					val items = emptyMap<CategoryModel, List<CustomEmojiModel>>().toMutableMap()
 
-					val allEmojis: Map<CategoryModel, List<EmojiModel>> =
+					val allEmojis: Map<CategoryModel, List<CustomEmojiModel>> =
 						map.mapKeys { CustomEmojiCategoryModel(it.key) }
-							.mapValues { it.value.map { e -> EmojiModel(e.surrogates) } }
+							.mapValues { it.value.map { e -> CustomEmojiModel(e.surrogates) } }
 					allEmojis.entries.toMutableList().apply {
 						add(
 							0,
