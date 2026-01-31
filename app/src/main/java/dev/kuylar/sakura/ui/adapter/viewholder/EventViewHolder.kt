@@ -35,7 +35,6 @@ import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
 import dev.kuylar.sakura.databinding.AttachmentImageBinding
 import dev.kuylar.sakura.databinding.ItemMessageBinding
 import dev.kuylar.sakura.databinding.ItemReactionBinding
-import dev.kuylar.sakura.databinding.ItemReactionSelectedBinding
 import dev.kuylar.sakura.markdown.MarkdownHandler
 import dev.kuylar.sakura.ui.adapter.listadapter.TimelineListAdapter
 import dev.kuylar.sakura.ui.adapter.model.EventModel
@@ -235,17 +234,8 @@ class EventViewHolder(
 			.sortedBy { -it.value.minBy { e -> e.originTimestamp }.originTimestamp }
 			.forEach { (key, list) ->
 				val weReacted = list.firstOrNull { it.sender == client.userId }
-				val reactionView = if (weReacted != null) {
-					ItemReactionSelectedBinding.inflate(
-						layoutInflater,
-						binding.reactions,
-						false
-					)
-				} else {
-					ItemReactionBinding.inflate(layoutInflater, binding.reactions, false)
-				}
 				val reactionBinding =
-					ItemReactionBinding.bind(reactionView.root)
+					ItemReactionBinding.inflate(layoutInflater, binding.reactions, false)
 				val shortcode = list
 					.mapNotNull { it.content?.getOrNull() as? ShortcodeReactionEventContent }
 					.groupBy { (it.shortcode ?: it.beeperShortcode)?.trim(':') }
@@ -261,18 +251,18 @@ class EventViewHolder(
 					reactionBinding.emojiUnicode.visibility = View.VISIBLE
 					reactionBinding.emojiUnicode.text = key
 				}
+				reactionBinding.root.setBackgroundResource(
+					if (weReacted != null) R.drawable.background_reaction_selected
+					else R.drawable.background_reaction
+				)
 				reactionBinding.counter.text = list.size.toString()
-				if (weReacted == null) {
-					reactionBinding.root.setOnClickListener {
-						reactionBinding.root.setOnClickListener(null)
-						suspendThread {
+				reactionBinding.root.setOnClickListener {
+					reactionBinding.root.setOnClickListener(null)
+					reactionBinding.root.alpha = .5f
+					suspendThread {
+						if (weReacted == null) {
 							client.reactToEvent(event.roomId, event.eventId, key, shortcode)
-						}
-					}
-				} else {
-					reactionBinding.root.setOnClickListener {
-						reactionBinding.root.setOnClickListener(null)
-						suspendThread {
+						} else {
 							client.redactEvent(weReacted.roomId, weReacted.eventId)
 						}
 					}

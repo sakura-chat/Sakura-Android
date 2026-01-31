@@ -4,19 +4,24 @@
 	android:layout_width="wrap_content"
 	android:layout_height="wrap_content"
 	android:background="@drawable/background_reaction"
+	android:clickable="true"
+	android:focusable="true"
 	android:paddingHorizontal="8dp"
 	android:paddingVertical="4dp">
 
 	<FrameLayout
 		android:layout_width="24dp"
 		android:layout_height="24dp"
-		android:background="?selectableItemBackground">
+		android:clickable="false"
+		android:focusable="false">
 
 		<ImageView
 			android:id="@+id/emojiImage"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
+			android:clickable="false"
 			android:contentDescription="@string/custom_emoji"
+			android:focusable="false"
 			android:visibility="gone" />
 
 		<TextView
@@ -24,8 +29,8 @@
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
 			android:autoSizeTextType="uniform"
-			android:clickable="true"
-			android:focusable="true"
+			android:clickable="false"
+			android:focusable="false"
 			android:gravity="center"
 			android:textAlignment="center"
 			android:textIsSelectable="false"
@@ -37,9 +42,8 @@
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
 		android:layout_marginStart="4dp"
-		android:autoSizeTextType="uniform"
-		android:clickable="true"
-		android:focusable="true"
+		android:clickable="false"
+		android:focusable="false"
 		android:gravity="center"
 		android:textAlignment="center"
 		android:textIsSelectable="false"
