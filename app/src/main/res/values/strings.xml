@@ -97,4 +97,5 @@
 	<string name="notification_rationale_enable">Turn on notifications</string>
 	<string name="notification_rationale_dismiss">Keep notifications disabled</string>
 	<string name="notification_rationale_dismiss_forever">Don\'t remind me again</string>
+	<string name="emoji_category_account">Your Emoji</string>
 </resources>

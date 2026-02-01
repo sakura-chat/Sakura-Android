@@ -6,5 +6,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 class UserImagePackEventContent : GlobalAccountDataEventContent {
 	var images: Map<String, MatrixEmote>? = null
-	var packs: MatrixEmotePack? = null
+	var pack: MatrixEmotePack? = null
 }

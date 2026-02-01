@@ -484,7 +484,8 @@ class TimelineFragment : Fragment(), MenuProvider {
 
 	private fun updateEmojiPicker() {
 		suspendThread {
-			val roomEmoji = client.getRoomEmoji(RoomId(roomId))
+			val roomEmoji = client.getRoomEmoji(RoomId(roomId)).filter { it.value.isNotEmpty() }
+			val accountEmojiPacks = client.getSavedImagePacks()
 			val accountEmoji = client.getAccountEmoji()
 			val recent = client.getRecentEmojis().take(24)
 			EmojiManager.getInstance(requireContext()).getEmojiByCategory().let { map ->
@@ -499,10 +500,17 @@ class TimelineFragment : Fragment(), MenuProvider {
 							0,
 							entry(
 								CustomEmojiCategoryModel("recent"),
-								recent.map { CustomEmojiModel(it.emoji) })
+								recent.map {
+									if (it.emoji.startsWith("mxc://"))
+										RoomCustomEmojiModel(it.emoji, "")
+									else CustomEmojiModel(it.emoji)
+								})
 						)
-						accountEmoji.forEach {
+						accountEmojiPacks.forEach {
 							if (roomEmoji.keys.any { other -> other == it }) return@forEach
+							add(1, it)
+						}
+						accountEmoji?.let {
 							add(1, it)
 						}
 						roomEmoji.forEach {

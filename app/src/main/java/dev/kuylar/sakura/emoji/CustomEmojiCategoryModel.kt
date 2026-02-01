@@ -19,6 +19,7 @@ class CustomEmojiCategoryModel(name: String): CategoryModel(name) {
 			"unicode:objects" -> R.string.emoji_category_objects
 			"unicode:symbols" -> R.string.emoji_category_symbols
 			"unicode:flags" -> R.string.emoji_category_flags
+			"#!accountImagePack" -> R.string.emoji_category_account
 			else -> name.substringAfter(":")
 		}
 		when (titleRes) {
@@ -38,6 +39,7 @@ class CustomEmojiCategoryModel(name: String): CategoryModel(name) {
 			"unicode:objects" -> R.drawable.ic_emoji_category_objects
 			"unicode:symbols" -> R.drawable.ic_emoji_category_symbols
 			"unicode:flags" -> R.drawable.ic_emoji_category_flags
+			"#!accountImagePack" -> R.drawable.ic_emoji_category_account
 			else -> throw IllegalArgumentException("Invalid emoji category: $name")
 		})
 	}

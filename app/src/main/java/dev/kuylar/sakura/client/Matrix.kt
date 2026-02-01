@@ -75,6 +75,7 @@ import dev.kuylar.sakura.client.customevent.SpaceOrderEventContent
 import dev.kuylar.sakura.client.customevent.SpaceParentEventContent
 import dev.kuylar.sakura.client.customevent.UserImagePackEventContent
 import dev.kuylar.sakura.client.customevent.UserNoteEventContent
+import dev.kuylar.sakura.emoji.CustomEmojiCategoryModel
 import dev.kuylar.sakura.emoji.CustomEmojiModel
 import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
 import dev.kuylar.sakura.emoji.RoomEmojiCategoryModel
@@ -94,6 +95,7 @@ import kotlinx.coroutines.launch
 import okio.Path.Companion.toPath
 import org.koin.core.module.Module
 import org.koin.dsl.module
+import java.util.Map.entry
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.io.path.Path
@@ -699,7 +701,7 @@ class Matrix {
 		}.toMap()
 	}
 
-	suspend fun getAccountEmoji(): Map<CategoryModel, List<CustomEmojiModel>> {
+	suspend fun getSavedImagePacks(): Map<CategoryModel, List<CustomEmojiModel>> {
 		startUpdatingRecentEmojiCache()
 		val roomEmojis =
 			client.user.getAccountData<EmoteRoomsEventContent>().firstOrNull() ?: return emptyMap()
@@ -709,7 +711,18 @@ class Matrix {
 			if (packs.isEmpty()) res.putAll(roomEmojis)
 			else res.putAll(roomEmojis.filterKeys { it.stateKey in packs })
 		}
-		return res
+		return res.filter { it.value.isNotEmpty() }
+	}
+
+	suspend fun getAccountEmoji(): Map.Entry<CategoryModel, List<CustomEmojiModel>>? {
+		startUpdatingRecentEmojiCache()
+		val userEmojis = client.user.getAccountData<UserImagePackEventContent>().firstOrNull()
+		if (!userEmojis?.images.isNullOrEmpty()) {
+			val cat = CustomEmojiCategoryModel(userEmojis.pack?.displayName ?: "#!accountImagePack")
+			val images = userEmojis.images?.filter { it.value.usage?.contains("emoticon") ?: true }
+			return entry(cat, images?.map { RoomCustomEmojiModel(it.value.url, it.key) } ?: emptyList())
+		}
+		return null
 	}
 
 	// TODO: Create DM channel here too
