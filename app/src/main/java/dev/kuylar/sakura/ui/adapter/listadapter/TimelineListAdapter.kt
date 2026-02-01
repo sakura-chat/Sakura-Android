@@ -126,10 +126,11 @@ class TimelineListAdapter(
 
 	override fun getItemCount() = if (isReady) super.getItemCount() else 0
 
-	override fun submitList(list: List<TimelineModel?>?) = super.submitList(list?.reversed())
+	override fun submitList(list: List<TimelineModel?>?) =
+		super.submitList(list?.sortedByDescending { it?.timestamp })
 
 	override fun submitList(list: List<TimelineModel?>?, commitCallback: Runnable?) =
-		super.submitList(list?.reversed(), commitCallback)
+		super.submitList(list?.sortedByDescending { it?.timestamp }, commitCallback)
 
 	override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TimelineViewHolder {
 		return when (viewType) {
@@ -286,7 +287,6 @@ class TimelineListAdapter(
 
 		val newEventModels = delta.elementsAfterChange
 			.filter { shouldDisplayEvent(it.snapshot) }
-			.sortedBy { it.snapshot.originTimestamp }
 
 		val toRemoveOutbox = arrayListOf<Int>()
 		outboxModels.forEachIndexed { i, it ->

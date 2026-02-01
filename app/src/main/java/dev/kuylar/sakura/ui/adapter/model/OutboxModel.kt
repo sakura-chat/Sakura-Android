@@ -23,6 +23,8 @@ class OutboxModel(
 		get() = snapshot.eventId ?: EventId(snapshot.transactionId)
 	override val roomId: RoomId
 		get() = snapshot.roomId
+	override val timestamp: Long
+		get() = snapshot.createdAt.toEpochMilliseconds() + 1000 * 60 * 60
 	override val type: Int
 		get() = TimelineModel.TYPE_OUTBOX
 	private val jobs = mutableListOf<Job>()

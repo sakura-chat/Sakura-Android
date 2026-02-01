@@ -9,6 +9,7 @@ interface TimelineModel {
 	val type: Int
 	val eventId: EventId
 	val roomId: RoomId
+	val timestamp: Long
 
 	fun dispose()
 

@@ -6,6 +6,7 @@ import de.connect2x.trixnity.client.room.getTimelineEventReactionAggregation
 import de.connect2x.trixnity.client.room.getTimelineEventReplaceAggregation
 import de.connect2x.trixnity.client.store.RoomUser
 import de.connect2x.trixnity.client.store.TimelineEvent
+import de.connect2x.trixnity.client.store.originTimestamp
 import de.connect2x.trixnity.client.store.sender
 import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.EventId
@@ -37,6 +38,8 @@ class EventModel(
 	private var userJob: Job? = null
 	override val type: Int
 		get() = TimelineModel.Companion.TYPE_EVENT
+	override val timestamp: Long
+		get() = snapshot.originTimestamp
 
 	init {
 		collectJob = suspendThread {
