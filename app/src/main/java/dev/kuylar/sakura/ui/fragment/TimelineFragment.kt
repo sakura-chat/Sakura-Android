@@ -20,6 +20,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.getSystemService
+import androidx.core.os.bundleOf
 import androidx.core.view.ContentInfoCompat
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
@@ -33,8 +34,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.discord.panels.PanelsChildGestureRegionObserver
-import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
 import de.connect2x.trixnity.client.room
 import de.connect2x.trixnity.client.store.eventId
@@ -50,19 +49,15 @@ import dev.kuylar.sakura.Utils.bytesToString
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentTimelineBinding
-import dev.kuylar.sakura.emoji.CustomEmojiCategoryModel
-import dev.kuylar.sakura.emoji.CustomEmojiModel
-import dev.kuylar.sakura.emoji.EmojiManager
 import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
-import dev.kuylar.sakura.emojipicker.model.CategoryModel
 import dev.kuylar.sakura.markdown.MarkdownHandler
 import dev.kuylar.sakura.ui.adapter.listadapter.TimelineListAdapter
+import dev.kuylar.sakura.ui.fragment.picker.EmojiPickerFragment
 import dev.kuylar.sakura.ui.models.AttachmentInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import java.util.Map.entry
 import javax.inject.Inject
 import kotlin.math.max
 
@@ -157,15 +152,8 @@ class TimelineFragment : Fragment(), MenuProvider {
 		binding.buttonEmoji.setOnClickListener {
 			requireContext().getSystemService<InputMethodManager>()
 				?.hideSoftInputFromWindow(binding.input.windowToken, 0)
-			binding.emojiPicker.visibility =
-				if (binding.emojiPicker.isVisible) View.GONE else View.VISIBLE
-		}
-		binding.emojiPicker.setOnEmojiSelectedCallback { emoji ->
-			if (emoji is RoomCustomEmojiModel) {
-				binding.input.insertMention(emoji.toMention(requireContext()))
-			} else {
-				binding.input.editableText.insert(binding.input.selectionStart, emoji.name)
-			}
+			binding.picker.visibility =
+				if (binding.picker.isVisible) View.GONE else View.VISIBLE
 		}
 
 		binding.attachment.buttonRemove.setOnClickListener {
@@ -194,6 +182,34 @@ class TimelineFragment : Fragment(), MenuProvider {
 				}
 			}
 		}
+		childFragmentManager.setFragmentResultListener("picker_action", this) { _, bundle ->
+			val action = bundle.getString("action") ?: return@setFragmentResultListener
+			val params = bundle.getStringArray("params")?.toList() ?: emptyList<String>()
+
+			when (action) {
+				"custom_emoji" -> {
+					val model = RoomCustomEmojiModel(params[0], params[1])
+					binding.input.insertMention(model.toMention(requireContext()))
+				}
+
+				"unicode_emoji" -> {
+					binding.input.editableText.insert(binding.input.selectionStart, params[0])
+				}
+
+				else -> {
+					Toast.makeText(
+						requireContext(),
+						"Picker action $action with params (${params.joinToString(", ") { "\"$it\"" }})",
+						Toast.LENGTH_LONG
+					).show()
+				}
+			}
+		}
+		childFragmentManager.beginTransaction()
+			.replace(R.id.picker, EmojiPickerFragment().apply {
+				arguments = bundleOf("roomId" to roomId)
+			})
+			.commit()
 
 		updateEmojiPicker()
 
@@ -232,9 +248,6 @@ class TimelineFragment : Fragment(), MenuProvider {
 				}
 			}
 		}
-		val ignoreView =
-			binding.emojiPicker.findViewById<TabLayout>(dev.kuylar.sakura.emojipicker.R.id.tabLayout)
-		PanelsChildGestureRegionObserver.Provider.get().register(ignoreView)
 	}
 
 	private fun sendMessage() {
@@ -423,7 +436,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 			onKeyboardClosed()
 		} else {
 			onKeyboardOpened()
-			(binding.emojiPicker.layoutParams as LinearLayout.LayoutParams).height =
+			(binding.picker.layoutParams as LinearLayout.LayoutParams).height =
 				max(resources.displayMetrics.density.toInt() * 300, bottom)
 		}
 	}
@@ -431,7 +444,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 	fun closeKeyboard() {
 		requireContext().getSystemService<InputMethodManager>()
 			?.hideSoftInputFromWindow(binding.input.windowToken, 0)
-		binding.emojiPicker.visibility = View.GONE
+		binding.picker.visibility = View.GONE
 	}
 
 	private fun checkAndLoadMoreIfNeeded(recyclerView: RecyclerView) {
@@ -474,7 +487,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 	}
 
 	private fun onKeyboardOpened() {
-		binding.emojiPicker.visibility = View.GONE
+		binding.picker.visibility = View.GONE
 	}
 
 	override fun onDestroy() {
@@ -483,46 +496,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 	}
 
 	private fun updateEmojiPicker() {
-		suspendThread {
-			val roomEmoji = client.getRoomEmoji(RoomId(roomId)).filter { it.value.isNotEmpty() }
-			val accountEmojiPacks = client.getSavedImagePacks()
-			val accountEmoji = client.getAccountEmoji()
-			val recent = client.getRecentEmojis().take(24)
-			EmojiManager.getInstance(requireContext()).getEmojiByCategory().let { map ->
-				activity?.runOnUiThread {
-					val items = emptyMap<CategoryModel, List<CustomEmojiModel>>().toMutableMap()
 
-					val allEmojis: Map<CategoryModel, List<CustomEmojiModel>> =
-						map.mapKeys { CustomEmojiCategoryModel(it.key) }
-							.mapValues { it.value.map { e -> CustomEmojiModel(e.surrogates) } }
-					allEmojis.entries.toMutableList().apply {
-						add(
-							0,
-							entry(
-								CustomEmojiCategoryModel("recent"),
-								recent.map {
-									if (it.emoji.startsWith("mxc://"))
-										RoomCustomEmojiModel(it.emoji, "")
-									else CustomEmojiModel(it.emoji)
-								})
-						)
-						accountEmojiPacks.forEach {
-							if (roomEmoji.keys.any { other -> other == it }) return@forEach
-							add(1, it)
-						}
-						accountEmoji?.let {
-							add(1, it)
-						}
-						roomEmoji.forEach {
-							add(1, it)
-						}
-					}.associateByTo(items, { it.key }, { it.value })
-
-					binding.emojiPicker.setEmojiLayout(R.layout.item_emoji)
-					binding.emojiPicker.loadItems(items)
-				}
-			}
-		}
 	}
 
 	private fun pickAttachment() {

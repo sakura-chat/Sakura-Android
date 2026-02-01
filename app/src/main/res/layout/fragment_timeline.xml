@@ -167,9 +167,17 @@
 			app:icon="@drawable/ic_send" />
 	</LinearLayout>
 
-	<dev.kuylar.sakura.emojipicker.EmojiPicker
-		android:id="@+id/emoji_picker"
+	<LinearLayout
+		android:id="@+id/picker"
 		android:layout_width="match_parent"
 		android:layout_height="300dp"
-		android:visibility="gone" />
+		android:orientation="vertical"
+		android:visibility="gone">
+
+		<androidx.fragment.app.FragmentContainerView
+			android:id="@+id/emoji_picker"
+			android:layout_width="match_parent"
+			android:layout_height="0dp"
+			android:layout_weight="1" />
+	</LinearLayout>
 </LinearLayout>

@@ -718,7 +718,9 @@ class Matrix {
 		startUpdatingRecentEmojiCache()
 		val userEmojis = client.user.getAccountData<UserImagePackEventContent>().firstOrNull()
 		if (!userEmojis?.images.isNullOrEmpty()) {
-			val cat = CustomEmojiCategoryModel(userEmojis.pack?.displayName ?: "#!accountImagePack")
+			val cat =
+				CustomEmojiCategoryModel(userEmojis.pack?.displayName?.takeIf { it.isNotBlank() }
+					?: "#!accountImagePack")
 			val images = userEmojis.images?.filter { it.value.usage?.contains("emoticon") ?: true }
 			return entry(cat, images?.map { RoomCustomEmojiModel(it.value.url, it.key) } ?: emptyList())
 		}
