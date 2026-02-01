@@ -17,7 +17,7 @@ class MxcDataFetcher(val model: Uri, val width: Int, val height: Int) : DataFetc
 		priority: Priority,
 		callback: DataFetcher.DataCallback<in ByteBuffer>
 	) {
-		val isFullMedia = !model.getBooleanQueryParameter("thumbnail", true)
+		val isFullMedia = !model.getBooleanQueryParameter("thumbnail", true) || width < 0 || height < 0
 		val isEncrypted = model.host == "sakuraNative" && model.path == "/encrypted"
 
 		@Suppress("DEPRECATION")

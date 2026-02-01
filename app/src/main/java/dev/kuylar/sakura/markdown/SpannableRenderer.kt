@@ -2,7 +2,6 @@ package dev.kuylar.sakura.markdown
 
 import android.content.Context
 import android.graphics.Typeface
-import android.graphics.drawable.Drawable
 import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.text.style.ForegroundColorSpan
@@ -12,13 +11,24 @@ import android.text.style.TypefaceSpan
 import android.text.style.URLSpan
 import android.util.TypedValue
 import androidx.core.text.toSpannable
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
-import dev.kuylar.mentionsedittext.ImageMentionSpan
+import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
 import dev.kuylar.sakura.markdown.emoji.CustomEmojiNode
+import org.commonmark.node.BlockQuote
+import org.commonmark.node.BulletList
+import org.commonmark.node.Code
+import org.commonmark.node.Emphasis
+import org.commonmark.node.FencedCodeBlock
+import org.commonmark.node.HardLineBreak
+import org.commonmark.node.Heading
+import org.commonmark.node.IndentedCodeBlock
+import org.commonmark.node.Link
+import org.commonmark.node.ListItem
+import org.commonmark.node.Node
+import org.commonmark.node.OrderedList
+import org.commonmark.node.Paragraph
+import org.commonmark.node.StrongEmphasis
+import org.commonmark.node.Text
 import com.google.android.material.R as MaterialR
-import org.commonmark.node.*
 
 class SpannableRenderer(val context: Context) {
 	fun render(node: Node): Spannable {
@@ -190,23 +200,10 @@ class SpannableRenderer(val context: Context) {
 
 			is CustomEmojiNode -> {
 				val start = builder.length
+				val model = RoomCustomEmojiModel(node.uri, node.shortcode)
 				builder.append(":${node.shortcode}:", builder)
 				builder.setSpan(
-					ImageMentionSpan(":${node.shortcode}:") {
-						Glide.with(context)
-							.asDrawable()
-							.load(node.uri)
-							.into(object : CustomTarget<Drawable>() {
-								override fun onResourceReady(
-									resource: Drawable,
-									transition: Transition<in Drawable>?
-								) {
-									it(resource)
-								}
-
-								override fun onLoadCleared(placeholder: Drawable?) {}
-							})
-					},
+					model.toMention(context),
 					start,
 					builder.length,
 					Spannable.SPAN_EXCLUSIVE_EXCLUSIVE

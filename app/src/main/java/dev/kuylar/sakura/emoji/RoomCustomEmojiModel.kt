@@ -1,11 +1,12 @@
 package dev.kuylar.sakura.emoji
 
+import android.content.Context
 import android.graphics.drawable.Drawable
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
@@ -26,16 +27,19 @@ class RoomCustomEmojiModel(val uri: String, val shortcode: String) : CustomEmoji
 		}
 	}
 
-	fun toMention(fragment: Fragment): MentionSpan {
+	fun toMention(context: Context): MentionSpan {
 		return ImageMentionSpan(":$shortcode~${uri.substringAfter("mxc://")}:") {
-			Glide.with(fragment)
+			Log.d("ImageMentionSpan", "Loading image $uri")
+			Glide.with(context)
 				.asDrawable()
 				.load(uri)
+				.error(R.drawable.ic_emoji)
 				.into(object : CustomTarget<Drawable>() {
 					override fun onResourceReady(
 						resource: Drawable,
 						transition: Transition<in Drawable>?
 					) {
+						Log.d("ImageMentionSpan", "Image $uri loaded")
 						it(resource)
 					}
 

@@ -162,7 +162,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 		}
 		binding.emojiPicker.setOnEmojiSelectedCallback { emoji ->
 			if (emoji is RoomCustomEmojiModel) {
-				binding.input.insertMention(emoji.toMention(this))
+				binding.input.insertMention(emoji.toMention(requireContext()))
 			} else {
 				binding.input.editableText.insert(binding.input.selectionStart, emoji.name)
 			}
