@@ -75,12 +75,12 @@ class MarkdownHandler @Inject constructor() {
 					val isEmoji = node.hasAttr("data-mx-emoticon")
 					val altText = node.attr("alt").takeUnless { x -> x.isBlank() }?.trim(':')
 						?: node.attr("title").takeUnless { x -> x.isBlank() }?.trim(':')
-						?: "emoji"
+						?: if (isEmoji) "emoji" else "Image"
 					val url = node.attr("src").substringAfter("mxc://")
 					if (isEmoji) {
 						":$altText~$url:"
 					} else {
-						altText
+						"![$altText]($url)"
 					}
 				}
 
@@ -105,6 +105,7 @@ class MarkdownHandler @Inject constructor() {
 
 				"p" -> {
 					val sb = StringBuilder()
+					sb.appendLine()
 					node.childNodes().forEach {
 						sb.append(htmlNodeToMarkdown(it, node.nodeName()))
 					}
@@ -114,6 +115,7 @@ class MarkdownHandler @Inject constructor() {
 
 				"blockquote" -> {
 					val sb = StringBuilder()
+					sb.appendLine()
 					for (i in 0 until node.childNodeSize()) {
 						val node = node.childNode(i)
 						val value = htmlNodeToMarkdown(node)
@@ -159,6 +161,16 @@ class MarkdownHandler @Inject constructor() {
 				"h1", "h2", "h3", "h4", "h5", "h6" -> {
 					val level = node.tagName().substring(1).toInt()
 					"${"#".repeat(level)} ${htmlNodeToMarkdown(node.childNodes())}\n\n"
+				}
+
+				"span" -> {
+					// TODO: get attributes (color etc)
+					node.text()
+				}
+
+				"sub" -> {
+					// TODO: sub/sup texts (need to impl parsers)
+					node.text()
 				}
 
 				else -> "!${node.nodeName()}[${node.text()}]!"
