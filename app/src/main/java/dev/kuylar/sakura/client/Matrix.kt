@@ -67,18 +67,21 @@ import de.connect2x.trixnity.core.serialization.events.stateOf
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.customevent.ElementRecentEmojiEventContent
 import dev.kuylar.sakura.client.customevent.EmoteRoomsEventContent
+import dev.kuylar.sakura.client.customevent.MatrixEmote
 import dev.kuylar.sakura.client.customevent.RecentEmoji
 import dev.kuylar.sakura.client.customevent.RoomImagePackEventContent
 import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
 import dev.kuylar.sakura.client.customevent.SpaceChildrenEventContent
 import dev.kuylar.sakura.client.customevent.SpaceOrderEventContent
 import dev.kuylar.sakura.client.customevent.SpaceParentEventContent
+import dev.kuylar.sakura.client.customevent.StickerMessageEventContent
 import dev.kuylar.sakura.client.customevent.UserImagePackEventContent
 import dev.kuylar.sakura.client.customevent.UserNoteEventContent
 import dev.kuylar.sakura.emoji.CustomEmojiCategoryModel
 import dev.kuylar.sakura.emoji.CustomEmojiModel
 import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
 import dev.kuylar.sakura.emoji.RoomEmojiCategoryModel
+import dev.kuylar.sakura.emoji.RoomStickerModel
 import dev.kuylar.sakura.emojipicker.model.CategoryModel
 import dev.kuylar.sakura.markdown.MarkdownHandler
 import dev.kuylar.sakura.ui.adapter.model.RoomModel
@@ -455,6 +458,23 @@ class Matrix {
 		}
 	}
 
+	suspend fun sendSticker(roomId: RoomId, sticker: MatrixEmote, replyingEvent: EventId? = null) {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "sendSticker() called before client was initialized.")
+			return
+		}
+		client.room.sendMessage(roomId) {
+			content(
+				StickerMessageEventContent(
+					body = sticker.body,
+					url = sticker.url,
+					info = sticker.info,
+					relatesTo = replyingEvent?.let { RelatesTo.Reply(RelatesTo.ReplyTo(it)) }
+				)
+			)
+		}
+	}
+
 	suspend fun editEvent(roomId: String, eventId: EventId, msg: String) {
 		if (!this::client.isInitialized) {
 			Log.w("MatrixClient", "editEvent() called before client was initialized.")
@@ -678,20 +698,30 @@ class Matrix {
 		}, userId)
 	}
 
+	suspend fun getRoomImagePacks(roomId: RoomId): Map<String, RoomImagePackEventContent> {
+		val res = mutableMapOf<String, RoomImagePackEventContent>()
+		return try {
+			client.room.getAllState<RoomImagePackEventContent>(roomId).firstOrNull()
+				?.mapValues { it.value.firstOrNull() }
+				?.values?.filterNotNull()?.associateByTo(res, { it.stateKey }, { it.content })
+			res
+		} catch (_: Exception) {
+			emptyMap()
+		}
+	}
+
 	suspend fun getRoomEmoji(roomId: RoomId): Map<RoomEmojiCategoryModel, List<CustomEmojiModel>> {
 		startUpdatingRecentEmojiCache()
-		val packs = client.room.getAllState<RoomImagePackEventContent>(roomId).firstOrNull()
-			?.map { it.value.first() }
-			?: return emptyMap()
+		val packs = getRoomImagePacks(roomId)
 		return packs.mapNotNull {
-			it?.let {
+			it.let {
 				Pair(
 					RoomEmojiCategoryModel(
 						roomId,
-						it.stateKey,
-						it.content.pack?.displayName ?: it.stateKey,
+						it.key,
+						it.value.pack?.displayName ?: it.key,
 					),
-					it.content.images
+					it.value.images
 						?.filter { e -> e.value.usage?.contains("emoticon") ?: true }
 						?.map { emoji ->
 							RoomCustomEmojiModel(emoji.value.url, emoji.key)
@@ -701,12 +731,12 @@ class Matrix {
 		}.toMap()
 	}
 
-	suspend fun getSavedImagePacks(): Map<CategoryModel, List<CustomEmojiModel>> {
+	suspend fun getSavedEmoji(): Map<CategoryModel, List<CustomEmojiModel>> {
 		startUpdatingRecentEmojiCache()
-		val roomEmojis =
+		val savedRooms =
 			client.user.getAccountData<EmoteRoomsEventContent>().firstOrNull() ?: return emptyMap()
 		val res = mutableMapOf<CategoryModel, List<CustomEmojiModel>>()
-		roomEmojis.rooms?.forEach { (roomId, packs) ->
+		savedRooms.rooms?.forEach { (roomId, packs) ->
 			val roomEmojis = getRoomEmoji(RoomId(roomId))
 			if (packs.isEmpty()) res.putAll(roomEmojis)
 			else res.putAll(roomEmojis.filterKeys { it.stateKey in packs })
@@ -714,17 +744,62 @@ class Matrix {
 		return res.filter { it.value.isNotEmpty() }
 	}
 
+	suspend fun getAccountEmojiPack() =
+		client.user.getAccountData<UserImagePackEventContent>().firstOrNull()
+
 	suspend fun getAccountEmoji(): Map.Entry<CategoryModel, List<CustomEmojiModel>>? {
 		startUpdatingRecentEmojiCache()
-		val userEmojis = client.user.getAccountData<UserImagePackEventContent>().firstOrNull()
+		val userEmojis = getAccountEmojiPack()
 		if (!userEmojis?.images.isNullOrEmpty()) {
 			val cat =
 				CustomEmojiCategoryModel(userEmojis.pack?.displayName?.takeIf { it.isNotBlank() }
-					?: "#!accountImagePack")
+					?: "#!accountEmojiPack")
 			val images = userEmojis.images?.filter { it.value.usage?.contains("emoticon") ?: true }
 			return entry(cat, images?.map { RoomCustomEmojiModel(it.value.url, it.key) } ?: emptyList())
 		}
 		return null
+	}
+
+	suspend fun getRoomStickers(roomId: RoomId): Map<RoomEmojiCategoryModel, List<CustomEmojiModel>> {
+		val packs = getRoomImagePacks(roomId)
+		return packs.mapNotNull {
+			it.let {
+				Pair(
+					RoomEmojiCategoryModel(
+						roomId,
+						it.key,
+						it.value.pack?.displayName ?: it.key,
+					),
+					it.value.images
+						?.filter { e -> e.value.usage?.contains("sticker") ?: true }
+						?.map { emoji -> RoomStickerModel(emoji.key, emoji.value) } ?: emptyList()
+				)
+			}
+		}.toMap()
+	}
+
+	suspend fun getAccountStickers(): Map.Entry<CategoryModel, List<CustomEmojiModel>>? {
+		val userEmojis = getAccountEmojiPack()
+		if (!userEmojis?.images.isNullOrEmpty()) {
+			val cat =
+				CustomEmojiCategoryModel(userEmojis.pack?.displayName?.takeIf { it.isNotBlank() }
+					?: "#!accountStickerPack")
+			val images = userEmojis.images?.filter { it.value.usage?.contains("sticker") ?: true }
+			return entry(cat, images?.map { RoomStickerModel(it.key, it.value) } ?: emptyList())
+		}
+		return null
+	}
+
+	suspend fun getSavedStickers(): Map<CategoryModel, List<CustomEmojiModel>> {
+		val savedRooms =
+			client.user.getAccountData<EmoteRoomsEventContent>().firstOrNull() ?: return emptyMap()
+		val res = mutableMapOf<CategoryModel, List<CustomEmojiModel>>()
+		savedRooms.rooms?.forEach { (roomId, packs) ->
+			val roomEmojis = getRoomStickers(RoomId(roomId))
+			if (packs.isEmpty()) res.putAll(roomEmojis)
+			else res.putAll(roomEmojis.filterKeys { it.stateKey in packs })
+		}
+		return res.filter { it.value.isNotEmpty() }
 	}
 
 	// TODO: Create DM channel here too
@@ -843,6 +918,7 @@ class Matrix {
 				stateOf<SpaceParentEventContent>("m.space.parent")
 				stateOf<SpaceChildrenEventContent>("m.space.child")
 				stateOf<RoomImagePackEventContent>("im.ponies.room_emotes")
+				messageOf<StickerMessageEventContent>("m.sticker")
 				messageOf<ShortcodeReactionEventContent>("m.reaction")
 				roomAccountDataOf<SpaceOrderEventContent>("org.matrix.msc3230.space_order")
 				globalAccountDataOf<ElementRecentEmojiEventContent>("io.element.recent_emoji")

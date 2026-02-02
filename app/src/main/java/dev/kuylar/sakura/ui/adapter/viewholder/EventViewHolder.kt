@@ -20,6 +20,7 @@ import de.connect2x.trixnity.client.store.originTimestamp
 import de.connect2x.trixnity.client.store.roomId
 import de.connect2x.trixnity.client.store.sender
 import de.connect2x.trixnity.core.model.EventId
+import de.connect2x.trixnity.core.model.events.MessageEventContent
 import de.connect2x.trixnity.core.model.events.RoomEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
@@ -32,6 +33,7 @@ import dev.kuylar.sakura.Utils.toTimestampDate
 import dev.kuylar.sakura.Utils.withinSameDay
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
+import dev.kuylar.sakura.client.customevent.StickerMessageEventContent
 import dev.kuylar.sakura.databinding.AttachmentImageBinding
 import dev.kuylar.sakura.databinding.ItemMessageBinding
 import dev.kuylar.sakura.databinding.ItemReactionBinding
@@ -193,6 +195,50 @@ class EventViewHolder(
 							params.width = newWidth
 							params.height = newHeight
 							attachmentBinding.root.layoutParams = params
+							attachmentBinding.loading.visibility = View.GONE
+							return false
+						}
+					})
+					.into(attachmentBinding.imageAttachment)
+				binding.attachment.removeAllViews()
+				binding.attachment.visibility = View.VISIBLE
+				binding.attachment.addView(attachmentBinding.root)
+			}
+
+			is StickerMessageEventContent -> {
+				val attachmentBinding = AttachmentImageBinding.inflate(
+					layoutInflater,
+					binding.attachment,
+					false
+				)
+				val displayMetrics = attachmentBinding.root.context.resources.displayMetrics
+				val maxSize = minOf(
+					displayMetrics.widthPixels * 0.7f,
+					112f * displayMetrics.density
+				).toInt()
+
+				Glide.with(attachmentBinding.root)
+					.load(content.url)
+					.listener(object : RequestListener<Drawable> {
+						override fun onLoadFailed(
+							e: GlideException?,
+							model: Any?,
+							target: Target<Drawable?>,
+							isFirstResource: Boolean
+						) = false
+
+						override fun onResourceReady(
+							resource: Drawable,
+							model: Any,
+							target: Target<Drawable?>?,
+							dataSource: DataSource,
+							isFirstResource: Boolean
+						): Boolean {
+							val params = attachmentBinding.root.layoutParams
+							params.width = maxSize
+							params.height = maxSize
+							attachmentBinding.root.layoutParams = params
+							attachmentBinding.loading.visibility = View.GONE
 							return false
 						}
 					})
@@ -293,7 +339,7 @@ class EventViewHolder(
 		}
 		binding.replyingBody.setText(R.string.empty_message)
 		val content =
-			event.content?.getOrNull() as? RoomMessageEventContent ?: return
+			event.content?.getOrNull() as? MessageEventContent ?: return
 
 		when (content) {
 			is RoomMessageEventContent.TextBased.Text -> {
@@ -313,6 +359,10 @@ class EventViewHolder(
 			}
 
 			is RoomMessageEventContent.FileBased.Image -> {
+				binding.replyingBody.text = content.body
+			}
+
+			is StickerMessageEventContent -> {
 				binding.replyingBody.text = content.body
 			}
 

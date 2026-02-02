@@ -5,5 +5,5 @@
 	android:id="@+id/emoji_picker"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
-	app:emojiSize="48dp"
-	tools:context=".ui.fragment.picker.EmojiPickerFragment" />
+	app:emojiSize="112dp"
+	tools:context=".ui.fragment.picker.StickerPickerFragment" />

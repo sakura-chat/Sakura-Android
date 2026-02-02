@@ -11,7 +11,7 @@ import de.connect2x.trixnity.client.store.sender
 import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
-import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import de.connect2x.trixnity.core.model.events.MessageEventContent
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -37,7 +37,7 @@ class EventModel(
 	private var replyJob: Job? = null
 	private var userJob: Job? = null
 	override val type: Int
-		get() = TimelineModel.Companion.TYPE_EVENT
+		get() = TimelineModel.TYPE_EVENT
 	override val timestamp: Long
 		get() = snapshot.originTimestamp
 
@@ -46,11 +46,11 @@ class EventModel(
 			flow.collect {
 				snapshot = it
 				onChange?.invoke()
-				if (replyJob == null && (it.content?.getOrNull() as? RoomMessageEventContent)?.relatesTo?.replyTo?.eventId != null) {
+				if (replyJob == null && (it.content?.getOrNull() as? MessageEventContent)?.relatesTo?.replyTo?.eventId != null) {
 					replyJob = suspendThread {
 						client.client.room.getTimelineEvent(
 							roomId,
-							(it.content?.getOrNull() as RoomMessageEventContent).relatesTo?.replyTo?.eventId!!
+							(it.content?.getOrNull() as MessageEventContent).relatesTo?.replyTo?.eventId!!
 						).collect { snapshot ->
 							repliedSnapshot = snapshot
 							onChange?.invoke()

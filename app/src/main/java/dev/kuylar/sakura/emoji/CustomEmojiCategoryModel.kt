@@ -4,8 +4,8 @@ import android.view.View
 import android.widget.TextView
 import com.google.android.material.tabs.TabLayout
 import dev.kuylar.sakura.R
-import dev.kuylar.sakura.emojipicker.R as EmojiR
 import dev.kuylar.sakura.emojipicker.model.CategoryModel
+import dev.kuylar.sakura.emojipicker.R as EmojiR
 
 class CustomEmojiCategoryModel(name: String): CategoryModel(name) {
 	override fun bind(view: View) {
@@ -19,7 +19,8 @@ class CustomEmojiCategoryModel(name: String): CategoryModel(name) {
 			"unicode:objects" -> R.string.emoji_category_objects
 			"unicode:symbols" -> R.string.emoji_category_symbols
 			"unicode:flags" -> R.string.emoji_category_flags
-			"#!accountImagePack" -> R.string.emoji_category_account
+			"#!accountEmojiPack" -> R.string.emoji_category_account
+			"#!accountStickerPack" -> R.string.sticker_category_account
 			else -> name.substringAfter(":")
 		}
 		when (titleRes) {
@@ -39,7 +40,8 @@ class CustomEmojiCategoryModel(name: String): CategoryModel(name) {
 			"unicode:objects" -> R.drawable.ic_emoji_category_objects
 			"unicode:symbols" -> R.drawable.ic_emoji_category_symbols
 			"unicode:flags" -> R.drawable.ic_emoji_category_flags
-			"#!accountImagePack" -> R.drawable.ic_emoji_category_account
+			"#!accountEmojiPack" -> R.drawable.ic_emoji_category_account
+			"#!accountStickerPack" -> R.drawable.ic_emoji_category_account
 			else -> throw IllegalArgumentException("Invalid emoji category: $name")
 		})
 	}

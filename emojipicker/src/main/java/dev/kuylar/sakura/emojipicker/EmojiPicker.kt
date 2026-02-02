@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.annotation.LayoutRes
+import androidx.core.content.withStyledAttributes
 import androidx.core.view.children
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -37,8 +38,11 @@ class EmojiPicker : LinearLayout, TabLayout.OnTabSelectedListener {
 	}
 
 	private fun init(attrs: AttributeSet?, defStyle: Int) {
-		val cols =
-			(resources.displayMetrics.widthPixels / (resources.displayMetrics.density * 48)).toInt()
+		var emojiSize = (resources.displayMetrics.density * 48).toInt()
+		context.withStyledAttributes(attrs, R.styleable.EmojiPicker, defStyle, 0) {
+			emojiSize = getDimensionPixelSize(R.styleable.EmojiPicker_emojiSize, 0)
+		}
+		val cols = resources.displayMetrics.widthPixels / emojiSize
 		val layoutManager = GridLayoutManager(context, cols)
 		layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
 			override fun getSpanSize(position: Int): Int {

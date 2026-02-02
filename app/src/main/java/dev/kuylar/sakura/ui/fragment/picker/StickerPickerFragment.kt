@@ -13,18 +13,17 @@ import de.connect2x.trixnity.core.model.RoomId
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
-import dev.kuylar.sakura.databinding.FragmentEmojiPickerBinding
-import dev.kuylar.sakura.emoji.CustomEmojiCategoryModel
+import dev.kuylar.sakura.databinding.FragmentStickerPickerBinding
 import dev.kuylar.sakura.emoji.CustomEmojiModel
 import dev.kuylar.sakura.emoji.EmojiManager
-import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
+import dev.kuylar.sakura.emoji.RoomStickerModel
 import dev.kuylar.sakura.emojipicker.model.CategoryModel
-import java.util.Map.entry
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class EmojiPickerFragment : Fragment() {
-	private lateinit var binding: FragmentEmojiPickerBinding
+class StickerPickerFragment : Fragment() {
+	private lateinit var binding: FragmentStickerPickerBinding
 	private var roomId: String? = null
 
 	@Inject
@@ -41,30 +40,22 @@ class EmojiPickerFragment : Fragment() {
 		inflater: LayoutInflater, container: ViewGroup?,
 		savedInstanceState: Bundle?
 	): View {
-		binding = FragmentEmojiPickerBinding.inflate(inflater, container, false)
+		binding = FragmentStickerPickerBinding.inflate(inflater, container, false)
 		return binding.root
 	}
 
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 		super.onViewCreated(view, savedInstanceState)
-		binding.emojiPicker.setOnEmojiSelectedCallback { emoji ->
-			if (emoji is RoomCustomEmojiModel) {
+		binding.emojiPicker.setOnEmojiSelectedCallback { it ->
+			if (it is RoomStickerModel) {
 				parentFragmentManager.setFragmentResult(
 					"picker_action",
 					bundleOf(
-						"action" to "custom_emoji",
+						"action" to "sticker",
 						"params" to listOf(
-							emoji.uri,
-							emoji.shortcode
+							it.key,
+							Json.encodeToString(it.sticker)
 						).toTypedArray()
-					)
-				)
-			} else {
-				parentFragmentManager.setFragmentResult(
-					"picker_action",
-					bundleOf(
-						"action" to "unicode_emoji",
-						"params" to listOf(emoji.name).toTypedArray()
 					)
 				)
 			}
@@ -78,43 +69,19 @@ class EmojiPickerFragment : Fragment() {
 	}
 
 	private suspend fun updateEmojiPicker() {
-		val roomEmoji = roomId?.let { id ->
-			client.getRoomEmoji(RoomId(id)).filter { it.value.isNotEmpty() }
+		val roomStickers = roomId?.let { id ->
+			client.getRoomStickers(RoomId(id)).filter { it.value.isNotEmpty() }
 		} ?: emptyMap()
-		val accountEmojiPacks = client.getSavedEmoji()
-		val accountEmoji = client.getAccountEmoji()
-		val recent = client.getRecentEmojis().take(24)
+		val accountStickerPacks = client.getSavedStickers()
+		val accountStickers = client.getAccountStickers()
 		EmojiManager.getInstance(requireContext()).getEmojiByCategory().let { map ->
 			activity?.runOnUiThread {
 				val items = emptyMap<CategoryModel, List<CustomEmojiModel>>().toMutableMap()
+				roomStickers.forEach { items[it.key] = it.value }
+				accountStickers?.let { items[it.key] = it.value }
+				accountStickerPacks.forEach { items[it.key] = it.value }
 
-				val allEmojis: Map<CategoryModel, List<CustomEmojiModel>> =
-					map.mapKeys { CustomEmojiCategoryModel(it.key) }
-						.mapValues { it.value.map { e -> CustomEmojiModel(e.surrogates) } }
-				allEmojis.entries.toMutableList().apply {
-					add(
-						0,
-						entry(
-							CustomEmojiCategoryModel("recent"),
-							recent.map {
-								if (it.emoji.startsWith("mxc://"))
-									RoomCustomEmojiModel(it.emoji, "")
-								else CustomEmojiModel(it.emoji)
-							})
-					)
-					accountEmojiPacks.forEach {
-						if (roomEmoji.keys.any { other -> other == it }) return@forEach
-						add(1, it)
-					}
-					accountEmoji?.let {
-						add(1, it)
-					}
-					roomEmoji.forEach {
-						add(1, it)
-					}
-				}.associateByTo(items, { it.key }, { it.value })
-
-				binding.emojiPicker.setEmojiLayout(R.layout.item_emoji)
+				binding.emojiPicker.setEmojiLayout(R.layout.item_sticker)
 				binding.emojiPicker.loadItems(items)
 			}
 		}

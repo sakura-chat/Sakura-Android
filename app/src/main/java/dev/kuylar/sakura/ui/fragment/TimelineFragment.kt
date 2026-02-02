@@ -20,7 +20,6 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.getSystemService
-import androidx.core.os.bundleOf
 import androidx.core.view.ContentInfoCompat
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
@@ -34,6 +33,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
 import de.connect2x.trixnity.client.room
 import de.connect2x.trixnity.client.store.eventId
@@ -48,16 +48,18 @@ import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.bytesToString
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
+import dev.kuylar.sakura.client.customevent.MatrixEmote
 import dev.kuylar.sakura.databinding.FragmentTimelineBinding
 import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
 import dev.kuylar.sakura.markdown.MarkdownHandler
+import dev.kuylar.sakura.ui.adapter.PickerPagerAdapter
 import dev.kuylar.sakura.ui.adapter.listadapter.TimelineListAdapter
-import dev.kuylar.sakura.ui.fragment.picker.EmojiPickerFragment
 import dev.kuylar.sakura.ui.models.AttachmentInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import kotlin.math.max
 
@@ -196,6 +198,23 @@ class TimelineFragment : Fragment(), MenuProvider {
 					binding.input.editableText.insert(binding.input.selectionStart, params[0])
 				}
 
+				"sticker" -> {
+					suspendThread {
+						try {
+							client.sendSticker(
+								RoomId(roomId),
+								Json.decodeFromString<MatrixEmote>(params[1]),
+								replyingEvent = replyingEvent
+							)
+							activity?.runOnUiThread {
+								handleReply(null)
+							}
+						} catch (e: Exception) {
+							Log.e("TimelineFragment", "Failed to send sticker\n${params[1]}", e)
+						}
+					}
+				}
+
 				else -> {
 					Toast.makeText(
 						requireContext(),
@@ -205,12 +224,6 @@ class TimelineFragment : Fragment(), MenuProvider {
 				}
 			}
 		}
-		childFragmentManager.beginTransaction()
-			.replace(R.id.picker, EmojiPickerFragment().apply {
-				arguments = bundleOf("roomId" to roomId)
-			})
-			.commit()
-
 		updateEmojiPicker()
 
 		binding.input.addTextChangedListener {
@@ -496,7 +509,15 @@ class TimelineFragment : Fragment(), MenuProvider {
 	}
 
 	private fun updateEmojiPicker() {
-
+		binding.pickerPager.adapter = PickerPagerAdapter(this)
+		TabLayoutMediator(binding.pickerTabs, binding.pickerPager) { tab, position ->
+			tab.text = when (position) {
+				0 -> getString(R.string.picker_emoji)
+				1 -> getString(R.string.picker_gif)
+				2 -> getString(R.string.picker_sticker)
+				else -> position.toString()
+			}
+		}.attach()
 	}
 
 	private fun pickAttachment() {

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="112dp"
+	android:layout_height="112dp"
+	android:background="?selectableItemBackground">
+
+	<ImageView
+		android:id="@+id/image"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:contentDescription="@string/custom_emoji"
+		android:padding="8dp"
+		android:visibility="gone" />
+
+	<TextView
+		android:id="@+id/text"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:autoSizeTextType="uniform"
+		android:clickable="true"
+		android:focusable="true"
+		android:gravity="center"
+		android:padding="8dp"
+		android:textAlignment="center"
+		android:textIsSelectable="false"
+		tools:text="🥺" />
+</FrameLayout>

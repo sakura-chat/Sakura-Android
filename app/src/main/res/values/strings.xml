@@ -98,4 +98,8 @@
 	<string name="notification_rationale_dismiss">Keep notifications disabled</string>
 	<string name="notification_rationale_dismiss_forever">Don\'t remind me again</string>
 	<string name="emoji_category_account">Your Emoji</string>
+	<string name="picker_emoji">Emoji</string>
+	<string name="picker_gif">GIFs</string>
+	<string name="picker_sticker">Stickers</string>
+	<string name="sticker_category_account">Your Stickers</string>
 </resources>
