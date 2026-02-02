@@ -20,6 +20,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.getSystemService
+import androidx.core.net.toUri
 import androidx.core.view.ContentInfoCompat
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
@@ -33,6 +34,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
 import de.connect2x.trixnity.client.room
@@ -213,6 +215,11 @@ class TimelineFragment : Fragment(), MenuProvider {
 							Log.e("TimelineFragment", "Failed to send sticker\n${params[1]}", e)
 						}
 					}
+				}
+
+				"gif" -> {
+					if (params.isNotEmpty())
+						loadAttachmentFromUri(params[0].toUri())
 				}
 
 				else -> {
@@ -500,6 +507,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 	}
 
 	private fun onKeyboardOpened() {
+		if (binding.picker.isVisible && binding.pickerTabs.selectedTabPosition == 1) return
 		binding.picker.visibility = View.GONE
 	}
 
@@ -562,6 +570,11 @@ class TimelineFragment : Fragment(), MenuProvider {
 						null
 					)
 				)
+			else {
+				Glide.with(this)
+					.load(attachment!!.contentUri)
+					.into(binding.attachment.thumbnail)
+			}
 		}
 	}
 

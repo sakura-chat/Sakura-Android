@@ -4,6 +4,7 @@ import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import dev.kuylar.sakura.ui.fragment.EmptyFragment
 import dev.kuylar.sakura.ui.fragment.picker.EmojiPickerFragment
+import dev.kuylar.sakura.ui.fragment.picker.GifPickerFragment
 import dev.kuylar.sakura.ui.fragment.picker.StickerPickerFragment
 
 class PickerPagerAdapter(fragment: Fragment) : FragmentStateAdapter(fragment) {
@@ -13,6 +14,7 @@ class PickerPagerAdapter(fragment: Fragment) : FragmentStateAdapter(fragment) {
 		if (!cache.containsKey(position))
 			cache[position] = when (position) {
 				0 -> EmojiPickerFragment()
+				1 -> GifPickerFragment()
 				2 -> StickerPickerFragment()
 				else -> EmptyFragment()
 			}
