@@ -125,11 +125,22 @@ class EventViewHolder(
 			binding.reactions.visibility = View.GONE
 
 		repliedEvent?.let { handleReply(it) }
-		event.content?.getOrNull()
-			.let { handleContent(event, it, eventModel.replaces?.history?.isNotEmpty() ?: false) }
+		event.content?.getOrNull().let {
+			handleContent(
+				event,
+				eventModel.userSnapshot,
+				it,
+				eventModel.replaces?.history?.isNotEmpty() ?: false
+			)
+		}
 	}
 
-	private fun handleContent(event: TimelineEvent, content: RoomEventContent?, edited: Boolean) {
+	private fun handleContent(
+		event: TimelineEvent,
+		sender: RoomUser?,
+		content: RoomEventContent?,
+		edited: Boolean
+	) {
 		when (content) {
 			is RoomMessageEventContent.TextBased.Text -> {
 				if (content.formattedBody != null) {
@@ -137,6 +148,22 @@ class EventViewHolder(
 				} else {
 					binding.body.text = content.bodyWithoutFallback
 				}
+			}
+
+			is RoomMessageEventContent.TextBased.Notice -> {
+				if (content.formattedBody != null) {
+					markdown.setTextView(binding.body, content.formattedBodyWithoutFallback, edited)
+				} else {
+					binding.body.text = content.bodyWithoutFallback
+				}
+			}
+
+			is RoomMessageEventContent.TextBased.Emote -> {
+				binding.senderName.visibility = View.GONE
+				val body = "\\* **${sender?.name ?: event.sender.full}** " +
+						(content.formattedBodyWithoutFallback?.let { markdown.htmlToMarkdown(it) }
+							?: content.body)
+				markdown.setTextView(binding.body, body, edited)
 			}
 
 			is RoomMessageEventContent.FileBased.Image -> {

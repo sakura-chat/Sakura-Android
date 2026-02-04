@@ -29,6 +29,8 @@ import de.connect2x.trixnity.core.model.events.m.ReactionEventContent
 import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.room.RedactionEventContent
+import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.isAtBottom
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
@@ -141,6 +143,19 @@ class TimelineListAdapter(
 				fragment
 			)
 
+			TYPE_EVENT_MINI -> EventViewHolder(
+				ItemMessageBinding.bind(
+					layoutInflater.inflate(
+						R.layout.item_message_mini,
+						parent,
+						false
+					)
+				),
+				client,
+				markdown,
+				fragment
+			)
+
 			TYPE_OUTBOX -> OutboxViewHolder(
 				ItemMessageBinding.inflate(layoutInflater, parent, false),
 				client,
@@ -192,8 +207,13 @@ class TimelineListAdapter(
 		}
 	}
 
-	override fun getItemViewType(position: Int) = when (getItem(position)) {
-		is EventModel -> TYPE_EVENT
+	override fun getItemViewType(position: Int) = when (val event = getItem(position)) {
+		is EventModel -> {
+			when (event.snapshot.content?.getOrNull()) {
+				is RoomMessageEventContent.TextBased.Emote -> TYPE_EVENT_MINI
+				else -> TYPE_EVENT
+			}
+		}
 		is OutboxModel -> TYPE_OUTBOX
 		else -> TYPE_LOADING
 	}
@@ -382,9 +402,10 @@ class TimelineListAdapter(
 		private const val PAGINATION_FETCH_SIZE = 20L
 
 		private const val TYPE_EVENT = 1
-		private const val TYPE_OUTBOX = 2
-		private const val TYPE_LOADING = 3
-		private const val TYPE_ERROR = 4
+		private const val TYPE_EVENT_MINI = 2
+		private const val TYPE_OUTBOX = 3
+		private const val TYPE_LOADING = 4
+		private const val TYPE_ERROR = 5
 
 
 		private val configStart: GetTimelineEventConfig.() -> Unit = {
