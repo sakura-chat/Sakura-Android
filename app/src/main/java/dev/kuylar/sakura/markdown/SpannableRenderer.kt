@@ -201,7 +201,7 @@ class SpannableRenderer(val context: Context) {
 			is CustomEmojiNode -> {
 				val start = builder.length
 				val model = RoomCustomEmojiModel(node.uri, node.shortcode)
-				builder.append(":${node.shortcode}:", builder)
+				builder.append(":${node.shortcode}:")
 				builder.setSpan(
 					model.toMention(context),
 					start,
