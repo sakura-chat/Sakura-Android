@@ -24,13 +24,13 @@ import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.getIndicatorColor
+import dev.kuylar.sakura.Utils.loadAvatar
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.UserNoteEventContent
 import dev.kuylar.sakura.client.request.ExtendedGetProfile
 import dev.kuylar.sakura.databinding.FragmentProfileBottomSheetBinding
 import dev.kuylar.sakura.ui.activity.MainActivity
-import io.getstream.avatarview.glide.loadImage
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import java.time.ZoneId
@@ -195,7 +195,7 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 	}
 
 	private fun updateMember(member: MemberEventContent) {
-		binding.avatar.loadImage(member.avatarUrl, true)
+		binding.avatar.loadAvatar(member.avatarUrl, member.displayName ?: "")
 		binding.displayname.text = member.displayName
 		if (member.displayName == userId.full) {
 			binding.username.visibility = View.GONE

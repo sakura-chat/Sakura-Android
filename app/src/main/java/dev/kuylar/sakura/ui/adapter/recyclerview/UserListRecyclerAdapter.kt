@@ -5,13 +5,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
-import dev.kuylar.sakura.Utils.getIndicatorColor
-import dev.kuylar.sakura.Utils.suspendThread
-import dev.kuylar.sakura.client.Matrix
-import dev.kuylar.sakura.databinding.ItemUserBinding
-import dev.kuylar.sakura.ui.fragment.bottomsheet.ProfileBottomSheetFragment
-import io.getstream.avatarview.glide.loadImage
-import kotlinx.coroutines.flow.Flow
 import de.connect2x.trixnity.client.store.RoomUser
 import de.connect2x.trixnity.client.store.UserPresence
 import de.connect2x.trixnity.client.store.avatarUrl
@@ -19,7 +12,15 @@ import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.m.Presence
+import dev.kuylar.sakura.Utils.getIndicatorColor
+import dev.kuylar.sakura.Utils.loadAvatar
+import dev.kuylar.sakura.Utils.suspendThread
+import dev.kuylar.sakura.client.Matrix
+import dev.kuylar.sakura.databinding.ItemUserBinding
 import dev.kuylar.sakura.ui.adapter.model.UserModel
+import dev.kuylar.sakura.ui.fragment.bottomsheet.ProfileBottomSheetFragment
+import io.getstream.avatarview.glide.loadImage
+import kotlinx.coroutines.flow.Flow
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -128,8 +129,9 @@ class UserListRecyclerAdapter(val fragment: Fragment, val roomId: String, val cl
 		fun bind(userModel: UserModel, roomId: String) {
 			if (userModel.userId != lastUserId) resetBindingState()
 
+			binding.avatar.avatarInitials = null
 			userModel.snapshot?.let { user ->
-				binding.avatar.loadImage(user.avatarUrl, true)
+				binding.avatar.loadAvatar(user.avatarUrl, user.name)
 				binding.name.text = user.name
 			}
 			val presence = userModel.presence ?: UserPresence(

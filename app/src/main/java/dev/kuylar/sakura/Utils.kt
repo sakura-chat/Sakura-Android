@@ -45,6 +45,8 @@ import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.service.ReplyReceiver
 import dev.kuylar.sakura.ui.activity.BubbleActivity
 import dev.kuylar.sakura.ui.activity.MainActivity
+import io.getstream.avatarview.AvatarView
+import io.getstream.avatarview.glide.loadImage
 import io.ktor.http.URLBuilder
 import io.ktor.utils.io.charsets.Charset
 import kotlinx.coroutines.CoroutineScope
@@ -198,6 +200,27 @@ object Utils {
 			}.build().toString()
 		}
 		else this.url
+	}
+
+	fun String.getInitials(uppercase: Boolean = false): String {
+		return this
+			.split(" ")
+			.mapNotNull {
+				it.firstOrNull { c -> c.isLetterOrDigit() }
+					?.let { c ->
+						if (uppercase) c.uppercase() else c
+					}
+			}
+			.joinToString("")
+	}
+
+	fun AvatarView.loadAvatar(url: String?, name: String) {
+		if (url != null)
+			loadImage(url, true)
+		else
+			name.getInitials(true).takeIf { it.isNotBlank() }?.let {
+				avatarInitials = it
+			}
 	}
 
 	private fun getBubbleMetadata(

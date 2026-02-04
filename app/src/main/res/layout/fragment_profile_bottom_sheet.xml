@@ -53,8 +53,11 @@
 				app:avatarViewIndicatorEnabled="true"
 				app:avatarViewIndicatorPosition="bottomRight"
 				app:avatarViewIndicatorSizeCriteria="6"
+				app:avatarViewInitialsBackgroundColor="?colorSecondaryContainer"
+				app:avatarViewInitialsTextColor="?colorOnSecondaryContainer"
 				app:avatarViewInitialsTextStyle="bold"
 				app:avatarViewShape="circle"
+				tools:avatarViewInitials="@tools:sample/full_names"
 				tools:src="@tools:sample/avatars" />
 
 			<TextView
