@@ -56,8 +56,9 @@ class MarkdownHandler @Inject constructor() {
 		return markdownToSpannable(htmlToMarkdown(html), context)
 	}
 	
-	fun setTextView(textView: TextView, html: String?) {
-		val spannable = htmlToSpannable(html, textView.context)
+	fun setTextView(textView: TextView, html: String?, isEdited: Boolean = false) {
+		val content = if (html != null && isEdited) "$html *(edited)*" else html
+		val spannable = htmlToSpannable(content, textView.context)
 		textView.text = spannable
 		spannable.getSpans<ImageMentionSpan>().forEach {
 			it.onImageLoaded = { textView.postInvalidate() }

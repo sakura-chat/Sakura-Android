@@ -149,7 +149,6 @@ class OutboxViewHolder(
 		binding.senderBadge.visibility = View.GONE
 		binding.avatar.visibility = View.VISIBLE
 		binding.messageInfo.visibility = View.VISIBLE
-		binding.edited.visibility = View.GONE
 		binding.body.visibility = View.VISIBLE
 		binding.embeds.removeAllViews()
 		binding.attachment.removeAllViews()

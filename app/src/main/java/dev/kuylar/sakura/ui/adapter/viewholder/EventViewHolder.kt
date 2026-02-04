@@ -118,10 +118,6 @@ class EventViewHolder(
 		binding.eventTimestamp.text =
 			event.originTimestamp.toTimestamp(binding.eventTimestamp.context)
 
-		// TODO: Put this inside the markdown spannable
-		if (eventModel.replaces?.history?.isNotEmpty() == true)
-			binding.edited.visibility = View.VISIBLE
-
 		if (eventModel.reactions?.reactions?.isNotEmpty() == true) {
 			binding.reactions.visibility = View.VISIBLE
 			handleReactions(event, eventModel.reactions!!.reactions)
@@ -129,22 +125,25 @@ class EventViewHolder(
 			binding.reactions.visibility = View.GONE
 
 		repliedEvent?.let { handleReply(it) }
-		event.content?.getOrNull().let { handleContent(event, it) }
+		event.content?.getOrNull()
+			.let { handleContent(event, it, eventModel.replaces?.history?.isNotEmpty() ?: false) }
 	}
 
-	private fun handleContent(event: TimelineEvent, content: RoomEventContent?) {
+	private fun handleContent(event: TimelineEvent, content: RoomEventContent?, edited: Boolean) {
 		when (content) {
 			is RoomMessageEventContent.TextBased.Text -> {
 				if (content.formattedBody != null) {
-					markdown.setTextView(binding.body, content.formattedBodyWithoutFallback)
+					markdown.setTextView(binding.body, content.formattedBodyWithoutFallback, edited)
 				} else {
 					binding.body.text = content.bodyWithoutFallback
 				}
 			}
 
 			is RoomMessageEventContent.FileBased.Image -> {
-				if (content.fileName != null && content.body != content.fileName) {
-					binding.body.text = content.body
+				if (content.formattedBodyWithoutFallback != null) {
+					markdown.setTextView(binding.body, content.formattedBodyWithoutFallback, edited)
+				} else if (content.fileName != null && content.body != content.fileName) {
+					markdown.setTextView(binding.body, content.bodyWithoutFallback, edited)
 				} else {
 					binding.body.visibility = View.GONE
 				}
@@ -378,7 +377,6 @@ class EventViewHolder(
 		binding.senderBadge.visibility = View.GONE
 		binding.avatar.visibility = View.VISIBLE
 		binding.messageInfo.visibility = View.VISIBLE
-		binding.edited.visibility = View.GONE
 		binding.body.visibility = View.VISIBLE
 		binding.embeds.removeAllViews()
 		binding.attachment.removeAllViews()

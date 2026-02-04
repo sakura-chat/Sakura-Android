@@ -206,18 +206,6 @@
 				android:ellipsize="end"
 				tools:text="@tools:sample/lorem" />
 
-			<TextView
-				android:id="@+id/edited"
-				style="?textAppearanceLabelMedium"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:layout_marginVertical="4dp"
-				android:ellipsize="end"
-				android:maxLines="1"
-				android:text="@string/message_edited"
-				android:textStyle="italic"
-				android:visibility="gone"
-				tools:visibility="visible" />
 		</LinearLayout>
 	</LinearLayout>
 
