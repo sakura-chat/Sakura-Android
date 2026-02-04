@@ -291,27 +291,14 @@ class TimelineFragment : Fragment(), MenuProvider {
 			}
 			return
 		}
-		if (replyingEvent != null) {
-			suspendThread {
-				client.sendMessage(
-					roomId,
-					msg,
-					requireContext(),
-					replyTo = replyingEvent,
-					attachment = attachment
-				)
-				activity?.runOnUiThread {
-					handleReply(null)
-					binding.input.editableText.clear()
-					binding.buttonSend.isEnabled = true
-				}
-			}
-			return
-		}
 		binding.buttonSend.isEnabled = false
 		suspendThread {
 			try {
-				client.sendMessage(roomId, msg, requireContext(), attachment = attachment)
+				client.sendMessage(
+					roomId, msg, requireContext(),
+					replyTo = replyingEvent,
+					attachment = attachment
+				)
 				activity?.runOnUiThread {
 					binding.buttonSend.isEnabled = true
 					binding.input.editableText.clear()
