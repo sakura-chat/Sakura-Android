@@ -300,6 +300,8 @@ class TimelineFragment : Fragment(), MenuProvider {
 					attachment = attachment
 				)
 				activity?.runOnUiThread {
+					if (replyingEvent != null)
+						handleReply(null)
 					binding.buttonSend.isEnabled = true
 					binding.input.editableText.clear()
 					attachment = null
