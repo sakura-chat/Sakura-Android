@@ -24,7 +24,9 @@ google-services = "4.4.4"
 firebase-bom = "34.8.0"
 emoji2 = "1.6.0"
 hilt = "2.58"
-commonmark = "0.27.1"
+#noinspection NewerVersionAvailable Required by Markwon
+commonmark = "0.13.0"
+markwon = "4.6.2"
 avatarview = "1.0.7"
 jsoup = "1.22.1"
 
@@ -60,11 +62,13 @@ firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging
 emoji2 = { group = "androidx.emoji2", name = "emoji2", version.ref = "emoji2" }
 dagger-hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 dagger-hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
-commonmark = { group = "org.commonmark", name = "commonmark", version.ref = "commonmark" }
-commonmark-ext-gfm-tables = { group = "org.commonmark", name = "commonmark-ext-gfm-tables", version.ref = "commonmark" }
-commonmark-ext-gfm-strikethrough = { group = "org.commonmark", name = "commonmark-ext-gfm-strikethrough", version.ref = "commonmark" }
-commonmark-ext-autolink = { group = "org.commonmark", name = "commonmark-ext-autolink", version.ref = "commonmark" }
-commonmark-ext-ins = { group = "org.commonmark", name = "commonmark-ext-ins", version.ref = "commonmark" }
+commonmark = { group = "com.atlassian.commonmark", name = "commonmark", version.ref = "commonmark" }
+markwon = { group = "io.noties.markwon", name = "core", version.ref = "markwon" }
+markwon-ext-strikethrough = { group = "io.noties.markwon", name = "ext-strikethrough", version.ref = "markwon" }
+markwon-ext-tables = { group = "io.noties.markwon", name = "ext-tables", version.ref = "markwon" }
+markwon-html = { group = "io.noties.markwon", name = "html", version.ref = "markwon" }
+markwon-image = { group = "io.noties.markwon", name = "image-glide", version.ref = "markwon" }
+markwon-linkify = { group = "io.noties.markwon", name = "linkify", version.ref = "markwon" }
 avatarview = { group = "io.getstream", name = "avatarview-glide", version.ref = "avatarview" }
 jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
 kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }

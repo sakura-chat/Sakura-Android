@@ -1,20 +1,22 @@
 package dev.kuylar.sakura.markdown
 
-import android.content.Context
-import android.text.Spannable
+import android.app.Application
+import android.util.Log
 import android.widget.TextView
 import androidx.core.net.toUri
-import androidx.core.text.getSpans
-import dev.kuylar.mentionsedittext.ImageMentionSpan
-import dev.kuylar.sakura.markdown.custom.emoji.CustomEmojiExtension
-import org.commonmark.ext.autolink.AutolinkExtension
-import org.commonmark.ext.autolink.AutolinkType
+import dev.kuylar.sakura.SakuraApplication
+import dev.kuylar.sakura.markdown.plugin.emoji.CustomEmojiPlugin
+import io.noties.markwon.Markwon
+import io.noties.markwon.MarkwonPlugin
+import io.noties.markwon.ext.strikethrough.StrikethroughPlugin
+import io.noties.markwon.ext.tables.TablePlugin
+import io.noties.markwon.html.HtmlPlugin
+import io.noties.markwon.image.glide.GlideImagesPlugin
+import io.noties.markwon.linkify.LinkifyPlugin
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
 import org.commonmark.ext.gfm.tables.TablesExtension
-import org.commonmark.ext.ins.InsExtension
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.html.HtmlRenderer
-import org.commonmark.renderer.text.LineBreakRendering
 import org.commonmark.renderer.text.TextContentRenderer
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
@@ -24,26 +26,29 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class MarkdownHandler @Inject constructor() {
+class MarkdownHandler @Inject constructor(application: Application) {
 	private val extensions = listOf(
-		CustomEmojiExtension(),
+		CustomEmojiPlugin(application as SakuraApplication),
 		TablesExtension.create(),
-		StrikethroughExtension.builder().apply {
-			requireTwoTildes(true)
-		}.build(),
-		AutolinkExtension.builder().apply {
-			linkTypes(AutolinkType.URL)
-		}.build(),
-		InsExtension.create()
+		StrikethroughExtension.create(),
 	)
+	private val plugins = listOf<MarkwonPlugin>(
+		GlideImagesPlugin.create(application),
+		HtmlPlugin.create(),
+		StrikethroughPlugin.create(),
+		TablePlugin.create(application),
+		LinkifyPlugin.create(),
+		CustomEmojiPlugin(application as SakuraApplication)
+	)
+	private val markwon = Markwon.builder(application).apply {
+		usePlugins(plugins)
+	}.build()
 	private val parser = Parser.builder().apply { extensions(extensions) }.build()
 	private val htmlRenderer = HtmlRenderer.builder().apply {
 		extensions(extensions)
-		omitSingleParagraphP(true)
 	}.build()
 	private val textRenderer = TextContentRenderer.builder().apply {
 		extensions(extensions)
-		lineBreakRendering(LineBreakRendering.SEPARATE_BLOCKS)
 	}.build()
 
 	fun inputToHtml(input: String): String {
@@ -60,21 +65,9 @@ class MarkdownHandler @Inject constructor() {
 		return htmlNodeToMarkdown(html.body().childNodes()).trim()
 	}
 
-	private fun markdownToSpannable(input: String, context: Context): Spannable {
-		return SpannableRenderer(context).render(parser.parse(input))
-	}
-
-	private fun htmlToSpannable(html: String?, context: Context): Spannable {
-		return markdownToSpannable(htmlToMarkdown(html), context)
-	}
-
 	fun setTextView(textView: TextView, html: String?, isEdited: Boolean = false) {
 		val content = if (html != null && isEdited) "$html *(edited)*" else html
-		val spannable = htmlToSpannable(content, textView.context)
-		textView.text = spannable
-		spannable.getSpans<ImageMentionSpan>().forEach {
-			it.onImageLoaded = { textView.postInvalidate() }
-		}
+		markwon.setMarkdown(textView, htmlToMarkdown(content))
 	}
 
 	private fun htmlNodeToMarkdown(node: Node, parentNodeName: String? = null): String {
@@ -176,17 +169,14 @@ class MarkdownHandler @Inject constructor() {
 					"${"#".repeat(level)} ${htmlNodeToMarkdown(node.childNodes())}\n\n"
 				}
 
-				"span" -> {
-					// TODO: get attributes (color etc)
-					node.text()
-				}
+				"del" -> "~~${htmlNodeToMarkdown(node.childNodes())}~~"
 
-				"sub" -> {
-					// TODO: sub/sup texts (need to impl parsers)
-					node.text()
-				}
+				"ins" -> node.outerHtml()
 
-				else -> "!${node.nodeName()}[${node.text()}]!"
+				else -> {
+					Log.w("MarkdownHandler", "Unknown HTML tag: ${node.tagName()}")
+					node.outerHtml()
+				}
 			}
 
 			else -> "#${node.nodeName()}[${node.nodeText()}]#"
