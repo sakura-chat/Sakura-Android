@@ -44,8 +44,8 @@ class SpannableRenderer(val context: Context) {
 			}
 
 			is Paragraph -> {
-				//if (builder.isNotEmpty() && node.parent !is ListItem)
-				//	builder.append("\n\n")
+				if (builder.isNotEmpty() && node.parent !is ListItem)
+					builder.append("\n\n")
 				visitChildren(node, builder)
 			}
 
