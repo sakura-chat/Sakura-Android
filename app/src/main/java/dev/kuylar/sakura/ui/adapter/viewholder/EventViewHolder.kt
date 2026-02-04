@@ -89,13 +89,14 @@ class EventViewHolder(
 			f.show(fragment.parentFragmentManager, "userBottomSheet")
 			true
 		}
-		binding.root.setOnClickListener {
-			val now = System.currentTimeMillis()
-			if (now - lastClick < ViewConfiguration.getDoubleTapTimeout()) {
-				(fragment as? TimelineFragment)?.handleReply(event.eventId)
+		listOf(binding.root, binding.body, binding.attachment).forEach {
+			it.setOnClickListener {
+				val now = System.currentTimeMillis()
+				if (now - lastClick < ViewConfiguration.getDoubleTapTimeout()) {
+					(fragment as? TimelineFragment)?.handleReply(event.eventId)
+				}
+				lastClick = now
 			}
-			@Suppress("AssignedValueIsNeverRead")
-			lastClick = now
 		}
 
 		var userInfoVisible = View.VISIBLE
