@@ -6,6 +6,7 @@ import android.widget.TextView
 import androidx.core.net.toUri
 import dev.kuylar.sakura.SakuraApplication
 import dev.kuylar.sakura.markdown.plugin.emoji.CustomEmojiPlugin
+import dev.kuylar.sakura.markdown.plugin.emoji.UserMentionPlugin
 import io.noties.markwon.Markwon
 import io.noties.markwon.MarkwonPlugin
 import io.noties.markwon.ext.strikethrough.StrikethroughPlugin
@@ -38,7 +39,8 @@ class MarkdownHandler @Inject constructor(application: Application) {
 		StrikethroughPlugin.create(),
 		TablePlugin.create(application),
 		LinkifyPlugin.create(),
-		CustomEmojiPlugin(application as SakuraApplication)
+		CustomEmojiPlugin(application as SakuraApplication),
+		UserMentionPlugin(application as SakuraApplication)
 	)
 	private val markwon = Markwon.builder(application).apply {
 		usePlugins(plugins)
@@ -95,7 +97,7 @@ class MarkdownHandler @Inject constructor(application: Application) {
 					val text = node.text()
 					// User mentions
 					if (url.host == "matrix.to" && url.fragment?.startsWith("/@") == true) {
-						"<${url.fragment?.substring(1)}>"
+						"<${url.fragment?.substring(1)}|${text}>"
 					} else {
 						"[${text}](${url})"
 					}
