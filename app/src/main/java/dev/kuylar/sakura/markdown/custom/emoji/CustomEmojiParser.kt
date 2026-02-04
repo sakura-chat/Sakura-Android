@@ -1,4 +1,4 @@
-package dev.kuylar.sakura.markdown.emoji
+package dev.kuylar.sakura.markdown.custom.emoji
 
 import org.commonmark.parser.beta.InlineContentParser
 import org.commonmark.parser.beta.InlineContentParserFactory

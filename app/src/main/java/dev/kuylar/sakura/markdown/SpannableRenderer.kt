@@ -12,7 +12,7 @@ import android.text.style.URLSpan
 import android.util.TypedValue
 import androidx.core.text.toSpannable
 import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
-import dev.kuylar.sakura.markdown.emoji.CustomEmojiNode
+import dev.kuylar.sakura.markdown.custom.emoji.CustomEmojiNode
 import org.commonmark.node.BlockQuote
 import org.commonmark.node.BulletList
 import org.commonmark.node.Code

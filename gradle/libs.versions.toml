@@ -61,6 +61,10 @@ emoji2 = { group = "androidx.emoji2", name = "emoji2", version.ref = "emoji2" }
 dagger-hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 dagger-hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
 commonmark = { group = "org.commonmark", name = "commonmark", version.ref = "commonmark" }
+commonmark-ext-gfm-tables = { group = "org.commonmark", name = "commonmark-ext-gfm-tables", version.ref = "commonmark" }
+commonmark-ext-gfm-strikethrough = { group = "org.commonmark", name = "commonmark-ext-gfm-strikethrough", version.ref = "commonmark" }
+commonmark-ext-autolink = { group = "org.commonmark", name = "commonmark-ext-autolink", version.ref = "commonmark" }
+commonmark-ext-ins = { group = "org.commonmark", name = "commonmark-ext-ins", version.ref = "commonmark" }
 avatarview = { group = "io.getstream", name = "avatarview-glide", version.ref = "avatarview" }
 jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
 kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }

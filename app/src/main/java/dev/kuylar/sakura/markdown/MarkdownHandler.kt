@@ -6,9 +6,12 @@ import android.widget.TextView
 import androidx.core.net.toUri
 import androidx.core.text.getSpans
 import dev.kuylar.mentionsedittext.ImageMentionSpan
-import dev.kuylar.sakura.markdown.emoji.CustomEmojiExtension
-import dev.kuylar.sakura.markdown.emoji.CustomEmojiHtmlRendererExtension
-import dev.kuylar.sakura.markdown.emoji.CustomEmojiPlaintextRendererExtension
+import dev.kuylar.sakura.markdown.custom.emoji.CustomEmojiExtension
+import org.commonmark.ext.autolink.AutolinkExtension
+import org.commonmark.ext.autolink.AutolinkType
+import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
+import org.commonmark.ext.gfm.tables.TablesExtension
+import org.commonmark.ext.ins.InsExtension
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.html.HtmlRenderer
 import org.commonmark.renderer.text.LineBreakRendering
@@ -22,15 +25,24 @@ import javax.inject.Singleton
 
 @Singleton
 class MarkdownHandler @Inject constructor() {
-	private val parser = Parser.builder().apply {
-		extensions(listOf(CustomEmojiExtension()))
-	}.build()
+	private val extensions = listOf(
+		CustomEmojiExtension(),
+		TablesExtension.create(),
+		StrikethroughExtension.builder().apply {
+			requireTwoTildes(true)
+		}.build(),
+		AutolinkExtension.builder().apply {
+			linkTypes(AutolinkType.URL)
+		}.build(),
+		InsExtension.create()
+	)
+	private val parser = Parser.builder().apply { extensions(extensions) }.build()
 	private val htmlRenderer = HtmlRenderer.builder().apply {
-		extensions(listOf(CustomEmojiHtmlRendererExtension()))
+		extensions(extensions)
 		omitSingleParagraphP(true)
 	}.build()
 	private val textRenderer = TextContentRenderer.builder().apply {
-		extensions(listOf(CustomEmojiPlaintextRendererExtension()))
+		extensions(extensions)
 		lineBreakRendering(LineBreakRendering.SEPARATE_BLOCKS)
 	}.build()
 
@@ -55,7 +67,7 @@ class MarkdownHandler @Inject constructor() {
 	private fun htmlToSpannable(html: String?, context: Context): Spannable {
 		return markdownToSpannable(htmlToMarkdown(html), context)
 	}
-	
+
 	fun setTextView(textView: TextView, html: String?, isEdited: Boolean = false) {
 		val content = if (html != null && isEdited) "$html *(edited)*" else html
 		val spannable = htmlToSpannable(content, textView.context)

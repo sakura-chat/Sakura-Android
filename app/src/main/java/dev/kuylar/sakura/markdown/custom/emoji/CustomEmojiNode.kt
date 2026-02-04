@@ -1,4 +1,4 @@
-package dev.kuylar.sakura.markdown.emoji
+package dev.kuylar.sakura.markdown.custom.emoji
 
 import org.commonmark.node.CustomNode
 import org.commonmark.node.Delimited
