@@ -23,6 +23,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.postDelayed
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.discord.panels.OverlappingPanelsLayout
@@ -218,7 +219,13 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 			putString("selectedRoomId", roomId)
 		}
 		binding.overlappingPanels.closePanels()
-		navController.navigate(R.id.nav_room, bundleOf("roomId" to roomId))
+		navController.navigate(
+			R.id.nav_room,
+			bundleOf("roomId" to roomId),
+			NavOptions.Builder().apply {
+				setLaunchSingleTop(true)
+			}.build()
+		)
 		supportFragmentManager.beginTransaction()
 			.replace(binding.usersPanel.id, RoomInfoPanelFragment().apply {
 				arguments = bundleOf("roomId" to roomId)

@@ -499,6 +499,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 	}
 
 	override fun onDestroy() {
+		timelineAdapter.dispose()
 		typingUsersJob?.cancel()
 		super.onDestroy()
 	}
