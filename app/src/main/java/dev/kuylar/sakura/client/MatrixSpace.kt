@@ -9,6 +9,7 @@ data class MatrixSpace(
 	val children: List<RoomModel>,
 	val childSpaces: List<MatrixSpace>,
 	val order: Long,
+	val type: Type,
 	var onChange: (() -> Unit)? = null
 ) {
 	var isUnread: Boolean = false
@@ -26,5 +27,11 @@ data class MatrixSpace(
 	private fun update() {
 		isUnread = children.any { it.isUnread } || childSpaces.any { it.isUnread }
 		mentions = children.sumOf { it.mentions } + childSpaces.sumOf { it.mentions }
+	}
+
+	enum class Type {
+		DirectMessages,
+		Groups,
+		Space
 	}
 }

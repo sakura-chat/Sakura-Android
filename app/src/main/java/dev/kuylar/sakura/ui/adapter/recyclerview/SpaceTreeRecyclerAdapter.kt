@@ -31,7 +31,7 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 	private var spaceTree: Map<String, MatrixSpace> = emptyMap()
 	private var spaceId = "!home:SakuraNative"
 	private var firstLoadComplete = false
-	private var currentSpace = MatrixSpace(null, emptyList(), emptyList(), 0)
+	private var currentSpace = MatrixSpace(null, emptyList(), emptyList(), 0, MatrixSpace.Type.DirectMessages)
 	private var expandedRooms = HashMap<String, Boolean>()
 	private var items = mutableListOf<Any>()
 

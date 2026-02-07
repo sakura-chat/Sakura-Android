@@ -7,7 +7,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.bumptech.glide.Glide
 import com.google.android.material.shape.ShapeAppearanceModel
-import de.connect2x.trixnity.client.room
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.MatrixSpace
@@ -30,9 +29,8 @@ class SpaceListRecyclerAdapter(
 		setHasStableIds(true)
 		suspendThread {
 			// Will be called every room change (hopefully)
-			client.client.room.getAll().collect {
-				spaceTree = client.getSpaceTree()
-					.associateBy { it.parent?.roomId?.full ?: "!home:SakuraNative" }
+			client.getSpaceTreeFlow().collect { tree ->
+				spaceTree = tree.associateBy { it.parent?.roomId?.full ?: "!home:SakuraNative" }
 				activity.runOnUiThread {
 					if (selectedSpaceId != null)
 						spaceTree[selectedSpaceId]?.let {
