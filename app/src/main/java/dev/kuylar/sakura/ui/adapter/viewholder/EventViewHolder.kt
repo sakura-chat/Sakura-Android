@@ -71,15 +71,6 @@ class EventViewHolder(
 		binding.unreadSeparator.visibility =
 			if (event.eventId == unreadEventId && nextEvent != null) View.VISIBLE else View.GONE
 
-		binding.root.setOnLongClickListener {
-			val f = EventBottomSheetFragment()
-			f.arguments = bundleOf(
-				"eventId" to event.eventId.full,
-				"roomId" to event.roomId.full,
-			)
-			f.show(fragment.parentFragmentManager, "eventBottomSheet")
-			true
-		}
 		binding.avatar.setOnLongClickListener {
 			val f = ProfileBottomSheetFragment()
 			f.arguments = bundleOf(
@@ -96,6 +87,15 @@ class EventViewHolder(
 					(fragment as? TimelineFragment)?.handleReply(event.eventId)
 				}
 				lastClick = now
+			}
+			it.setOnLongClickListener {
+				val f = EventBottomSheetFragment()
+				f.arguments = bundleOf(
+					"eventId" to event.eventId.full,
+					"roomId" to event.roomId.full,
+				)
+				f.show(fragment.parentFragmentManager, "eventBottomSheet")
+				true
 			}
 		}
 
