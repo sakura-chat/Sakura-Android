@@ -34,6 +34,7 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 	private var currentSpace = MatrixSpace(null, emptyList(), emptyList(), 0, MatrixSpace.Type.DirectMessages)
 	private var expandedRooms = HashMap<String, Boolean>()
 	private var items = mutableListOf<Any>()
+	private var currentRoomId: String? = null
 
 	init {
 		setHasStableIds(true)
@@ -144,7 +145,7 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 	}
 
 	class RoomViewModel(val binding: ItemRoomBinding) : RoomListViewModel(binding) {
-		fun bind(model: RoomModel) {
+		fun bind(model: RoomModel, currentRoomId: String?) {
 			val room = model.snapshot
 			val lastMessage = model.lastMessage
 
@@ -173,7 +174,7 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 				binding.root.setOnClickListener {
 					openRoom(room)
 				}
-				if (room.roomId.full != currentRoomId()) {
+				if (room.roomId.full != currentRoomId) {
 					binding.container.setBackgroundColor(Color.TRANSPARENT)
 				} else {
 					val typedValue = android.util.TypedValue()
@@ -235,7 +236,7 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 
 	override fun onBindViewHolder(holder: RoomListViewModel, position: Int) {
 		when (holder) {
-			is RoomViewModel -> (items[position] as? RoomModel)?.let { holder.bind(it) }
+			is RoomViewModel -> (items[position] as? RoomModel)?.let { holder.bind(it, currentRoomId) }
 			is CategoryViewModel -> (items[position] as? SpaceModel)?.let { holder.bind(it) }
 		}
 	}
@@ -244,18 +245,9 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 
 	private fun openRoom(room: Room?) {
 		if (room == null) return
-		val oldRoomId = currentRoomId()
+		currentRoomId = room.roomId.full
 		activity.openRoomTimeline(room)
-		items.indexOfFirst { (it as? RoomModel)?.id?.full == oldRoomId }
-			.takeUnless { it == -1 }
-			?.let {
-				notifyItemChanged(it)
-			}
-		items.indexOfFirst { (it as? RoomModel)?.id == room.roomId }
-			.takeUnless { it == -1 }
-			?.let {
-				notifyItemChanged(it)
-			}
+		notifyDataSetChanged() // TODO: Gonna switch to a ListAdapter soon so this doesn't matter
 	}
 
 	private fun currentRoomId() = activity.getCurrentRoomId()
