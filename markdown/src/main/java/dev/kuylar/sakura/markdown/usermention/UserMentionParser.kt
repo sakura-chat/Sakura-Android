@@ -23,6 +23,7 @@ class UserMentionParser : InlineContentParser {
 		}
 
 		val str = scanner.toString()
+		if (str.firstOrNull() != '@') return null
 		val split = str.split('|', limit = 2)
 
 		scanner.next()
