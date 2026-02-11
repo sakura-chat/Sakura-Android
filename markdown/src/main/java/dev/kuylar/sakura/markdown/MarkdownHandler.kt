@@ -1,56 +1,42 @@
 package dev.kuylar.sakura.markdown
 
-import android.app.Application
+import android.text.Html
 import android.util.Log
 import android.widget.TextView
 import androidx.core.net.toUri
-import dev.kuylar.sakura.SakuraApplication
-import dev.kuylar.sakura.markdown.plugin.emoji.CustomEmojiPlugin
-import dev.kuylar.sakura.markdown.plugin.emoji.UserMentionPlugin
-import io.noties.markwon.Markwon
-import io.noties.markwon.MarkwonPlugin
-import io.noties.markwon.ext.strikethrough.StrikethroughPlugin
-import io.noties.markwon.ext.tables.TablePlugin
-import io.noties.markwon.html.HtmlPlugin
-import io.noties.markwon.image.glide.GlideImagesPlugin
-import io.noties.markwon.linkify.LinkifyPlugin
+import dev.kuylar.sakura.markdown.emoji.CustomEmojiExtension
+import org.commonmark.ext.autolink.AutolinkExtension
+import org.commonmark.ext.autolink.AutolinkType
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
-import org.commonmark.ext.gfm.tables.TablesExtension
+import org.commonmark.ext.ins.InsExtension
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.html.HtmlRenderer
+import org.commonmark.renderer.text.LineBreakRendering
 import org.commonmark.renderer.text.TextContentRenderer
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class MarkdownHandler @Inject constructor(application: Application) {
+class MarkdownHandler {
 	private val extensions = listOf(
-		CustomEmojiPlugin(application as SakuraApplication),
-		TablesExtension.create(),
-		StrikethroughExtension.create(),
+		CustomEmojiExtension(),
+		StrikethroughExtension.builder().apply {
+			requireTwoTildes(true)
+		}.build(),
+		AutolinkExtension.builder().apply {
+			linkTypes(AutolinkType.URL)
+		}.build(),
+		InsExtension.create()
 	)
-	private val plugins = listOf<MarkwonPlugin>(
-		GlideImagesPlugin.create(application),
-		HtmlPlugin.create(),
-		StrikethroughPlugin.create(),
-		TablePlugin.create(application),
-		LinkifyPlugin.create(),
-		CustomEmojiPlugin(application as SakuraApplication),
-		UserMentionPlugin(application as SakuraApplication)
-	)
-	private val markwon = Markwon.builder(application).apply {
-		usePlugins(plugins)
-	}.build()
 	private val parser = Parser.builder().apply { extensions(extensions) }.build()
 	private val htmlRenderer = HtmlRenderer.builder().apply {
 		extensions(extensions)
+		omitSingleParagraphP(true)
 	}.build()
 	private val textRenderer = TextContentRenderer.builder().apply {
 		extensions(extensions)
+		lineBreakRendering(LineBreakRendering.SEPARATE_BLOCKS)
 	}.build()
 
 	fun inputToHtml(input: String): String {
@@ -68,8 +54,9 @@ class MarkdownHandler @Inject constructor(application: Application) {
 	}
 
 	fun setTextView(textView: TextView, html: String?, isEdited: Boolean = false) {
-		val content = if (html != null && isEdited) "$html *(edited)*" else html
-		markwon.setMarkdown(textView, htmlToMarkdown(content))
+		val content = if (html != null && isEdited) "$html <sub><i>(edited)</i></sub>" else html
+		textView.text = Html.fromHtml(content, Html.FROM_HTML_MODE_COMPACT)
+		// TODO
 	}
 
 	private fun htmlNodeToMarkdown(node: Node, parentNodeName: String? = null): String {

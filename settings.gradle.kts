@@ -23,3 +23,4 @@ dependencyResolutionManagement {
 rootProject.name = "Sakura"
 include(":app")
 include(":emojipicker")
+include(":markdown")

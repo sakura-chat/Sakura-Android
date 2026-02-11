@@ -1,5 +1,5 @@
-package dev.kuylar.sakura.markdown.plugin.emoji
-
+package dev.kuylar.sakura.markdown.emoji
+/*
 import dev.kuylar.mentionsedittext.TextMentionSpan
 import dev.kuylar.sakura.SakuraApplication
 import io.noties.markwon.AbstractMarkwonPlugin
@@ -113,3 +113,4 @@ class UserMentionPlugin(val application: SakuraApplication) : AbstractMarkwonPlu
 		override fun getClosingDelimiter() = ">"
 	}
 }
+ */

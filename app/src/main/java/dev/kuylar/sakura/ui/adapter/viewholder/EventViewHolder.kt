@@ -43,6 +43,7 @@ import dev.kuylar.sakura.ui.adapter.model.EventModel
 import dev.kuylar.sakura.ui.fragment.TimelineFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.EventBottomSheetFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.ProfileBottomSheetFragment
+import kotlin.random.Random
 
 class EventViewHolder(
 	val binding: ItemMessageBinding,
@@ -52,6 +53,7 @@ class EventViewHolder(
 ) : TimelineViewHolder(binding) {
 	private val layoutInflater = fragment.layoutInflater
 	private var lastEventId: EventId? = null
+	private var nonce = 0L
 
 	fun bind(
 		eventModel: EventModel,
@@ -59,6 +61,7 @@ class EventViewHolder(
 		nextEventModel: EventModel?,
 		unreadEventId: EventId?
 	) {
+		nonce = Random.nextLong()
 		val event = eventModel.snapshot
 		val lastEvent = lastEventModel?.snapshot
 		val nextEvent = nextEventModel?.snapshot

@@ -77,17 +77,10 @@ dependencies {
 	implementation(platform(libs.firebase.bom))
 	implementation(libs.firebase.messaging)
 	implementation(libs.emoji2)
-	implementation(project(":emojipicker"))
 	implementation(libs.dagger.hilt.android)
 	ksp(libs.dagger.hilt.compiler)
-	implementation(libs.commonmark)
-	implementation(libs.markwon) { exclude(group = "org.jetbrains", module = "annotations-java5") }
-	implementation(libs.markwon.ext.strikethrough) { exclude(group = "org.jetbrains", module = "annotations-java5") }
-	implementation(libs.markwon.ext.tables) { exclude(group = "org.jetbrains", module = "annotations-java5") }
-	implementation(libs.markwon.html) { exclude(group = "org.jetbrains", module = "annotations-java5") }
-	implementation(libs.markwon.image) { exclude(group = "org.jetbrains", module = "annotations-java5") }
-	implementation(libs.markwon.linkify) { exclude(group = "org.jetbrains", module = "annotations-java5") }
 	implementation(libs.avatarview)
-	implementation(libs.jsoup)
 	implementation(libs.kotlin.reflect)
+	implementation(project(":emojipicker"))
+	implementation(project(":markdown"))
 }

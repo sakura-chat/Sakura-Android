@@ -1,13 +1,8 @@
-package dev.kuylar.sakura.markdown.plugin.emoji
+package dev.kuylar.sakura.markdown.emoji
 
-import dev.kuylar.sakura.SakuraApplication
-import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
-import io.noties.markwon.AbstractMarkwonPlugin
-import io.noties.markwon.MarkwonVisitor
 import org.commonmark.node.CustomNode
 import org.commonmark.node.Delimited
 import org.commonmark.node.Node
-import org.commonmark.node.Text
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.NodeRenderer
 import org.commonmark.renderer.html.HtmlNodeRendererContext
@@ -15,11 +10,10 @@ import org.commonmark.renderer.html.HtmlRenderer
 import org.commonmark.renderer.text.TextContentNodeRendererContext
 import org.commonmark.renderer.text.TextContentRenderer
 
-class CustomEmojiPlugin(val application: SakuraApplication) : AbstractMarkwonPlugin(),
-	HtmlRenderer.HtmlRendererExtension,
+class CustomEmojiExtension : Parser.ParserExtension, HtmlRenderer.HtmlRendererExtension,
 	TextContentRenderer.TextContentRendererExtension {
-	override fun configureParser(builder: Parser.Builder) {
-		builder.postProcessor(::processEmoji)
+	override fun extend(parserBuilder: Parser.Builder) {
+		parserBuilder.customInlineContentParserFactory(CustomEmojiParser.Factory())
 	}
 
 	override fun extend(rendererBuilder: HtmlRenderer.Builder) {
@@ -32,51 +26,6 @@ class CustomEmojiPlugin(val application: SakuraApplication) : AbstractMarkwonPlu
 		rendererBuilder.nodeRendererFactory { context ->
 			CustomEmojiTextNodeRenderer(context)
 		}
-	}
-
-	override fun configureVisitor(builder: MarkwonVisitor.Builder) {
-		builder.on(CustomEmojiNode::class.java) { visitor, node ->
-			val span = RoomCustomEmojiModel(node.uri, node.shortcode).toMention(application)
-			visitor.builder().append(span.value, span)
-		}
-	}
-
-	private fun processEmoji(block: Node): Node {
-		var node = block.firstChild
-		while (node != null) {
-			val next = node.next
-			if (node is Text) {
-				val literal = node.literal
-				val regex = Regex(":([^:]+)~([^:]+):")
-				val match = regex.find(literal)
-
-				if (match != null) {
-					val start = match.range.first
-					val end = match.range.last + 1
-
-					if (start > 0) {
-						node.insertBefore(Text(literal.take(start)))
-					}
-
-					node.insertBefore(
-						CustomEmojiNode(
-							"mxc://${match.groupValues[2]}",
-							match.groupValues[1]
-						)
-					)
-
-					if (end < literal.length) {
-						node.insertBefore(Text(literal.substring(end)))
-					}
-
-					node.unlink()
-				}
-			} else {
-				processEmoji(node)
-			}
-			node = next
-		}
-		return block
 	}
 
 	private class CustomEmojiNodeRenderer(
