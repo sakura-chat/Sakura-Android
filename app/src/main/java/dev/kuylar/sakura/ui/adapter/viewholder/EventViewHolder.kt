@@ -181,9 +181,10 @@ class EventViewHolder(
 
 			is RoomMessageEventContent.TextBased.Emote -> {
 				binding.senderName.visibility = View.GONE
-				val body = "\\* **${sender?.name ?: event.sender.full}** " +
-						(content.formattedBodyWithoutFallback?.let { markdown.htmlToMarkdown(it) }
-							?: content.body)
+				binding.avatar.visibility = View.VISIBLE
+				val body =
+					"* <b>${sender?.name ?: event.sender.full}</b> " + (content.formattedBodyWithoutFallback
+						?: content.bodyWithoutFallback.replace("<", "&lt;").replace(">", "&gt;"))
 				markdown.setTextView(binding.body, body, edited) {
 					if (cNonce != nonce) return@setTextView
 					binding.body.text = binding.body.text
