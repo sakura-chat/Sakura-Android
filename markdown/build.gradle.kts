@@ -45,6 +45,8 @@ dependencies {
 	androidTestImplementation(libs.androidx.espresso.core)
 	implementation(libs.dagger.hilt.android)
 	ksp(libs.dagger.hilt.compiler)
+	implementation(libs.glide)
+	implementation(libs.mentionsedittext)
 	implementation(libs.commonmark)
 	implementation(libs.commonmark.ext.gfm.strikethrough)
 	implementation(libs.commonmark.ext.autolink)

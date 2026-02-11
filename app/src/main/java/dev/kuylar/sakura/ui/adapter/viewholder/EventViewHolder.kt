@@ -6,6 +6,7 @@ import android.text.Html
 import android.view.View
 import android.view.ViewConfiguration
 import androidx.core.os.bundleOf
+import androidx.core.text.method.LinkMovementMethodCompat
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
@@ -101,6 +102,7 @@ class EventViewHolder(
 				true
 			}
 		}
+		binding.body.movementMethod = LinkMovementMethodCompat.getInstance()
 
 		var userInfoVisible = View.VISIBLE
 
@@ -145,10 +147,18 @@ class EventViewHolder(
 		content: RoomEventContent?,
 		edited: Boolean
 	) {
+		val cNonce = nonce
 		when (content) {
 			is RoomMessageEventContent.TextBased.Text -> {
 				if (content.formattedBody != null) {
-					markdown.setTextView(binding.body, content.formattedBodyWithoutFallback, edited)
+					markdown.setTextView(
+						binding.body,
+						content.formattedBodyWithoutFallback,
+						edited
+					) {
+						if (cNonce != nonce) return@setTextView
+						binding.body.text = binding.body.text
+					}
 				} else {
 					binding.body.text = content.bodyWithoutFallback
 				}
@@ -156,7 +166,14 @@ class EventViewHolder(
 
 			is RoomMessageEventContent.TextBased.Notice -> {
 				if (content.formattedBody != null) {
-					markdown.setTextView(binding.body, content.formattedBodyWithoutFallback, edited)
+					markdown.setTextView(
+						binding.body,
+						content.formattedBodyWithoutFallback,
+						edited
+					) {
+						if (cNonce != nonce) return@setTextView
+						binding.body.text = binding.body.text
+					}
 				} else {
 					binding.body.text = content.bodyWithoutFallback
 				}
@@ -167,14 +184,27 @@ class EventViewHolder(
 				val body = "\\* **${sender?.name ?: event.sender.full}** " +
 						(content.formattedBodyWithoutFallback?.let { markdown.htmlToMarkdown(it) }
 							?: content.body)
-				markdown.setTextView(binding.body, body, edited)
+				markdown.setTextView(binding.body, body, edited) {
+					if (cNonce != nonce) return@setTextView
+					binding.body.text = binding.body.text
+				}
 			}
 
 			is RoomMessageEventContent.FileBased.Image -> {
 				if (content.formattedBodyWithoutFallback != null) {
-					markdown.setTextView(binding.body, content.formattedBodyWithoutFallback, edited)
+					markdown.setTextView(
+						binding.body,
+						content.formattedBodyWithoutFallback,
+						edited
+					) {
+						if (cNonce != nonce) return@setTextView
+						binding.body.text = binding.body.text
+					}
 				} else if (content.fileName != null && content.body != content.fileName) {
-					markdown.setTextView(binding.body, content.bodyWithoutFallback, edited)
+					markdown.setTextView(binding.body, content.bodyWithoutFallback, edited) {
+						if (cNonce != nonce) return@setTextView
+						binding.body.text = binding.body.text
+					}
 				} else {
 					binding.body.visibility = View.GONE
 				}

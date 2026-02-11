@@ -409,11 +409,11 @@ class TimelineListAdapter(
 
 
 		private val configStart: GetTimelineEventConfig.() -> Unit = {
-			this.allowReplaceContent = false
+			this.allowReplaceContent = true
 			this.fetchSize = PAGINATION_FETCH_SIZE
 		}
 		private val configPaged: GetTimelineEventsConfig.() -> Unit = {
-			this.allowReplaceContent = false
+			this.allowReplaceContent = true
 			this.maxSize = PAGINATION_MAX_SIZE
 			this.fetchSize = PAGINATION_FETCH_SIZE
 			this.fetchTimeout = 5.seconds

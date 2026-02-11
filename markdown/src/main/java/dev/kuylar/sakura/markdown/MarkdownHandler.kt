@@ -1,10 +1,13 @@
 package dev.kuylar.sakura.markdown
 
-import android.text.Html
 import android.util.Log
 import android.widget.TextView
 import androidx.core.net.toUri
+import androidx.core.text.getSpans
+import dev.kuylar.mentionsedittext.ImageMentionSpan
 import dev.kuylar.sakura.markdown.emoji.CustomEmojiExtension
+import dev.kuylar.sakura.markdown.span.SpoilerSpan
+import dev.kuylar.sakura.markdown.usermention.UserMentionExtension
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.autolink.AutolinkType
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
@@ -21,6 +24,7 @@ import org.jsoup.nodes.TextNode
 class MarkdownHandler {
 	private val extensions = listOf(
 		CustomEmojiExtension(),
+		UserMentionExtension(),
 		StrikethroughExtension.builder().apply {
 			requireTwoTildes(true)
 		}.build(),
@@ -30,6 +34,7 @@ class MarkdownHandler {
 		InsExtension.create()
 	)
 	private val parser = Parser.builder().apply { extensions(extensions) }.build()
+	private val htmlSpannableRenderer = HtmlSpannableRenderer()
 	private val htmlRenderer = HtmlRenderer.builder().apply {
 		extensions(extensions)
 		omitSingleParagraphP(true)
@@ -53,10 +58,23 @@ class MarkdownHandler {
 		return htmlNodeToMarkdown(html.body().childNodes()).trim()
 	}
 
-	fun setTextView(textView: TextView, html: String?, isEdited: Boolean = false) {
-		val content = if (html != null && isEdited) "$html <sub><i>(edited)</i></sub>" else html
-		textView.text = Html.fromHtml(content, Html.FROM_HTML_MODE_COMPACT)
-		// TODO
+	fun setTextView(
+		textView: TextView,
+		html: String?,
+		isEdited: Boolean = false,
+		onUpdated: (() -> Unit)
+	) {
+		val spannable = htmlSpannableRenderer.fromHtml(
+			if (html != null && isEdited) "$html <sub><i>(edited)</i></sub>" else html,
+			textView.context
+		)
+		spannable.getSpans<ImageMentionSpan>().forEach {
+			it.onImageLoaded = { onUpdated.invoke() }
+		}
+		spannable.getSpans<SpoilerSpan>().forEach {
+			it.onReveal = { onUpdated.invoke() }
+		}
+		textView.text = spannable
 	}
 
 	private fun htmlNodeToMarkdown(node: Node, parentNodeName: String? = null): String {

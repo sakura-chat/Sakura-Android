@@ -23,6 +23,7 @@ import dev.kuylar.sakura.databinding.ItemMessageBinding
 import dev.kuylar.sakura.markdown.MarkdownHandler
 import dev.kuylar.sakura.ui.adapter.model.OutboxModel
 import dev.kuylar.sakura.ui.fragment.bottomsheet.ProfileBottomSheetFragment
+import kotlin.random.Random
 
 class OutboxViewHolder(
 	val binding: ItemMessageBinding,
@@ -32,8 +33,10 @@ class OutboxViewHolder(
 ) : TimelineViewHolder(binding) {
 	private val layoutInflater = fragment.layoutInflater
 	private var lastEventId: EventId? = null
+	private var nonce = 0L
 
 	fun bind(eventModel: OutboxModel) {
+		nonce = Random.nextLong()
 		val event = eventModel.snapshot
 
 		if (eventModel.eventId != lastEventId) resetBindingState()
@@ -57,7 +60,11 @@ class OutboxViewHolder(
 		when (val content = event.content) {
 			is RoomMessageEventContent.TextBased.Text -> {
 				if (content.formattedBody != null) {
-					markdown.setTextView(binding.body, content.formattedBodyWithoutFallback)
+					val cNonce = nonce
+					markdown.setTextView(binding.body, content.formattedBodyWithoutFallback) {
+						if (cNonce != nonce) return@setTextView
+						binding.body.text = binding.body.text
+					}
 				} else {
 					binding.body.text = content.bodyWithoutFallback
 				}

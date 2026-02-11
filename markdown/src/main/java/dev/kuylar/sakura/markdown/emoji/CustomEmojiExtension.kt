@@ -1,5 +1,12 @@
 package dev.kuylar.sakura.markdown.emoji
 
+import android.content.Context
+import android.graphics.drawable.Drawable
+import android.util.Log
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
+import dev.kuylar.mentionsedittext.ImageMentionSpan
 import org.commonmark.node.CustomNode
 import org.commonmark.node.Delimited
 import org.commonmark.node.Node
@@ -66,5 +73,23 @@ class CustomEmojiExtension : Parser.ParserExtension, HtmlRenderer.HtmlRendererEx
 		override fun getOpeningDelimiter() = ":"
 
 		override fun getClosingDelimiter() = ":"
+
+		fun toMention(context: Context) = ImageMentionSpan(":$shortcode~${uri.substringAfter("mxc://")}:") {
+			Log.d("ImageMentionSpan", "Loading image $uri")
+			Glide.with(context)
+				.asDrawable()
+				.load(uri)
+				.into(object : CustomTarget<Drawable>() {
+					override fun onResourceReady(
+						resource: Drawable,
+						transition: Transition<in Drawable>?
+					) {
+						Log.d("ImageMentionSpan", "Image $uri loaded")
+						it(resource)
+					}
+
+					override fun onLoadCleared(placeholder: Drawable?) {}
+				})
+		}
 	}
 }
