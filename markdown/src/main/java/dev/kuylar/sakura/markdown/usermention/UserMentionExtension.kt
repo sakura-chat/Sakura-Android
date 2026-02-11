@@ -1,13 +1,8 @@
-package dev.kuylar.sakura.markdown.emoji
-/*
-import dev.kuylar.mentionsedittext.TextMentionSpan
-import dev.kuylar.sakura.SakuraApplication
-import io.noties.markwon.AbstractMarkwonPlugin
-import io.noties.markwon.MarkwonVisitor
+package dev.kuylar.sakura.markdown.usermention
+
 import org.commonmark.node.CustomNode
 import org.commonmark.node.Delimited
 import org.commonmark.node.Node
-import org.commonmark.node.Text
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.NodeRenderer
 import org.commonmark.renderer.html.HtmlNodeRendererContext
@@ -15,11 +10,11 @@ import org.commonmark.renderer.html.HtmlRenderer
 import org.commonmark.renderer.text.TextContentNodeRendererContext
 import org.commonmark.renderer.text.TextContentRenderer
 
-class UserMentionPlugin(val application: SakuraApplication) : AbstractMarkwonPlugin(),
+class UserMentionExtension : Parser.ParserExtension,
 	HtmlRenderer.HtmlRendererExtension,
 	TextContentRenderer.TextContentRendererExtension {
-	override fun configureParser(builder: Parser.Builder) {
-		builder.postProcessor(::processMention)
+	override fun extend(parserBuilder: Parser.Builder) {
+		parserBuilder.customInlineContentParserFactory(UserMentionParser.Factory())
 	}
 
 	override fun extend(rendererBuilder: HtmlRenderer.Builder) {
@@ -32,52 +27,6 @@ class UserMentionPlugin(val application: SakuraApplication) : AbstractMarkwonPlu
 		rendererBuilder.nodeRendererFactory { context ->
 			UserMentionPlaintextRenderer(context)
 		}
-	}
-
-	override fun configureVisitor(builder: MarkwonVisitor.Builder) {
-		builder.on(UserMentionNode::class.java) { visitor, node ->
-			val span = TextMentionSpan(
-				node.name,
-				node.userId,
-				horizontalPadding = (application.resources.displayMetrics.density * 4).toInt()
-			)
-			visitor.builder().append(node.name, span)
-		}
-	}
-
-	private fun processMention(block: Node): Node {
-		var node = block.firstChild
-		while (node != null) {
-			val next = node.next
-			if (node is Text) {
-				val literal = node.literal
-				val regex = Regex("<(.+?)\\|(.+?)>")
-				val match = regex.find(literal)
-
-				if (match != null) {
-					val start = match.range.first
-					val end = match.range.last + 1
-					val id = match.groupValues[1]
-					val name = match.groupValues[2]
-
-					if (start > 0) {
-						node.insertBefore(Text(literal.take(start)))
-					}
-
-					node.insertBefore(UserMentionNode(id, "@$name"))
-
-					if (end < literal.length) {
-						node.insertBefore(Text(literal.substring(end)))
-					}
-
-					node.unlink()
-				}
-			} else {
-				processMention(node)
-			}
-			node = next
-		}
-		return block
 	}
 
 	private class UserMentionHtmlRenderer(
@@ -113,4 +62,3 @@ class UserMentionPlugin(val application: SakuraApplication) : AbstractMarkwonPlu
 		override fun getClosingDelimiter() = ">"
 	}
 }
- */
