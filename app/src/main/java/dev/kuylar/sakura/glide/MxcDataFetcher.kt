@@ -38,8 +38,7 @@ class MxcDataFetcher(val model: Uri, val width: Int, val height: Int) : DataFetc
 					model.getQueryParameter("height")?.toLongOrNull() ?: height.toLong(),
 					ThumbnailResizingMethod.SCALE,
 					// TODO: Get default animated previews from settings
-					model.getQueryParameter("animated")?.toBooleanStrictOrNull() ?: true,
-					saveToCache = false
+					model.getQueryParameter("animated")?.toBooleanStrictOrNull() ?: true
 				)
 			}
 			try {
