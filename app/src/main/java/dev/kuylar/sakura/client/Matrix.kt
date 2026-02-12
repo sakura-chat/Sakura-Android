@@ -434,6 +434,7 @@ class Matrix {
 			Log.w("MatrixClient", "reactToEvent() called before client was initialized.")
 			return
 		}
+		if (reaction.isBlank()) return
 		val sc = shortcode?.trim(':')
 		appendRecentEmoji(reaction)
 		client.room.sendMessage(roomId) {
