@@ -81,15 +81,6 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 				}
 			}
 		}
-		presenceJob = suspendThread {
-			client.client.user.getPresence(userId).collect {
-				it?.let { user ->
-					activity?.runOnUiThread {
-						updatePresence(user)
-					}
-				}
-			}
-		}
 		memberJob = suspendThread {
 			client.client.room.getState<MemberEventContent>(roomId, userId.full).collect {
 				it?.content?.let { user ->
@@ -225,7 +216,6 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 			binding.userAbout.text = profile.bio
 		}
 	}
-
 
 	private fun updatePowerLevel(powerLevel: PowerLevel) {
 		binding.roomName.visibility = View.VISIBLE
