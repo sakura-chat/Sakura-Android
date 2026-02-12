@@ -36,6 +36,7 @@ class MarkdownHandler {
 	private val parser = Parser.builder().apply { extensions(extensions) }.build()
 	private val htmlSpannableRenderer = HtmlSpannableRenderer()
 	private val htmlRenderer = HtmlRenderer.builder().apply {
+		softbreak("<br/>")
 		extensions(extensions)
 		omitSingleParagraphP(true)
 	}.build()
@@ -45,7 +46,7 @@ class MarkdownHandler {
 	}.build()
 
 	fun inputToHtml(input: String): String {
-		return htmlRenderer.render(parser.parse(input.replace("\n", "<br/>")))
+		return htmlRenderer.render(parser.parse(input))
 	}
 
 	fun inputToPlaintext(input: String): String {
