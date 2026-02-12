@@ -9,6 +9,8 @@
 		android:id="@+id/spaces_recycler"
 		android:layout_width="68dp"
 		android:layout_height="match_parent"
+		android:clipToPadding="false"
+		android:paddingBottom="80dp"
 		tools:listitem="@layout/item_space" />
 
 	<com.google.android.material.card.MaterialCardView
@@ -51,6 +53,8 @@
 				android:id="@+id/rooms_recycler"
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
+				android:clipToPadding="false"
+				android:paddingBottom="80dp"
 				tools:listitem="@layout/item_room" />
 		</LinearLayout>
 	</com.google.android.material.card.MaterialCardView>

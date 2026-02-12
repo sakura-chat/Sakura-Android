@@ -96,17 +96,16 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 			supportFragmentManager.findFragmentById(binding.navHostFragment.id) as NavHostFragment
 		navController = navHostFragment.navController
 
-		ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+		ViewCompat.setOnApplyWindowInsetsListener(binding.timelinePanel) { v, insets ->
 			val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
 			val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
 
 			navHostFragment.childFragmentManager.fragments.forEach { fragment ->
 				if (fragment is TimelineFragment) {
-					fragment.onImeHeightChanged(ime.bottom)
+					fragment.onImeHeightChanged(ime.bottom - systemBars.bottom)
 				}
 			}
 
-			binding.statusBarBg.layoutParams.height = systemBars.top
 			v.setPadding(
 				systemBars.left,
 				ime.top,
@@ -359,7 +358,6 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		binding.syncIndicatorText.setText(resId)
 		binding.syncIndicatorText.setTextColor(getColorFromAttr(textColor))
 		binding.syncIndicator.setBackgroundColor(getColorFromAttr(backgroundColor))
-		binding.statusBarBg.setBackgroundColor(getColorFromAttr(backgroundColor))
 	}
 
 	private fun getColorFromAttr(attr: Int): Int {
