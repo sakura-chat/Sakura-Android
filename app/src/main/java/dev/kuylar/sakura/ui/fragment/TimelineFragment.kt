@@ -86,6 +86,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 	private var lastReadEventTimestamp: Long = 0
 	private var clearCacheUnlocked = false
 	private var attachment: AttachmentInfo? = null
+	private var typing = false
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -235,7 +236,11 @@ class TimelineFragment : Fragment(), MenuProvider {
 
 		binding.input.addTextChangedListener {
 			suspendThread {
-				client.client.api.room.setTyping(RoomId(roomId), client.userId, !it.isNullOrBlank())
+				val typingNew = !it.isNullOrBlank()
+				if (typing != typingNew) {
+					typing = typingNew
+					client.client.api.room.setTyping(RoomId(roomId), client.userId, typing)
+				}
 			}
 		}
 		ViewCompat.setOnReceiveContentListener(
