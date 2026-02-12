@@ -164,12 +164,24 @@ class HtmlSpannableRenderer {
 					state.builder.length,
 					Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
 				)
+				state.builder.setSpan(
+					RelativeSizeSpan(.8f),
+					start,
+					state.builder.length,
+					Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+				)
 			}
 
 			"sub" -> {
 				visitChildren(state, element.childNodes())
 				state.builder.setSpan(
 					SubscriptSpan(),
+					start,
+					state.builder.length,
+					Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+				)
+				state.builder.setSpan(
+					RelativeSizeSpan(.8f),
 					start,
 					state.builder.length,
 					Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
