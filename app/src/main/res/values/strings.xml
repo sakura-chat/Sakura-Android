@@ -103,4 +103,8 @@
 	<string name="picker_sticker">Stickers</string>
 	<string name="sticker_category_account">Your Stickers</string>
 	<string name="gif_search_template">Search %s</string>
+	<string name="title_main">Messages</string>
+	<string name="title_search">Search</string>
+	<string name="title_notifications">Notifications</string>
+	<string name="title_settings">Settings</string>
 </resources>
