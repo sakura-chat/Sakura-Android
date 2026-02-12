@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	tools:context=".ui.fragment.settings.SettingsFragment">
+
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:background="?colorSurfaceContainerLowest"
+		android:orientation="vertical"
+		android:paddingBottom="16dp">
+
+		<ImageView
+			android:id="@+id/banner"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:adjustViewBounds="true"
+			android:maxHeight="150dp"
+			android:minHeight="100dp"
+			android:scaleType="centerCrop"
+			tools:src="@tools:sample/backgrounds/scenic" />
+
+		<io.getstream.avatarview.AvatarView
+			android:id="@+id/avatar"
+			android:layout_width="96dp"
+			android:layout_height="96dp"
+			android:layout_marginHorizontal="16dp"
+			android:layout_marginTop="-48dp"
+			app:avatarViewBorderColor="?colorSurface"
+			app:avatarViewBorderWidth="8dp"
+			app:avatarViewIndicatorBorderColor="?colorSurface"
+			app:avatarViewIndicatorBorderSizeCriteria="9"
+			app:avatarViewIndicatorColor="@color/status_offline"
+			app:avatarViewIndicatorEnabled="true"
+			app:avatarViewIndicatorPosition="bottomRight"
+			app:avatarViewIndicatorSizeCriteria="6"
+			app:avatarViewInitialsBackgroundColor="?colorSecondaryContainer"
+			app:avatarViewInitialsTextColor="?colorOnSecondaryContainer"
+			app:avatarViewInitialsTextStyle="bold"
+			app:avatarViewShape="circle"
+			tools:avatarViewInitials="@tools:sample/full_names"
+			tools:src="@tools:sample/avatars" />
+
+		<TextView
+			android:id="@+id/displayname"
+			style="?textAppearanceTitleLargeEmphasized"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginHorizontal="16dp"
+			android:layout_marginTop="8dp"
+			android:ellipsize="end"
+			android:maxLines="1"
+			tools:text="@tools:sample/full_names" />
+
+		<TextView
+			android:id="@+id/username"
+			style="?textAppearanceLabelLarge"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginHorizontal="16dp"
+			android:layout_marginTop="4dp"
+			android:ellipsize="end"
+			android:maxLines="1"
+			tools:text="\@username:example.homeserver" />
+
+		<TextView
+			android:id="@+id/extras"
+			style="?textAppearanceLabelLarge"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginHorizontal="16dp"
+			android:layout_marginTop="4dp"
+			android:ellipsize="end"
+			android:maxLines="1"
+			android:visibility="gone"
+			tools:text="Extra data from other MSCs will be here (pronouns, etc.)"
+			tools:visibility="visible" />
+
+		<TextView
+			android:id="@+id/status"
+			style="?textAppearanceLabelLarge"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginHorizontal="16dp"
+			android:layout_marginTop="8dp"
+			android:ellipsize="end"
+			android:maxLines="1"
+			android:visibility="gone"
+			tools:text="User's custom status"
+			tools:visibility="visible" />
+	</LinearLayout>
+</ScrollView>

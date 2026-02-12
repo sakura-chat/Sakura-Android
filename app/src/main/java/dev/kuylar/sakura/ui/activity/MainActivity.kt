@@ -173,6 +173,13 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 							binding.overlappingPanels.closePanels()
 							binding.overlappingPanels.setStartPanelUseFullPortraitWidth(false)
 							binding.overlappingPanels.setStartPanelLockState(OverlappingPanelsLayout.LockState.UNLOCKED)
+							binding.overlappingPanels.setEndPanelLockState(OverlappingPanelsLayout.LockState.UNLOCKED)
+						}
+
+						R.id.nav_settings -> {
+							binding.overlappingPanels.closePanels()
+							binding.overlappingPanels.setStartPanelLockState(OverlappingPanelsLayout.LockState.CLOSE)
+							binding.overlappingPanels.setEndPanelLockState(OverlappingPanelsLayout.LockState.CLOSE)
 						}
 					}
 				}
@@ -418,6 +425,8 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 	override fun onNavigationItemSelected(item: MenuItem): Boolean {
 		return when (item.itemId) {
 			R.id.nav_main -> {
+				binding.bottomNav.hide()
+				binding.overlappingPanels.closePanels()
 				navController.popBackStack(R.id.nav_room, false)
 			}
 
@@ -432,8 +441,9 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 			}
 
 			R.id.nav_settings -> {
-				Toast.makeText(this, "not implemented yet", Toast.LENGTH_LONG).show()
-				false
+				binding.overlappingPanels.closePanels()
+				navController.navigate(R.id.nav_settings)
+				true
 			}
 
 			else -> {
