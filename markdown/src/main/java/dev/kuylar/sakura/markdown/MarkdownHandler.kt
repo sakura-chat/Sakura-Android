@@ -46,7 +46,7 @@ class MarkdownHandler {
 	}.build()
 
 	fun inputToHtml(input: String): String {
-		return htmlRenderer.render(parser.parse(input))
+		return htmlRenderer.render(parser.parse(input.trim()))
 	}
 
 	fun inputToPlaintext(input: String): String {

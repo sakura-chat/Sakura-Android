@@ -41,7 +41,7 @@ class HtmlSpannableRenderer {
 		val sb = SpannableStringBuilder()
 		val state = State(context, sb)
 		visitChildren(state, doc.body().childNodes())
-		return sb
+		return sb.trim() as Spannable
 	}
 
 	private fun visitChildren(
