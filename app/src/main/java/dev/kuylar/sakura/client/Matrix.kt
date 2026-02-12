@@ -755,7 +755,7 @@ class Matrix {
 			// Not a good way to get the filter ID imo, but it works
 			(client as? MatrixClientImpl)?.di?.get<AccountStore>()?.let { accountStore ->
 				val account = accountStore.getAccount() ?: return@let
-				val filterId = account.filterId ?: return@let
+				val filterId = account.filter?.syncFilterId ?: return@let
 				val filter =
 					client.api.user.getFilter(account.userId, filterId).getOrNull() ?: return@let
 				var changed = force
@@ -802,7 +802,7 @@ class Matrix {
 				)
 				val newFilterId = client.api.user.setFilter(account.userId, newFilter).getOrThrow()
 				Log.i("MatrixClient", "Filter updated: $newFilterId")
-				accountStore.updateAccount { it?.copy(filterId = newFilterId) }
+				accountStore.updateAccount { it?.copy(filter = it.filter?.copy(syncFilterId = newFilterId)) }
 			}
 		} catch (e: Exception) {
 			Log.e("MatrixClient", "Failed to update filters", e)
