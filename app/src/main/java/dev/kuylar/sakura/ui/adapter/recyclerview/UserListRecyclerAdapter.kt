@@ -12,6 +12,7 @@ import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.m.Presence
+import de.connect2x.trixnity.core.model.events.m.room.Membership
 import dev.kuylar.sakura.Utils.getIndicatorColor
 import dev.kuylar.sakura.Utils.loadAvatar
 import dev.kuylar.sakura.Utils.suspendThread
@@ -21,6 +22,7 @@ import dev.kuylar.sakura.ui.adapter.model.UserModel
 import dev.kuylar.sakura.ui.fragment.bottomsheet.ProfileBottomSheetFragment
 import io.getstream.avatarview.glide.loadImage
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -37,23 +39,28 @@ class UserListRecyclerAdapter(val fragment: Fragment, val roomId: String, val cl
 				client.client.user.getAll(RoomId(roomId)).collect { users ->
 					val addedUsers = users.filter { it.key !in this.userMap.keys }
 					val removedUsers = this.userMap.filter { it.key !in users.keys }
-					fragment.activity?.runOnUiThread {
-						addedUsers.forEach { (id, userFlow) ->
-							handleUserAdded(id, userFlow)
-						}
-						removedUsers.forEach { (id, _) ->
-							handleUserRemoved(id)
-						}
+					addedUsers.forEach { (id, userFlow) ->
+						handleUserAdded(id, userFlow)
+					}
+					removedUsers.forEach { (id, _) ->
+						handleUserRemoved(id)
 					}
 				}
 			}
 		}
 	}
 
-	private fun handleUserAdded(id: UserId, userFlow: Flow<RoomUser?>) {
+	private suspend fun handleUserAdded(id: UserId, userFlow: Flow<RoomUser?>) {
 		val existing = users.indexOfFirst { it == id }
+		val snapshot = userFlow.firstOrNull()
+		if (snapshot?.event?.content?.membership != Membership.JOIN) {
+			handleUserRemoved(id)
+			return
+		}
 		if (existing >= 0) {
-			notifyItemChanged(existing)
+			fragment.activity?.runOnUiThread {
+				notifyItemChanged(existing)
+			}
 			return
 		}
 		val model = UserModel(id, userFlow, client) {
@@ -62,7 +69,9 @@ class UserListRecyclerAdapter(val fragment: Fragment, val roomId: String, val cl
 		userMap[id] = model
 		val insertIndex = findSortedPosition(model)
 		users.add(insertIndex, id)
-		notifyItemInserted(insertIndex)
+		fragment.activity?.runOnUiThread {
+			notifyItemInserted(insertIndex)
+		}
 	}
 
 	private fun handleUserRemoved(id: UserId) {
@@ -70,7 +79,9 @@ class UserListRecyclerAdapter(val fragment: Fragment, val roomId: String, val cl
 		if (index >= 0) {
 			users.removeAt(index)
 			userMap.remove(id)?.dispose()
-			notifyItemRemoved(index)
+			fragment.activity?.runOnUiThread {
+				notifyItemRemoved(index)
+			}
 		}
 	}
 
