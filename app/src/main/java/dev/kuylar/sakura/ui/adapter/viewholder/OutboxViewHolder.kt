@@ -17,12 +17,14 @@ import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
 import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
 import dev.kuylar.sakura.R
+import dev.kuylar.sakura.Utils.loadAvatar
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.AttachmentImageBinding
 import dev.kuylar.sakura.databinding.ItemMessageBinding
 import dev.kuylar.sakura.markdown.MarkdownHandler
 import dev.kuylar.sakura.ui.adapter.model.OutboxModel
 import dev.kuylar.sakura.ui.fragment.bottomsheet.ProfileBottomSheetFragment
+import io.getstream.avatarview.glide.loadImage
 import kotlin.random.Random
 
 class OutboxViewHolder(
@@ -145,9 +147,7 @@ class OutboxViewHolder(
 
 	private fun handleUser(user: RoomUser) {
 		binding.senderName.text = user.name
-		Glide.with(binding.root)
-			.load(user.avatarUrl)
-			.into(binding.avatar)
+		binding.avatar.loadAvatar(user.avatarUrl, user.name)
 	}
 
 	private fun resetBindingState() {
@@ -162,7 +162,8 @@ class OutboxViewHolder(
 		binding.attachment.visibility = View.GONE
 		if (binding.reactions.childCount > 1)
 			binding.reactions.removeViews(0, binding.reactions.childCount - 1)
-		binding.avatar.setImageDrawable(null)
+		binding.avatar.loadImage(null)
+		binding.avatar.avatarInitials = null
 		binding.senderName.text = ""
 		binding.body.text = ""
 		binding.eventTimestamp.text = ""

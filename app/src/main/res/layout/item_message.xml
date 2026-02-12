@@ -137,14 +137,18 @@
 				android:layout_width="40dp"
 				android:layout_height="wrap_content" />
 
-			<com.google.android.material.imageview.ShapeableImageView
+			<io.getstream.avatarview.AvatarView
 				android:id="@+id/avatar"
 				android:layout_width="40dp"
 				android:layout_height="40dp"
-				android:background="?colorSecondaryContainer"
-				app:layout_constraintStart_toStartOf="parent"
-				app:shapeAppearanceOverlay="@style/circleImageView"
-				tools:srcCompat="@tools:sample/avatars" />
+				app:avatarViewBorderColor="?colorSurfaceContainer"
+				app:avatarViewBorderWidth="0dp"
+				app:avatarViewInitialsBackgroundColor="?colorSecondaryContainer"
+				app:avatarViewInitialsTextColor="?colorOnSecondaryContainer"
+				app:avatarViewInitialsTextStyle="bold"
+				app:avatarViewShape="circle"
+				tools:avatarViewInitials="@tools:sample/full_names"
+				tools:src="@tools:sample/avatars"/>
 		</FrameLayout>
 
 		<LinearLayout

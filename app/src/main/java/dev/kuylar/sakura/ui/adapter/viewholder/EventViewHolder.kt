@@ -28,6 +28,7 @@ import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
 import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.getImageUrl
+import dev.kuylar.sakura.Utils.loadAvatar
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.Utils.toTimestamp
 import dev.kuylar.sakura.Utils.toTimestampDate
@@ -45,6 +46,7 @@ import dev.kuylar.sakura.ui.fragment.TimelineFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.EventBottomSheetFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.ProfileBottomSheetFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.ReactionBottomSheetFragment
+import io.getstream.avatarview.glide.loadImage
 import kotlin.random.Random
 
 class EventViewHolder(
@@ -332,9 +334,7 @@ class EventViewHolder(
 
 	private fun handleUser(user: RoomUser) {
 		binding.senderName.text = user.name
-		Glide.with(binding.root)
-			.load(user.avatarUrl)
-			.into(binding.avatar)
+		binding.avatar.loadAvatar(user.avatarUrl, user.name)
 	}
 
 	private fun handleReactions(
@@ -451,7 +451,8 @@ class EventViewHolder(
 		binding.attachment.visibility = View.GONE
 		if (binding.reactions.childCount > 1)
 			binding.reactions.removeViews(0, binding.reactions.childCount - 1)
-		binding.avatar.setImageDrawable(null)
+		binding.avatar.loadImage(null)
+		binding.avatar.avatarInitials = null
 		binding.senderName.text = ""
 		binding.body.text = ""
 		binding.eventTimestamp.text = ""
