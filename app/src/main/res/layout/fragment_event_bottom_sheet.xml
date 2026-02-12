@@ -30,7 +30,7 @@
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
 				android:gravity="center"
-				android:text="😭"
+				tools:text="😭"
 				android:textSize="24sp" />
 		</FrameLayout>
 
@@ -50,7 +50,7 @@
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
 				android:gravity="center"
-				android:text="💀"
+				tools:text="💀"
 				android:textSize="24sp" />
 		</FrameLayout>
 
@@ -70,7 +70,7 @@
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
 				android:gravity="center"
-				android:text="🥺"
+				tools:text="🥺"
 				android:textSize="24sp" />
 		</FrameLayout>
 
@@ -90,7 +90,7 @@
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
 				android:gravity="center"
-				android:text="🫃"
+				tools:text="🫃"
 				android:textSize="24sp" />
 		</FrameLayout>
 
@@ -110,7 +110,7 @@
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
 				android:gravity="center"
-				android:text="🐟"
+				tools:text="🐟"
 				android:textSize="24sp" />
 		</FrameLayout>
 
