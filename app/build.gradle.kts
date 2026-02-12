@@ -80,7 +80,6 @@ dependencies {
 	ksp(libs.dagger.hilt.compiler)
 	implementation(libs.avatarview)
 	implementation(libs.kotlin.reflect)
-	implementation(libs.jsonview)
 	implementation(project(":emojipicker"))
 	implementation(project(":markdown"))
 }

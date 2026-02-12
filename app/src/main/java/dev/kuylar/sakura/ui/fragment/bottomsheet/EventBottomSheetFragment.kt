@@ -8,18 +8,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.os.bundleOf
 import androidx.core.view.postDelayed
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import dagger.hilt.android.AndroidEntryPoint
-import dev.kuylar.sakura.Utils.suspendThread
-import dev.kuylar.sakura.client.Matrix
-import dev.kuylar.sakura.client.customevent.RecentEmoji
-import dev.kuylar.sakura.databinding.FragmentEventBottomSheetBinding
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.launch
 import de.connect2x.trixnity.client.room
 import de.connect2x.trixnity.client.room.getTimelineEventReactionAggregation
 import de.connect2x.trixnity.client.room.getTimelineEventReplaceAggregation
@@ -31,6 +23,15 @@ import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.m.FullyReadEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import dev.kuylar.sakura.Utils.suspendThread
+import dev.kuylar.sakura.client.Matrix
+import dev.kuylar.sakura.client.customevent.RecentEmoji
+import dev.kuylar.sakura.databinding.FragmentEventBottomSheetBinding
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -226,6 +227,14 @@ class EventBottomSheetFragment : BottomSheetDialogFragment() {
 			suspendThread {
 				client.reactToEvent(roomId!!, eventId!!, recentEmojis[4].emoji)
 			}
+			binding.root.postDelayed(50) {
+				dismiss()
+			}
+		}
+		binding.reaction.setOnClickListener {
+			val f = ReactionBottomSheetFragment()
+			f.arguments = bundleOf("roomId" to roomId?.full, "eventId" to eventId?.full)
+			f.show(parentFragmentManager, "reactionBottomSheet")
 			binding.root.postDelayed(50) {
 				dismiss()
 			}

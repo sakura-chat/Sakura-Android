@@ -44,6 +44,7 @@ import dev.kuylar.sakura.ui.adapter.model.EventModel
 import dev.kuylar.sakura.ui.fragment.TimelineFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.EventBottomSheetFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.ProfileBottomSheetFragment
+import dev.kuylar.sakura.ui.fragment.bottomsheet.ReactionBottomSheetFragment
 import kotlin.random.Random
 
 class EventViewHolder(
@@ -101,6 +102,11 @@ class EventViewHolder(
 				f.show(fragment.parentFragmentManager, "eventBottomSheet")
 				true
 			}
+		}
+		binding.reactionAdd.root.setOnClickListener {
+			val f = ReactionBottomSheetFragment()
+			f.arguments = bundleOf("roomId" to event.roomId.full, "eventId" to event.eventId.full)
+			f.show(fragment.parentFragmentManager, "reactionBottomSheet")
 		}
 		binding.body.movementMethod = LinkMovementMethodCompat.getInstance()
 
