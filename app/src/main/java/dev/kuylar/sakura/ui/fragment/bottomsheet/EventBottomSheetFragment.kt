@@ -17,6 +17,7 @@ import de.connect2x.trixnity.client.room.getTimelineEventReactionAggregation
 import de.connect2x.trixnity.client.room.getTimelineEventReplaceAggregation
 import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.client.store.eventId
+import de.connect2x.trixnity.client.store.roomId
 import de.connect2x.trixnity.client.store.sender
 import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.EventId
@@ -27,11 +28,8 @@ import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.RecentEmoji
 import dev.kuylar.sakura.databinding.FragmentEventBottomSheetBinding
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -68,7 +66,7 @@ class EventBottomSheetFragment : BottomSheetDialogFragment() {
 			binding.root.postDelayed(50) { dismiss() }
 			return
 		}
-		collectJob = CoroutineScope(Dispatchers.Main).launch {
+		collectJob = suspendThread {
 			val isEdited =
 				client.client.room.getTimelineEventReplaceAggregation(roomId!!, eventId!!)
 					.firstOrNull()?.history?.isNotEmpty() ?: false
@@ -173,11 +171,6 @@ class EventBottomSheetFragment : BottomSheetDialogFragment() {
 					client.userId
 				)
 			}
-			binding.root.postDelayed(50) { dismiss() }
-		}
-		binding.viewSource.setOnClickListener {
-			// TODO: EventSourceFragment
-			Toast.makeText(requireContext(), "not yet implemented", Toast.LENGTH_LONG).show()
 			binding.root.postDelayed(50) { dismiss() }
 		}
 		binding.report.setOnClickListener {
