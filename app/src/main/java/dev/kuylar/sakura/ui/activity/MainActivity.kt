@@ -403,7 +403,6 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		if (startPanelState == panelState) return
 		startPanelState = panelState
 
-		Log.i("MainActivity", "onPanelStateChange: $panelState")
 		when (panelState) {
 			PanelState.Closing -> {
 				if (getCurrentRoomId() != null)
@@ -412,7 +411,6 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 
 			PanelState.Closed -> {
 				if (opening) {
-					Log.i("MainActivity", "Bottom bar is still opening, marked to close asap")
 					hideAsSoonAsOpened = true
 				} else if (binding.bottomNav.isVisible) {
 					binding.bottomNav.hide()
@@ -467,7 +465,6 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		if (isVisible) return
 		if (opening) return
 		opening = true
-		Log.i("MainActivity", "Opening: start")
 
 		val parent = parent as ViewGroup
 		if (!isLaidOut) {
@@ -496,9 +493,7 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 				parent.overlay.remove(drawable)
 				visibility = View.VISIBLE
 				opening = false
-				Log.i("MainActivity", "Opening: complete")
 				if (hideAsSoonAsOpened) {
-					Log.i("MainActivity", "Bottom bar was requested to close as soon as it was opened, closing")
 					binding.bottomNav.hide()
 					hideAsSoonAsOpened = false
 				}
@@ -509,7 +504,6 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 
 	private fun BottomNavigationView.hide() {
 		if (isGone) return
-		Log.i("MainActivity", "Closing: start")
 
 		val drawable = drawToBitmap().toDrawable(context.resources)
 		val parent = parent as ViewGroup
@@ -529,7 +523,6 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 			}
 			doOnEnd {
 				parent.overlay.remove(drawable)
-				Log.i("MainActivity", "Closing: complete")
 			}
 			start()
 		}

@@ -160,7 +160,6 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 						noteEvent!!.copyWith(userId, it?.toString() ?: ""),
 						client.userId
 					)
-					Log.i("ProfileBottomSheetFragment", "Updated user note")
 				}
 			}
 		}

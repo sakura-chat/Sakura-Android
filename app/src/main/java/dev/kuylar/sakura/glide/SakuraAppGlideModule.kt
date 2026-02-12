@@ -15,7 +15,6 @@ class SakuraAppGlideModule: AppGlideModule() {
 		glide: Glide,
 		registry: Registry
 	) {
-		Log.i("SakuraAppGlideModule", "Registering MxcModelLoaderFactory")
 		registry.append(String::class.java, ByteBuffer::class.java, MxcModelLoaderFactory())
 	}
 }
