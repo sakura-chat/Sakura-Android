@@ -159,6 +159,9 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 			binding.bottomNav.hide()
 		}
 		handleStateChange(SyncState.STOPPED)
+		binding.bottomNav.post {
+			onPanelStateChange(PanelState.Opened)
+		}
 		lifecycleScope.launch {
 			lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
 				navController.addOnDestinationChangedListener { _, destination, _ ->
@@ -407,11 +410,16 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 					binding.bottomNav.hide()
 			}
 
-			PanelState.Opening -> {
-				binding.bottomNav.show()
+			PanelState.Closed -> {
+				binding.bottomNav.postDelayed(100) {
+					if (getCurrentRoomId() != null)
+						binding.bottomNav.hide()
+				}
 			}
 
-			else -> {}
+			PanelState.Opening, PanelState.Opened -> {
+				binding.bottomNav.show()
+			}
 		}
 
 		startPanelState = panelState
