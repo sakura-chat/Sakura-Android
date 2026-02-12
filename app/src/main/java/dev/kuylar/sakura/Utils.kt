@@ -47,7 +47,6 @@ import dev.kuylar.sakura.ui.activity.BubbleActivity
 import dev.kuylar.sakura.ui.activity.MainActivity
 import io.getstream.avatarview.AvatarView
 import io.getstream.avatarview.glide.loadImage
-import io.ktor.http.URLBuilder
 import io.ktor.utils.io.charsets.Charset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -189,17 +188,7 @@ object Utils {
 				Charset.defaultCharset()
 			)
 		}
-		return if (listOfNotNull(
-				this.info?.mimeType,
-				this.fileName,
-				this.body
-			).any { it.contains(".gif") }
-		) this.url?.let {
-			URLBuilder(it).apply {
-				parameters.append("animated", "true")
-			}.build().toString()
-		}
-		else this.url
+		return this.url
 	}
 
 	fun String.getInitials(uppercase: Boolean = false): String {
