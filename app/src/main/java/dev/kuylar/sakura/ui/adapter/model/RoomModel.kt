@@ -12,7 +12,9 @@ import de.connect2x.trixnity.core.model.push.PushCondition
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import kotlinx.coroutines.Job
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 class RoomModel(
 	val id: RoomId,
 	var snapshot: Room,

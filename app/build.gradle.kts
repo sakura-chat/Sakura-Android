@@ -1,6 +1,5 @@
 plugins {
 	alias(libs.plugins.android.application)
-	alias(libs.plugins.kotlin.android)
 	alias(libs.plugins.google.devtools.ksp)
 	alias(libs.plugins.google.services)
 	alias(libs.plugins.dagger.hilt.android)
@@ -37,13 +36,13 @@ android {
 		sourceCompatibility = JavaVersion.VERSION_17
 		targetCompatibility = JavaVersion.VERSION_17
 	}
-	kotlin {
-		jvmToolchain(17)
-	}
 	buildFeatures {
 		viewBinding = true
 		buildConfig = true
 	}
+}
+kotlin {
+	jvmToolchain(17)
 }
 
 dependencies {
@@ -81,6 +80,7 @@ dependencies {
 	ksp(libs.dagger.hilt.compiler)
 	implementation(libs.avatarview)
 	implementation(libs.kotlin.reflect)
+	implementation(libs.jsonview)
 	implementation(project(":emojipicker"))
 	implementation(project(":markdown"))
 }

@@ -52,7 +52,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 class TimelineListAdapter(
 	val fragment: Fragment,
 	val roomId: RoomId,

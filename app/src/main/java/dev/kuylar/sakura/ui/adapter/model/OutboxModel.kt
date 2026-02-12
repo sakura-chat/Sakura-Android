@@ -10,7 +10,9 @@ import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 class OutboxModel(
 	flow: Flow<RoomOutboxMessage<*>?>,
 	var snapshot: RoomOutboxMessage<*>,
