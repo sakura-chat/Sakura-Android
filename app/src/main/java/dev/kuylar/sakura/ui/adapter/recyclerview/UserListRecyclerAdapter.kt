@@ -133,6 +133,13 @@ class UserListRecyclerAdapter(val fragment: Fragment, val roomId: String, val cl
 		}.let { if (it < 0) -(it + 1) else it }
 	}
 
+	fun dispose() {
+		userMap.forEach { (k, it) ->
+			it.dispose()
+		}
+		userMap.clear()
+	}
+
 	class ViewHolder(private val binding: ItemUserBinding) : RecyclerView.ViewHolder(binding.root) {
 		private var lastUserId: UserId? = null
 

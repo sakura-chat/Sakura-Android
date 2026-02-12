@@ -35,7 +35,6 @@ class UserModel(
 				onChange?.invoke()
 			}
 		}
-
 	}
 
 	fun dispose() {
