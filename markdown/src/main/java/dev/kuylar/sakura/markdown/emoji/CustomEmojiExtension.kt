@@ -75,7 +75,6 @@ class CustomEmojiExtension : Parser.ParserExtension, HtmlRenderer.HtmlRendererEx
 		override fun getClosingDelimiter() = ":"
 
 		fun toMention(context: Context) = ImageMentionSpan(":$shortcode~${uri.substringAfter("mxc://")}:") {
-			Log.d("ImageMentionSpan", "Loading image $uri")
 			Glide.with(context)
 				.asDrawable()
 				.load(uri)
@@ -84,7 +83,6 @@ class CustomEmojiExtension : Parser.ParserExtension, HtmlRenderer.HtmlRendererEx
 						resource: Drawable,
 						transition: Transition<in Drawable>?
 					) {
-						Log.d("ImageMentionSpan", "Image $uri loaded")
 						it(resource)
 					}
 
