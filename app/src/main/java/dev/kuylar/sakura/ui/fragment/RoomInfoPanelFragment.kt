@@ -11,7 +11,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentRoomInfoPanelBinding
-import dev.kuylar.sakura.ui.adapter.recyclerview.UserListRecyclerAdapter
+import dev.kuylar.sakura.ui.adapter.listadapter.UserListAdapter
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -55,11 +55,11 @@ class RoomInfoPanelFragment : Fragment() {
 		}
 
 		binding.recycler.layoutManager = LinearLayoutManager(requireContext())
-		binding.recycler.adapter = UserListRecyclerAdapter(this, roomId, client)
+		binding.recycler.adapter = UserListAdapter(this, roomId, client, binding.recycler)
 	}
 
 	override fun onDestroy() {
-		(binding.recycler.adapter as? UserListRecyclerAdapter)?.dispose()
+		(binding.recycler.adapter as? UserListAdapter)?.dispose()
 		super.onDestroy()
 	}
 }
