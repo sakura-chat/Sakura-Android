@@ -10,6 +10,7 @@ import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
@@ -29,42 +30,30 @@ class OutboxModel(
 		get() = snapshot.createdAt.toEpochMilliseconds() + 1000 * 60 * 60
 	override val type: Int
 		get() = TimelineModel.TYPE_OUTBOX
-	private val jobs = mutableListOf<Job>()
+	private var job: Job? = null
 
 	init {
-		jobs.add(
-			suspendThread {
-				flow.collect {
-					it?.let {
-						snapshot = it
-						onChange?.invoke(this)
-					}
-				}
-			})
-		jobs.add(
-			suspendThread {
-				snapshot.mediaUploadProgress.collect {
-					it?.let {
-						uploadProgress = it
-						onChange?.invoke(this)
-					}
-				}
+		job = suspendThread {
+			combine(
+				flow,
+				snapshot.mediaUploadProgress,
+				client.client.user.getById(roomId, client.userId)
+			) { message, progress, user ->
+				Triple(
+					message, progress, user
+				)
+			}.collect { (message, progress, user) ->
+				message?.let { snapshot = it }
+				uploadProgress = progress
+				userSnapshot = user
+
+				onChange?.invoke(this)
 			}
-		)
-		jobs.add(
-			suspendThread {
-				client.client.user.getById(roomId, client.userId).collect {
-					it?.let { snapshot ->
-						userSnapshot = snapshot
-						onChange?.invoke(this)
-					}
-				}
-			}
-		)
+		}
 	}
 
 	override fun dispose() {
-		jobs.forEach { it.cancel() }
-		jobs.clear()
+		job?.cancel()
+		job = null
 	}
 }

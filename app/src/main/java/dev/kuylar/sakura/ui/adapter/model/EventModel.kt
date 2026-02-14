@@ -17,6 +17,8 @@ import dev.kuylar.sakura.client.Matrix
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class EventModel(
@@ -32,49 +34,38 @@ class EventModel(
 	var reactions: TimelineEventAggregation.Reaction? = null
 	var replaces: TimelineEventAggregation.Replace? = null
 	private var collectJob: Job? = null
-	private var reactionsJob: Job? = null
-	private var replacesJob: Job? = null
-	private var replyJob: Job? = null
-	private var userJob: Job? = null
 	override val type: Int
 		get() = TimelineModel.TYPE_EVENT
 	override val timestamp: Long
 		get() = snapshot.originTimestamp
 
 	init {
+		val repliedEventId =
+			(snapshot.content?.getOrNull() as? MessageEventContent)?.relatesTo?.replyTo?.eventId
 		collectJob = suspendThread {
-			flow.collect {
-				snapshot = it
-				onChange?.invoke()
-				if (replyJob == null && (it.content?.getOrNull() as? MessageEventContent)?.relatesTo?.replyTo?.eventId != null) {
-					replyJob = suspendThread {
-						client.client.room.getTimelineEvent(
-							roomId,
-							(it.content?.getOrNull() as MessageEventContent).relatesTo?.replyTo?.eventId!!
-						).collect { snapshot ->
-							repliedSnapshot = snapshot
-							onChange?.invoke()
-						}
-					}
-				}
+			combine(
+				flow,
+				if (repliedEventId != null)
+					client.client.room.getTimelineEvent(roomId, repliedEventId)
+				else
+					flowOf<TimelineEvent?>(null),
+				client.client.room.getTimelineEventReactionAggregation(roomId, eventId),
+				client.client.room.getTimelineEventReplaceAggregation(roomId, eventId),
+				client.client.user.getById(roomId, snapshot.sender)
+			) { message, reply, reactions, edits, user ->
+				Pair(Triple(message, reply, user), Pair(reactions, edits))
+			}.collect { (p1, p2) ->
+				val newMessage = p1.first
+				val newReply = p1.second
+				val newUser = p1.third
+				val newReactions = p2.first
+				val newEdits = p2.second
 
-			}
-		}
-		reactionsJob = suspendThread {
-			client.client.room.getTimelineEventReactionAggregation(roomId, eventId).collect {
-				reactions = it
-				onChange?.invoke()
-			}
-		}
-		replacesJob = suspendThread {
-			client.client.room.getTimelineEventReplaceAggregation(roomId, eventId).collect {
-				replaces = it
-				onChange?.invoke()
-			}
-		}
-		userJob = suspendThread {
-			client.client.user.getById(roomId, snapshot.sender).collect { snapshot ->
-				userSnapshot = snapshot
+				snapshot = newMessage
+				repliedSnapshot = newReply
+				reactions = newReactions
+				replaces = newEdits
+				userSnapshot = newUser
 				onChange?.invoke()
 			}
 		}
@@ -83,13 +74,5 @@ class EventModel(
 	override fun dispose() {
 		collectJob?.cancel()
 		collectJob = null
-		reactionsJob?.cancel()
-		reactionsJob = null
-		replacesJob?.cancel()
-		replacesJob = null
-		replyJob?.cancel()
-		replyJob = null
-		userJob?.cancel()
-		userJob = null
 	}
 }

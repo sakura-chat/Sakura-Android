@@ -8,6 +8,7 @@ import de.connect2x.trixnity.core.model.RoomId
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.combine
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
@@ -18,9 +19,6 @@ class RoomModel(
 	var onChange: (() -> Unit)? = null
 ) {
 	private var collectJob: Job? = null
-	private var receiptJob: Job? = null
-	private var pushRuleJob: Job? = null
-	private var mentionsJob: Job? = null
 	var lastMessage: TimelineEvent? = null
 	var isUnread = false
 	var mentions = 0
@@ -28,55 +26,32 @@ class RoomModel(
 
 	init {
 		collectJob = suspendThread {
+			combine(
+				client.client.room.getById(id),
+				client.client.notification.isUnread(id),
+				client.client.notification.getCount(id)
+			) { room, unread, count ->
+				Triple(room, unread, count)
+			}.collect { (room, unread, count) ->
+				room?.let {
+					snapshot = it
+					snapshot.lastRelevantEventId?.let { eventId ->
+						lastMessage = client.getEvent(id, eventId)
+					}
+				}
+				isUnread = unread
+				mentions = count
+				onChange?.invoke()
+			}
 			client.client.room.getById(id).collect {
 				snapshot = it ?: snapshot
-				snapshot.lastRelevantEventId?.let { eventId ->
-					lastMessage = client.getEvent(id, eventId)
-				}
 				onChange?.invoke()
 			}
 		}
-		receiptJob = suspendThread {
-			client.client.notification.isUnread(id).collect {
-				isUnread = it
-				onChange?.invoke()
-			}
-		}
-		mentionsJob = suspendThread {
-			client.client.notification.getCount(id).collect {
-				mentions = it
-				onChange?.invoke()
-			}
-		}
-		/*
-		pushRuleJob = suspendThread {
-			client.pushRules.collect {
-				val overrideRule = it.override?.firstOrNull { override ->
-					override.conditions?.any { condition ->
-						condition is PushCondition.EventMatch
-								&& condition.key == "room_id"
-								&& condition.pattern == id.full
-					} ?: false
-				}?.takeIf { rule -> rule.enabled }
-				val roomRule = it.room?.firstOrNull { rule -> rule.ruleId == id.full }
-					?.takeIf { rule -> rule.enabled }
-				val mergedRule = overrideRule ?: roomRule
-				mergedRule?.let { rule ->
-					muted = rule.actions.any { action -> action.name == "dont_notify" }
-				}
-			}
-		}
-		 */
 	}
 
 	fun dispose() {
 		collectJob?.cancel()
 		collectJob = null
-		receiptJob?.cancel()
-		receiptJob = null
-		pushRuleJob?.cancel()
-		pushRuleJob = null
-		mentionsJob?.cancel()
-		mentionsJob = null
 	}
 }

@@ -12,6 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 data class UserModel(
@@ -37,24 +38,18 @@ data class UserModel(
 	)
 
 	private var collectJob: Job? = null
-	private var presenceJob: Job? = null
 
 	init {
 		collectJob = CoroutineScope(Dispatchers.Main).launch {
-			flow.collect {
-				state = state.copy(
-					avatar = it?.avatarUrl,
-					username = it?.name ?: userId.full
+			combine(flow, client.client.user.getPresence(userId)) { user, presence ->
+				State(
+					userId,
+					user?.avatarUrl,
+					user?.name ?: userId.full,
+					presence?.presence ?: Presence.OFFLINE
 				)
-				snapshot = it
-				onChange?.invoke()
-			}
-		}
-		presenceJob = CoroutineScope(Dispatchers.Main).launch {
-			client.client.user.getPresence(userId).collect {
-				state = state.copy(
-					presence = it?.presence ?: Presence.OFFLINE
-				)
+			}.collect {
+				state = it
 				onChange?.invoke()
 			}
 		}
@@ -63,8 +58,6 @@ data class UserModel(
 	fun dispose() {
 		collectJob?.cancel()
 		collectJob = null
-		presenceJob?.cancel()
-		presenceJob = null
 	}
 
 	class DiffCallback : DiffUtil.ItemCallback<State>() {
