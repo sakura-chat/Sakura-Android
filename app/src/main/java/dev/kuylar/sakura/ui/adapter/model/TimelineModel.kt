@@ -12,6 +12,8 @@ interface TimelineModel {
 	val timestamp: Long
 
 	fun dispose()
+	fun start()
+	fun pause()
 
 	class ItemCallback : DiffUtil.ItemCallback<TimelineModel>() {
 		override fun areItemsTheSame(oldItem: TimelineModel, newItem: TimelineModel) =
@@ -22,8 +24,8 @@ interface TimelineModel {
 		@SuppressLint("DiffUtilEquals")
 		override fun areContentsTheSame(oldItem: TimelineModel, newItem: TimelineModel): Boolean {
 			return if (oldItem is EventModel && newItem is EventModel) {
-				val oldContents = oldItem.snapshot.content?.getOrNull()
-				val newContents = newItem.snapshot.content?.getOrNull()
+				val oldContents = oldItem.eventSnapshot.content?.getOrNull()
+				val newContents = newItem.eventSnapshot.content?.getOrNull()
 				oldContents == newContents
 			} else oldItem.eventId == newItem.eventId
 		}

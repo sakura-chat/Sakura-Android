@@ -211,7 +211,7 @@ class TimelineListAdapter(
 
 	override fun getItemViewType(position: Int) = when (val event = getItem(position)) {
 		is EventModel -> {
-			when (event.snapshot.content?.getOrNull()) {
+			when (event.eventSnapshot.content?.getOrNull()) {
 				is RoomMessageEventContent.TextBased.Emote -> TYPE_EVENT_MINI
 				else -> TYPE_EVENT
 			}
@@ -221,6 +221,11 @@ class TimelineListAdapter(
 	}
 
 	override fun getItemId(position: Int) = getItem(position)!!.eventId.hashCode().toLong()
+
+	override fun onViewRecycled(holder: TimelineViewHolder) {
+		holder.pause()
+		super.onViewRecycled(holder)
+	}
 
 	private fun updateEventById(eventId: EventId) {
 		synchronized(currentList) {
@@ -259,7 +264,7 @@ class TimelineListAdapter(
 		shouldDisplayEvent(event.content?.getOrNull(), event.relatesTo)
 
 	private fun shouldDisplayEvent(outbox: OutboxModel) =
-		shouldDisplayEvent(outbox.snapshot.content, outbox.snapshot.content.relatesTo)
+		shouldDisplayEvent(outbox.eventSnapshot.content, outbox.eventSnapshot.content.relatesTo)
 
 	private fun listenToReceipts() {
 		getReceiptJob = suspendThread {
@@ -292,7 +297,7 @@ class TimelineListAdapter(
 				}.filter { shouldDisplayEvent(it) }.toList()
 				existingModels.values.forEach { m -> m.dispose() }
 				submitList(
-					timelineState.elements.filter { shouldDisplayEvent(it.snapshot) } + newOutboxModels,
+					timelineState.elements.filter { shouldDisplayEvent(it.eventSnapshot) } + newOutboxModels,
 					::handlePostSubmitScroll
 				)
 				synchronized(outboxModels) {
@@ -308,11 +313,11 @@ class TimelineListAdapter(
 		timelineState = timeline.state.first()
 
 		val newEventModels = delta.elementsAfterChange
-			.filter { shouldDisplayEvent(it.snapshot) }
+			.filter { shouldDisplayEvent(it.eventSnapshot) }
 
 		val toRemoveOutbox = arrayListOf<Int>()
 		outboxModels.forEachIndexed { i, it ->
-			if (it.snapshot.sentAt != null)
+			if (it.eventSnapshot.sentAt != null)
 				toRemoveOutbox.add(i)
 		}
 		toRemoveOutbox.forEach { outboxModels.removeAt(it) }

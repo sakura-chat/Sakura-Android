@@ -36,10 +36,15 @@ class OutboxViewHolder(
 	private val layoutInflater = fragment.layoutInflater
 	private var lastEventId: EventId? = null
 	private var nonce = 0L
+	private var pauser: (() -> Unit)? = null
 
 	fun bind(eventModel: OutboxModel) {
 		nonce = Random.nextLong()
-		val event = eventModel.snapshot
+		val event = eventModel.eventSnapshot
+		pauser = {
+			eventModel.pause()
+		}
+		eventModel.start()
 
 		if (eventModel.eventId != lastEventId) resetBindingState()
 		eventModel.userSnapshot?.let { handleUser(it) }
@@ -143,6 +148,10 @@ class OutboxViewHolder(
 				)
 			}
 		}
+	}
+
+	override fun pause() {
+		pauser?.invoke()
 	}
 
 	private fun handleUser(user: RoomUser) {

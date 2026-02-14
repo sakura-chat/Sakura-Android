@@ -11,44 +11,38 @@ import dev.kuylar.sakura.client.Matrix
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
 class OutboxModel(
 	flow: Flow<RoomOutboxMessage<*>?>,
-	var snapshot: RoomOutboxMessage<*>,
+	var eventSnapshot: RoomOutboxMessage<*>,
 	val client: Matrix,
 	var onChange: ((OutboxModel) -> Unit)? = null
 ) : TimelineModel {
 	var uploadProgress: FileTransferProgress? = null
 	var userSnapshot: RoomUser? = null
+	private var combinedFlow: Flow<Snapshot>
+	private var snapshot: Snapshot? = null
 	override val eventId: EventId
-		get() = snapshot.eventId ?: EventId(snapshot.transactionId)
+		get() = eventSnapshot.eventId ?: EventId(eventSnapshot.transactionId)
 	override val roomId: RoomId
-		get() = snapshot.roomId
+		get() = eventSnapshot.roomId
 	override val timestamp: Long
-		get() = snapshot.createdAt.toEpochMilliseconds() + 1000 * 60 * 60
+		get() = eventSnapshot.createdAt.toEpochMilliseconds() + 1000 * 60 * 60
 	override val type: Int
 		get() = TimelineModel.TYPE_OUTBOX
 	private var job: Job? = null
 
 	init {
-		job = suspendThread {
-			combine(
-				flow,
-				snapshot.mediaUploadProgress,
-				client.client.user.getById(roomId, client.userId)
-			) { message, progress, user ->
-				Triple(
-					message, progress, user
-				)
-			}.collect { (message, progress, user) ->
-				message?.let { snapshot = it }
-				uploadProgress = progress
-				userSnapshot = user
-
-				onChange?.invoke(this)
-			}
+		combinedFlow = combine(
+			flow,
+			eventSnapshot.mediaUploadProgress,
+			client.client.user.getById(roomId, client.userId)
+		) { message, progress, user -> Snapshot(message, progress, user) }
+		suspendThread {
+			collect(combinedFlow.first())
 		}
 	}
 
@@ -56,4 +50,32 @@ class OutboxModel(
 		job?.cancel()
 		job = null
 	}
+
+	override fun start() {
+		if (job?.isActive == true) return
+		job = suspendThread {
+			combinedFlow.collect { collect(it) }
+		}
+	}
+
+	override fun pause() {
+		job?.cancel()
+		job = null
+	}
+
+	fun collect(newSnapshot: Snapshot) {
+		if (snapshot == newSnapshot) return
+		snapshot = newSnapshot
+
+		newSnapshot.message?.let { eventSnapshot = it }
+		uploadProgress = newSnapshot.progress
+		userSnapshot = newSnapshot.user
+		onChange?.invoke(this)
+	}
+
+	data class Snapshot(
+		val message: RoomOutboxMessage<*>?,
+		val progress: FileTransferProgress?,
+		val user: RoomUser?
+	)
 }

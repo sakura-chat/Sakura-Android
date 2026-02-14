@@ -58,6 +58,7 @@ class EventViewHolder(
 	private val layoutInflater = fragment.layoutInflater
 	private var lastEventId: EventId? = null
 	private var nonce = 0L
+	private var pauser: (() -> Unit)? = null
 
 	fun bind(
 		eventModel: EventModel,
@@ -66,11 +67,15 @@ class EventViewHolder(
 		unreadEventId: EventId?
 	) {
 		nonce = Random.nextLong()
-		val event = eventModel.snapshot
-		val lastEvent = lastEventModel?.snapshot
-		val nextEvent = nextEventModel?.snapshot
+		val event = eventModel.eventSnapshot
+		val lastEvent = lastEventModel?.eventSnapshot
+		val nextEvent = nextEventModel?.eventSnapshot
 		val repliedEvent = eventModel.repliedSnapshot
 		var lastClick = 0L
+		pauser = {
+			eventModel.pause()
+		}
+		eventModel.start()
 
 		if (eventModel.eventId != lastEventId) resetBindingState()
 		eventModel.userSnapshot?.let { handleUser(it) }
@@ -147,6 +152,10 @@ class EventViewHolder(
 				eventModel.replaces?.history?.isNotEmpty() ?: false
 			)
 		}
+	}
+
+	override fun pause() {
+		pauser?.invoke()
 	}
 
 	private fun handleContent(
