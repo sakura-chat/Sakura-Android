@@ -18,8 +18,11 @@ import de.connect2x.trixnity.client.cryptodriver.vodozemac.vodozemac
 import de.connect2x.trixnity.client.flattenValues
 import de.connect2x.trixnity.client.media.okio.okio
 import de.connect2x.trixnity.client.room
+import de.connect2x.trixnity.client.room.TimelineStateChange
 import de.connect2x.trixnity.client.room.getAccountData
 import de.connect2x.trixnity.client.room.getAllState
+import de.connect2x.trixnity.client.room.getTimelineEventReactionAggregation
+import de.connect2x.trixnity.client.room.getTimelineEventReplaceAggregation
 import de.connect2x.trixnity.client.room.message.file
 import de.connect2x.trixnity.client.room.message.image
 import de.connect2x.trixnity.client.room.message.reply
@@ -29,8 +32,11 @@ import de.connect2x.trixnity.client.store.AccountStore
 import de.connect2x.trixnity.client.store.Room
 import de.connect2x.trixnity.client.store.RoomUser
 import de.connect2x.trixnity.client.store.TimelineEvent
+import de.connect2x.trixnity.client.store.eventId
 import de.connect2x.trixnity.client.store.repository.room.TrixnityRoomDatabase
 import de.connect2x.trixnity.client.store.repository.room.room
+import de.connect2x.trixnity.client.store.roomId
+import de.connect2x.trixnity.client.store.sender
 import de.connect2x.trixnity.client.store.type
 import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.client.user.getAccountData
@@ -85,12 +91,14 @@ import dev.kuylar.sakura.emoji.RoomStickerModel
 import dev.kuylar.sakura.emojipicker.model.CategoryModel
 import dev.kuylar.sakura.markdown.MarkdownHandler
 import dev.kuylar.sakura.ui.adapter.model.RoomModel
+import dev.kuylar.sakura.ui.adapter.timeline.TimelineItem
 import dev.kuylar.sakura.ui.models.AttachmentInfo
 import io.ktor.http.ContentType
 import io.ktor.http.Url
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
@@ -192,6 +200,22 @@ class Matrix {
 	}
 
 	suspend fun getRoom(roomId: String) = getRoom(RoomId(roomId))
+
+	fun getTimeline(onStateChange: suspend (TimelineStateChange<TimelineItem.Event>) -> Unit) =
+		client.room.getTimeline(onStateChange) {
+			val snapshot = it.first()
+			TimelineItem.Event(
+				snapshot,
+				combine(
+					it,
+					client.user.getById(snapshot.roomId, snapshot.sender),
+					client.room.getTimelineEventReactionAggregation(snapshot.roomId, snapshot.eventId),
+					client.room.getTimelineEventReplaceAggregation(snapshot.roomId, snapshot.eventId),
+				) { event, user, reactions, replaces ->
+					TimelineItem.Event.Snapshot(event, user, reactions, replaces)
+				}
+			)
+		}
 
 	suspend fun getRooms(): List<Room> {
 		if (!this::client.isInitialized) {

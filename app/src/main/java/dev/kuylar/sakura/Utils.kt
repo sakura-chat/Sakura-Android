@@ -87,7 +87,7 @@ object Utils {
 			val pattern =
 				if (DateFormat.is24HourFormat(context)) "HH:mm" else "hh:mm a"
 			val formatter = SimpleDateFormat(pattern, Locale.getDefault())
-			return formatter.format(this)
+			formatter.format(this)
 		} else {
 			DateUtils.getRelativeDateTimeString(
 				context,
@@ -214,6 +214,8 @@ object Utils {
 			}
 			.joinToString("")
 	}
+
+	fun AvatarView.loadUser(user: RoomUser) = loadAvatar(user.avatarUrl, user.name)
 
 	fun AvatarView.loadAvatar(url: String?, name: String) {
 		if (url != null)
@@ -411,4 +413,7 @@ object Utils {
 
 		override fun hashCode() = "v=$version;$url".hashCode()
 	}
+
+	val RoomMessageEventContent.content: String
+		get() = this.formattedBodyWithoutFallback ?: this.bodyWithoutFallback
 }

@@ -31,6 +31,7 @@ import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResultListener
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -55,7 +56,7 @@ import dev.kuylar.sakura.databinding.FragmentTimelineBinding
 import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
 import dev.kuylar.sakura.markdown.MarkdownHandler
 import dev.kuylar.sakura.ui.adapter.PickerPagerAdapter
-import dev.kuylar.sakura.ui.adapter.listadapter.TimelineListAdapter
+import dev.kuylar.sakura.ui.adapter.timeline.TimelineRecyclerAdapter
 import dev.kuylar.sakura.ui.models.AttachmentInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -76,7 +77,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 
 	@Inject
 	lateinit var markdown: MarkdownHandler
-	private lateinit var timelineAdapter: TimelineListAdapter
+	private lateinit var timelineAdapter: TimelineRecyclerAdapter
 	private lateinit var visualMediaPicker: ActivityResultLauncher<PickVisualMediaRequest>
 	private var isLoadingMore = false
 	private var editingEvent: EventId? = null
@@ -133,16 +134,19 @@ class TimelineFragment : Fragment(), MenuProvider {
 			Lifecycle.State.RESUMED
 		)
 
-		timelineAdapter = TimelineListAdapter(
+		timelineAdapter = TimelineRecyclerAdapter(
 			this,
 			RoomId(roomId),
-			binding.timelineRecycler,
 			client,
 			markdown
 		) {
-			binding.loading.visibility = if (it.first || it.second) View.VISIBLE else View.GONE
-			if (!it.first && !it.second) isLoadingMore = false
+			binding.loading.visibility = if (it) View.VISIBLE else View.GONE
+			if (!it) isLoadingMore = false
 		}
+		binding.timelineRecycler.layoutManager = LinearLayoutManager(requireContext()).apply {
+			stackFromEnd = true
+		}
+		binding.timelineRecycler.adapter = timelineAdapter
 		binding.timelineRecycler.addOnScrollListener(object : RecyclerView.OnScrollListener() {
 			override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
 				super.onScrolled(recyclerView, dx, dy)
@@ -344,10 +348,9 @@ class TimelineFragment : Fragment(), MenuProvider {
 			"/reinit" -> {
 				Log.i("TimelineFragment", "Reinitializing the recycler adapter")
 				timelineAdapter.dispose()
-				timelineAdapter = TimelineListAdapter(
+				timelineAdapter = TimelineRecyclerAdapter(
 					this,
 					RoomId(roomId),
-					binding.timelineRecycler,
 					client,
 					markdown
 				)
@@ -469,30 +472,33 @@ class TimelineFragment : Fragment(), MenuProvider {
 		val totalItemCount = layoutManager.itemCount
 
 		if (totalItemCount == 0 || !timelineAdapter.isReady) return
-		if ((totalItemCount - lastVisibleItem - 1) <= 5 && timelineAdapter.canLoadMoreBackward()) {
-			isLoadingMore = true
-			suspendThread {
-				timelineAdapter.loadMoreBackwards()
-			}
-			return
-		}
-
-		if (firstVisibleItem <= 5) {
-			if (timelineAdapter.canLoadMoreForward()) {
+		if (!isLoadingMore) {
+			if (allItemsAreVisible(firstVisibleItem, lastVisibleItem, totalItemCount)
+				&& timelineAdapter.canLoadMoreBefore()
+			) {
 				isLoadingMore = true
-				suspendThread {
-					timelineAdapter.loadMoreForwards()
+				lifecycleScope.launch {
+					timelineAdapter.loadMoreBefore()
 				}
+				return
 			}
-			val lastEventId = timelineAdapter.lastEventId ?: return
-			val lastEventTimestamp = timelineAdapter.lastEventTimestamp
-			if (lastReadEventTimestamp < lastEventTimestamp) {
-				lastReadEventId = lastEventId
-				lastReadEventTimestamp = lastEventTimestamp
-				suspendThread {
-					client.client.api.room.setReceipt(RoomId(roomId), lastEventId)
+			if (firstVisibleItem <= 10 && timelineAdapter.canLoadMoreBefore()) {
+				isLoadingMore = true
+				lifecycleScope.launch {
+					timelineAdapter.loadMoreBefore()
 				}
+				return
 			}
+			if (lastVisibleItem == totalItemCount - 1 && timelineAdapter.canLoadMoreAfter()) {
+				isLoadingMore = true
+				lifecycleScope.launch {
+					timelineAdapter.loadMoreAfter()
+				}
+				return
+			}
+		}
+		if (lastVisibleItem == totalItemCount - 1) {
+			// TODO: READ INDICATOR
 		}
 	}
 
@@ -598,5 +604,10 @@ class TimelineFragment : Fragment(), MenuProvider {
 		companion object {
 			val MIME_TYPES = arrayOf("image/*", "video/*")
 		}
+	}
+
+	companion object {
+		private fun allItemsAreVisible(first: Int, last: Int, total: Int) =
+			first == 0 && last == total - 1
 	}
 }
