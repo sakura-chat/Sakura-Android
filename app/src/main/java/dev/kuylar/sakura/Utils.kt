@@ -27,6 +27,7 @@ import androidx.core.graphics.drawable.IconCompat
 import androidx.core.net.toUri
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SortedList
 import de.connect2x.trixnity.client.media
 import de.connect2x.trixnity.client.store.Room
 import de.connect2x.trixnity.client.store.RoomUser
@@ -416,4 +417,10 @@ object Utils {
 
 	val RoomMessageEventContent.content: String
 		get() = this.formattedBodyWithoutFallback ?: this.bodyWithoutFallback
+
+	fun <T> SortedList<T>.getOrNull(index: Int): T? {
+		if (index < 0) return null
+		if (index >= size()) return null
+		return get(index)
+	}
 }

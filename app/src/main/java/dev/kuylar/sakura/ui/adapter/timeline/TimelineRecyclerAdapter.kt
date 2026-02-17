@@ -20,6 +20,7 @@ import de.connect2x.trixnity.core.model.events.m.ReactionEventContent
 import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.room.RedactionEventContent
+import dev.kuylar.sakura.Utils.getOrNull
 import dev.kuylar.sakura.Utils.isAtBottom
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
@@ -96,7 +97,7 @@ class TimelineRecyclerAdapter(
 	)
 
 	override fun onBindViewHolder(holder: TimelineEventViewHolder, position: Int) {
-		holder.bind(items[position])
+		holder.bind(items[position], items.getOrNull(position - 1))
 	}
 
 	override fun getItemCount() = items.size()
