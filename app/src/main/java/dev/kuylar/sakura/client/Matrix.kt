@@ -98,10 +98,13 @@ import io.ktor.http.Url
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import okio.Path.Companion.toPath
 import org.koin.core.module.Module
@@ -129,6 +132,7 @@ class Matrix {
 	private var loadedRecentEmoji = false
 	private var syncStarted = false
 	lateinit var pushRules: Flow<PushRuleSet>
+	private val roomCache = HashMap<RoomId, StateFlow<Room?>>()
 
 	constructor(context: Context, from: String) {
 		this.context = context
@@ -164,6 +168,7 @@ class Matrix {
 		// Load this beforehand so we always have a list of recent emojis in hand
 		getRecentEmojis()
 		listenForPushRules()
+		initializeRoomCache()
 	}
 
 	suspend fun login(
@@ -189,17 +194,35 @@ class Matrix {
 		).getOrThrow()
 		getRecentEmojis()
 		listenForPushRules()
+		initializeRoomCache()
 	}
 
-	suspend fun getRoom(roomId: RoomId): Room? {
+	private suspend fun initializeRoomCache() {
+		val scope = coroutineScope { this }
+		client.room.getAll().collect { rooms ->
+			rooms.forEach { (id, flow) ->
+				if (roomCache.contains(id)) return@forEach
+				val initialValue = flow.first()
+				synchronized(roomCache) {
+					roomCache[id] = flow.stateIn(
+						scope = scope,
+						started = SharingStarted.Eagerly,
+						initialValue = initialValue
+					)
+				}
+			}
+		}
+	}
+
+	fun getRoom(roomId: RoomId): Room? {
 		if (!this::client.isInitialized) {
 			Log.w("MatrixClient", "getRoom() called before client was initialized.")
 			return null
 		}
-		return client.room.getById(roomId).first()
+		return roomCache[roomId]?.value
 	}
 
-	suspend fun getRoom(roomId: String) = getRoom(RoomId(roomId))
+	fun getRoom(roomId: String) = getRoom(RoomId(roomId))
 
 	fun getTimeline(onStateChange: suspend (TimelineStateChange<TimelineItem.Event>) -> Unit) =
 		client.room.getTimeline(onStateChange) {
