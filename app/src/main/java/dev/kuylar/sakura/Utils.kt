@@ -218,12 +218,12 @@ object Utils {
 	fun AvatarView.loadUser(user: RoomUser) = loadAvatar(user.avatarUrl, user.name)
 
 	fun AvatarView.loadAvatar(url: String?, name: String) {
-		if (url != null)
+		if (url != null) {
+			avatarInitials = null
 			loadImage(url, true)
-		else
-			name.getInitials(true).takeIf { it.isNotBlank() }?.let {
-				avatarInitials = it
-			}
+		} else name.getInitials(true).takeIf { it.isNotBlank() }?.let {
+			avatarInitials = it
+		}
 	}
 
 	private fun getBubbleMetadata(
