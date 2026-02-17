@@ -161,13 +161,13 @@ object Utils {
 		return String.format(Locale.getDefault(), "%.2f %s", value, units[unitIndex])
 	}
 
-	fun RecyclerView.isAtBottom(): Boolean {
+	fun RecyclerView.isAtBottom(offset: Int = 0): Boolean {
 		val lm = layoutManager as? LinearLayoutManager ?: return false
 		if (lm.itemCount == 0) return true
 		return if (lm.reverseLayout) {
-			lm.findFirstCompletelyVisibleItemPosition() == 0
+			lm.findFirstCompletelyVisibleItemPosition() == 0 + offset
 		} else {
-			lm.findLastCompletelyVisibleItemPosition() == lm.itemCount - 1
+			lm.findLastCompletelyVisibleItemPosition() == lm.itemCount - 1 + offset
 		}
 	}
 

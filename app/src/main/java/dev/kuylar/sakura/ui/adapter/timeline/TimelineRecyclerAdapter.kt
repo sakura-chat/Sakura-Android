@@ -1,5 +1,6 @@
 package dev.kuylar.sakura.ui.adapter.timeline
 
+import android.util.Log
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -19,6 +20,7 @@ import de.connect2x.trixnity.core.model.events.m.ReactionEventContent
 import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.room.RedactionEventContent
+import dev.kuylar.sakura.Utils.isAtBottom
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
 import dev.kuylar.sakura.databinding.ItemMessageBinding
@@ -34,6 +36,7 @@ class TimelineRecyclerAdapter(
 	roomId: RoomId,
 	val client: Matrix,
 	val markdown: MarkdownHandler,
+	val recycler: RecyclerView? = null,
 	val isLoading: ((Boolean) -> Unit)? = null
 ) : RecyclerView.Adapter<TimelineEventViewHolder>() {
 	val layoutInflater = fragment.layoutInflater
@@ -42,8 +45,17 @@ class TimelineRecyclerAdapter(
 			override fun compare(o1: TimelineItem, o2: TimelineItem): Int =
 				o1.sortTimestamp.compareTo(o2.sortTimestamp)
 
-			override fun onInserted(position: Int, count: Int) =
+			override fun onInserted(position: Int, count: Int) {
+				val scroll = recycler?.isAtBottom(-count) ?: false
 				notifyItemRangeInserted(position, count)
+				if (scroll) {
+					recycler.post {
+						val item = (recycler.adapter?.itemCount ?: 1) - 1
+						Log.i("TimelineRecyclerAdapter", "scrollToPosition(${item})")
+						recycler.scrollToPosition(item)
+					}
+				}
+			}
 
 			override fun onRemoved(position: Int, count: Int) =
 				notifyItemRangeRemoved(position, count)

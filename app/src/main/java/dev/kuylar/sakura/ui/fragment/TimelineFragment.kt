@@ -138,7 +138,8 @@ class TimelineFragment : Fragment(), MenuProvider {
 			this,
 			RoomId(roomId),
 			client,
-			markdown
+			markdown,
+			binding.timelineRecycler
 		) {
 			binding.loading.visibility = if (it) View.VISIBLE else View.GONE
 			if (!it) isLoadingMore = false
