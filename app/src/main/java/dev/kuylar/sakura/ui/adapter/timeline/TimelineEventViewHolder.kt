@@ -17,6 +17,7 @@ import dev.kuylar.sakura.Utils.loadUser
 import dev.kuylar.sakura.Utils.toTimestamp
 import dev.kuylar.sakura.databinding.ItemMessageBinding
 import dev.kuylar.sakura.markdown.MarkdownHandler
+import io.getstream.avatarview.glide.loadImage
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlin.random.Random
@@ -34,6 +35,7 @@ class TimelineEventViewHolder(
 		collectionJob = null
 		nonce = Random.nextLong()
 		val currentNonce = nonce
+		resetBindingState()
 		setData(currentNonce, item, prevItem)
 		collectionJob =
 			(bindingAdapter as? TimelineRecyclerAdapter)?.fragment?.lifecycleScope?.launch {
@@ -62,7 +64,7 @@ class TimelineEventViewHolder(
 		setAvatarVisibility(item, prevItem)
 		item.content?.let { setContent(currentNonce, it) }
 		item.user?.let { setUser(it) }
-		setReply((item as? TimelineItem.Event)?.repliedToEvent)
+		(item as? TimelineItem.Event)?.repliedToEvent?.let { setReply(currentNonce, it) }
 	}
 
 	private fun setAvatarVisibility(item: TimelineItem, prevItem: TimelineItem?) {
@@ -116,12 +118,7 @@ class TimelineEventViewHolder(
 		binding.senderName.text = user.name
 	}
 
-	private fun setReply(reply: TimelineItem.Event.Snapshot.Reply?) {
-		val currentNonce = nonce
-		if (reply == null) {
-			binding.replyingEvent.visibility = View.GONE
-			return
-		}
+	private fun setReply(currentNonce: Long, reply: TimelineItem.Event.Snapshot.Reply) {
 		binding.replyingEvent.visibility = View.VISIBLE
 		Glide.with(binding.root).load(reply.user.avatarUrl).into(binding.replyingAvatar)
 		binding.replyingName.text = reply.user.name
@@ -136,6 +133,35 @@ class TimelineEventViewHolder(
 			is RoomMessageEventContent.FileBased -> {
 				binding.replyingBody.setText(R.string.message_attachment)
 			}
+		}
+	}
+
+
+
+	private fun resetBindingState() {
+		binding.unreadSeparator.visibility = View.GONE
+		binding.dateSeparator.visibility = View.GONE
+
+		binding.replyingEvent.visibility = View.GONE
+		binding.replyingBody.text = null
+		binding.replyingAvatar.setImageDrawable(null)
+		binding.replyingName.text = null
+
+		binding.avatar.avatarInitials = null
+		binding.avatar.loadImage(null)
+
+		binding.senderName.text = null
+		binding.senderBadge.text = null
+		binding.senderBadge.visibility = View.GONE
+
+		binding.eventTimestamp.text = null
+		binding.body.text = null
+
+		binding.attachment.removeAllViews()
+		binding.embeds.removeAllViews()
+
+		while (binding.reactions.childCount > 1) {
+			binding.reactions.removeViewAt(0)
 		}
 	}
 }
