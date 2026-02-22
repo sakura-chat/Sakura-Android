@@ -1,29 +1,6 @@
 package dev.kuylar.sakura.ui.adapter.recyclerview
 
-import android.annotation.SuppressLint
-import android.graphics.Color
-import android.os.Handler
-import android.util.Log
-import android.view.View
-import android.view.ViewGroup
-import androidx.core.content.ContextCompat
-import androidx.core.os.postDelayed
-import androidx.recyclerview.widget.RecyclerView
-import androidx.viewbinding.ViewBinding
-import com.bumptech.glide.Glide
-import de.connect2x.trixnity.client.store.Room
-import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
-import dev.kuylar.sakura.R
-import dev.kuylar.sakura.Utils.suspendThread
-import dev.kuylar.sakura.client.Matrix
-import dev.kuylar.sakura.client.MatrixSpace
-import dev.kuylar.sakura.databinding.ItemRoomBinding
-import dev.kuylar.sakura.databinding.ItemRoomCategoryBinding
-import dev.kuylar.sakura.ui.activity.MainActivity
-import dev.kuylar.sakura.ui.adapter.model.RoomModel
-import dev.kuylar.sakura.ui.adapter.model.SpaceModel
-import com.google.android.material.R as MaterialR
-
+/*
 @SuppressLint("NotifyDataSetChanged")
 class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 	RecyclerView.Adapter<SpaceTreeRecyclerAdapter.RoomListViewModel>() {
@@ -251,4 +228,4 @@ class SpaceTreeRecyclerAdapter(val activity: MainActivity, val client: Matrix) :
 	}
 
 	private fun currentRoomId() = activity.getCurrentRoomId()
-}
+}*/

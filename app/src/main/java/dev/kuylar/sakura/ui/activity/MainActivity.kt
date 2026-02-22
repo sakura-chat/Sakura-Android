@@ -53,10 +53,9 @@ import de.connect2x.trixnity.core.model.RoomId
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
-import dev.kuylar.sakura.client.MatrixSpace
 import dev.kuylar.sakura.databinding.ActivityMainBinding
-import dev.kuylar.sakura.ui.adapter.recyclerview.SpaceListRecyclerAdapter
-import dev.kuylar.sakura.ui.adapter.recyclerview.SpaceTreeRecyclerAdapter
+import dev.kuylar.sakura.ui.adapter.spaces.SpaceTreeListAdapter
+import dev.kuylar.sakura.ui.adapter.spaces.TopLevelSpacesRecyclerAdapter
 import dev.kuylar.sakura.ui.fragment.RoomInfoPanelFragment
 import dev.kuylar.sakura.ui.fragment.TimelineFragment
 import dev.kuylar.sakura.ui.fragment.verification.VerificationBottomSheetFragment
@@ -82,6 +81,7 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 			}
 		}
 	private var startPanelState: PanelState = PanelState.Closed
+	private var spaceTreeLoaded = false
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -190,13 +190,19 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		suspendThread {
 			try {
 				client.initialize("main")
-			} catch (_: Exception) {
+			} catch (e: Exception) {
+				Log.wtf("MainActivity", "Failed to initialize client", e)
 				// Failed to load client. Give up and send the user to the login screen
 				this@MainActivity.runOnUiThread {
 					startActivity(Intent(this, LoginActivity::class.java))
 					finish()
 				}
 				return@suspendThread
+			}
+			lifecycleScope.launch {
+				repeatOnLifecycle(Lifecycle.State.STARTED) {
+					client.initializeRoomCache()
+				}
 			}
 			runOnUiThread {
 				onClientReady()
@@ -234,29 +240,26 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 				client.registerFcmPusher(it.result)
 			}
 		}
-		binding.roomsPanel.spacesRecycler.adapter = SpaceListRecyclerAdapter(
-			this,
-			client,
-			getSharedPreferences("main", MODE_PRIVATE).getString("selectedSpaceId", null)
-		)
-		binding.roomsPanel.roomsRecycler.adapter = SpaceTreeRecyclerAdapter(this, client)
+		val sp = getSharedPreferences("main", MODE_PRIVATE)
+		val selectedSpace =
+			sp.getString("selectedSpaceId", null)?.let { RoomId(it) } ?: Matrix.DIRECT_ROOM
+		val selectedRoom = sp.getString("selectedRoomId", null)?.let { RoomId(it) }
+		binding.roomsPanel.spacesRecycler.adapter =
+			TopLevelSpacesRecyclerAdapter(this, client, selectedSpace)
+		binding.roomsPanel.roomsRecycler.adapter = SpaceTreeListAdapter(this, client, selectedRoom)
 		if (autoNavigate) {
-			val navigatedFromIntent = handleIntent(intent)
-			if (!navigatedFromIntent)
-				getSharedPreferences("main", MODE_PRIVATE).getString("selectedRoomId", null)?.let {
-					openRoomTimeline(it)
-				}
+			if (!handleIntent(intent) && selectedRoom != null) openRoomTimeline(selectedRoom)
 		}
 	}
 
-	fun openSpaceTree(space: MatrixSpace) {
+	fun openSpaceTree(id: RoomId) {
+		val room = client.getRoom(id)
 		getSharedPreferences("main", MODE_PRIVATE).edit {
-			putString("selectedSpaceId", space.parent?.roomId?.full ?: "!home:SakuraNative")
+			putString("selectedSpaceId", id.full)
 		}
-		binding.roomsPanel.title.text = space.parent?.name?.explicitName ?: "Home"
+		binding.roomsPanel.title.text = room?.name?.explicitName ?: "Home"
 		binding.roomsPanel.topic.visibility = View.GONE
-		(binding.roomsPanel.roomsRecycler.adapter as? SpaceTreeRecyclerAdapter)
-			?.changeSpace(space.parent?.roomId?.full ?: "!home:SakuraNative")
+		(binding.roomsPanel.roomsRecycler.adapter as? SpaceTreeListAdapter)?.changeSpace(id)
 	}
 
 	fun openRoomTimeline(room: Room) = openRoomTimeline(room.roomId)
@@ -307,6 +310,14 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 	}
 
 	private fun handleStateChange(state: SyncState) {
+		if (!spaceTreeLoaded && state != SyncState.STOPPED && state != SyncState.STARTED) {
+			spaceTreeLoaded = true
+			openSpaceTree(
+				getSharedPreferences("main", MODE_PRIVATE)
+					.getString("selectedSpaceId", null)?.let { RoomId(it) }
+					?: Matrix.DIRECT_ROOM
+			)
+		}
 		val resId = when (state) {
 			SyncState.INITIAL_SYNC -> R.string.sync_status_initial
 			SyncState.STARTED -> R.string.sync_status_start
@@ -321,27 +332,12 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 				MaterialR.attr.colorOnPrimary
 			)
 
-			SyncState.STARTED -> Pair(
-				MaterialR.attr.colorTertiary,
-				MaterialR.attr.colorOnTertiary
-			)
-
 			SyncState.RUNNING -> Pair(
 				MaterialR.attr.colorSurface,
 				MaterialR.attr.colorOnSurface
 			)
 
-			SyncState.ERROR -> Pair(
-				MaterialR.attr.colorTertiary,
-				MaterialR.attr.colorOnTertiary
-			)
-
-			SyncState.TIMEOUT -> Pair(
-				MaterialR.attr.colorTertiary,
-				MaterialR.attr.colorOnTertiary
-			)
-
-			SyncState.STOPPED -> Pair(
+			SyncState.ERROR, SyncState.TIMEOUT, SyncState.STOPPED, SyncState.STARTED -> Pair(
 				MaterialR.attr.colorTertiary,
 				MaterialR.attr.colorOnTertiary
 			)

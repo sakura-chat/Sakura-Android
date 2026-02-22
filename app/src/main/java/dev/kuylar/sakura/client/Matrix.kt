@@ -17,9 +17,9 @@ import de.connect2x.trixnity.client.create
 import de.connect2x.trixnity.client.cryptodriver.vodozemac.vodozemac
 import de.connect2x.trixnity.client.flattenValues
 import de.connect2x.trixnity.client.media.okio.okio
+import de.connect2x.trixnity.client.notification
 import de.connect2x.trixnity.client.room
 import de.connect2x.trixnity.client.room.TimelineStateChange
-import de.connect2x.trixnity.client.room.getAccountData
 import de.connect2x.trixnity.client.room.getAllState
 import de.connect2x.trixnity.client.room.getTimelineEventReactionAggregation
 import de.connect2x.trixnity.client.room.getTimelineEventReplaceAggregation
@@ -60,7 +60,6 @@ import de.connect2x.trixnity.core.model.events.m.DirectEventContent
 import de.connect2x.trixnity.core.model.events.m.PushRulesEventContent
 import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.room.CreateEventContent
-import de.connect2x.trixnity.core.model.events.m.room.Membership
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.push.PushRuleSet
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
@@ -68,7 +67,6 @@ import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMap
 import de.connect2x.trixnity.core.serialization.events.default
 import de.connect2x.trixnity.core.serialization.events.globalAccountDataOf
 import de.connect2x.trixnity.core.serialization.events.messageOf
-import de.connect2x.trixnity.core.serialization.events.roomAccountDataOf
 import de.connect2x.trixnity.core.serialization.events.stateOf
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.customevent.ElementRecentEmojiEventContent
@@ -77,9 +75,6 @@ import dev.kuylar.sakura.client.customevent.MatrixEmote
 import dev.kuylar.sakura.client.customevent.RecentEmoji
 import dev.kuylar.sakura.client.customevent.RoomImagePackEventContent
 import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
-import dev.kuylar.sakura.client.customevent.SpaceChildrenEventContent
-import dev.kuylar.sakura.client.customevent.SpaceOrderEventContent
-import dev.kuylar.sakura.client.customevent.SpaceParentEventContent
 import dev.kuylar.sakura.client.customevent.StickerMessageEventContent
 import dev.kuylar.sakura.client.customevent.UserImagePackEventContent
 import dev.kuylar.sakura.client.customevent.UserNoteEventContent
@@ -96,11 +91,13 @@ import dev.kuylar.sakura.ui.models.AttachmentInfo
 import io.ktor.http.ContentType
 import io.ktor.http.Url
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
@@ -133,6 +130,9 @@ class Matrix {
 	private var syncStarted = false
 	lateinit var pushRules: Flow<PushRuleSet>
 	private val roomCache = HashMap<RoomId, StateFlow<Room?>>()
+	var spaceTree: Flow<List<MatrixSpace>> = emptyFlow()
+		private set
+	val clientScope = MainScope()
 
 	constructor(context: Context, from: String) {
 		this.context = context
@@ -168,7 +168,7 @@ class Matrix {
 		// Load this beforehand so we always have a list of recent emojis in hand
 		getRecentEmojis()
 		listenForPushRules()
-		initializeRoomCache()
+		//spaceTree = getSpaceTreeFlow()
 	}
 
 	suspend fun login(
@@ -194,18 +194,17 @@ class Matrix {
 		).getOrThrow()
 		getRecentEmojis()
 		listenForPushRules()
-		initializeRoomCache()
+		//spaceTree = getSpaceTreeFlow()
 	}
 
-	private suspend fun initializeRoomCache() {
-		val scope = coroutineScope { this }
+	suspend fun initializeRoomCache() {
 		client.room.getAll().collect { rooms ->
 			rooms.forEach { (id, flow) ->
 				if (roomCache.contains(id)) return@forEach
 				val initialValue = flow.first()
 				synchronized(roomCache) {
 					roomCache[id] = flow.stateIn(
-						scope = scope,
+						scope = clientScope,
 						started = SharingStarted.Eagerly,
 						initialValue = initialValue
 					)
@@ -223,6 +222,7 @@ class Matrix {
 	}
 
 	fun getRoom(roomId: String) = getRoom(RoomId(roomId))
+	fun getRoomFlow(roomId: RoomId) = roomCache[roomId]
 
 	fun getTimeline(onStateChange: suspend (TimelineStateChange<TimelineItem.Event>) -> Unit) =
 		client.room.getTimeline(onStateChange) {
@@ -232,121 +232,128 @@ class Matrix {
 				combine(
 					it,
 					client.user.getById(snapshot.roomId, snapshot.sender),
-					client.room.getTimelineEventReactionAggregation(snapshot.roomId, snapshot.eventId),
-					client.room.getTimelineEventReplaceAggregation(snapshot.roomId, snapshot.eventId),
+					client.room.getTimelineEventReactionAggregation(
+						snapshot.roomId,
+						snapshot.eventId
+					),
+					client.room.getTimelineEventReplaceAggregation(
+						snapshot.roomId,
+						snapshot.eventId
+					),
 				) { event, user, reactions, replaces ->
 					TimelineItem.Event.Snapshot(event, user, reactions, replaces)
 				}
 			)
 		}
 
-	suspend fun getRooms(): List<Room> {
-		if (!this::client.isInitialized) {
-			Log.w("MatrixClient", "getRooms() called before client was initialized.")
-			return emptyList()
-		}
-		return client.room.getAll().flattenValues().first()
-			.filter { it.membership != Membership.LEAVE && it.membership != Membership.BAN }
-			.toList()
+	fun getIsUnread(roomId: RoomId): Flow<Boolean> {
+		return if (roomId == DIRECT_ROOM) {
+			combine(roomCache.mapNotNull { it.value.value }
+				.filter { it.type != CreateEventContent.RoomType.Space && it.isDirect }
+				.map { getIsUnread(it.roomId) }) { it.any { r -> r } }
+		} else if (roomId == GROUPS_ROOM) {
+			combine(roomCache.mapNotNull { it.value.value }
+				.filter { it.type != CreateEventContent.RoomType.Space && !it.isDirect }
+				.map { getIsUnread(it.roomId) }) { it.any { r -> r } }
+		} else if (roomCache[roomId]?.value?.type == CreateEventContent.RoomType.Space) {
+			combine(getSpaceChildren(roomId).map { getIsUnread(it.roomId) }) {
+				it.any { v -> v }
+			}
+		} else client.notification.isUnread(roomId)
+	}
+	fun getNotificationCount(roomId: RoomId): Flow<Int> {
+		return if (roomId == DIRECT_ROOM) {
+			combine(roomCache.mapNotNull { it.value.value }
+				.filter { it.type != CreateEventContent.RoomType.Space && it.isDirect }
+				.map { getNotificationCount(it.roomId) }) { it.sum() }
+		} else if (roomId == GROUPS_ROOM) {
+			combine(roomCache.mapNotNull { it.value.value }
+				.filter { it.type != CreateEventContent.RoomType.Space && !it.isDirect }
+				.map { getNotificationCount(it.roomId) }) { it.sum() }
+		} else if (roomCache[roomId]?.value?.type == CreateEventContent.RoomType.Space) {
+			combine(getSpaceChildren(roomId).map { getNotificationCount(it.roomId) }) {
+				it.sum()
+			}
+		} else client.notification.getCount(roomId)
 	}
 
-	fun getRoomsFlow(): Flow<List<Room>> {
-		if (!this::client.isInitialized) {
-			Log.w("MatrixClient", "getRoomsFlow() called before client was initialized.")
-			return flow { }
-		}
-		return flow {
-			client.room.getAll().flattenValues().collect {
-				emit(it.filter { it.membership != Membership.LEAVE && it.membership != Membership.BAN }
-					.toList())
+	suspend fun getTopLevelSpaces(): List<Room> =
+		client.room.getAll().flattenValues().first().let { rooms ->
+			val allSpaces = rooms.filter { it.type == CreateEventContent.RoomType.Space }
+
+			return if (allSpaces.isEmpty()) {
+				emptyList()
+			} else {
+				val topLevel = allSpaces.filter { space ->
+					!allSpaces.any { it.childEvents?.containsKey(space.roomId.full) == true }
+				}
+				topLevel.sortedWith(
+					compareBy<Room> {
+						it.orderEvent?.order == null
+					}.thenBy {
+						it.orderEvent?.order ?: Long.MAX_VALUE
+					}.thenBy {
+						it.roomId.full
+					}
+				)
 			}
 		}
+
+	fun getSpaceChildren(roomId: RoomId) = getSpaceChildren(roomCache[roomId]?.value)
+	fun getSpaceChildren(room: Room?): List<Room> {
+		if (room == null) return emptyList()
+		if (room.type != CreateEventContent.RoomType.Space) return emptyList()
+		return (room.childEvents?.keys ?: emptySet()).mapNotNull { roomCache[RoomId(it)]?.value }
 	}
 
 	@OptIn(ExperimentalTime::class)
-	fun getSpaceTreeFlow(): Flow<List<MatrixSpace>> {
-		if (!this::client.isInitialized) {
-			Log.w("MatrixClient", "getSpaceTreeFlow() called before client was initialized.")
-			return flow {}
+	fun getSpaceChildrenRecursive(roomId: RoomId) = when (roomId) {
+		DIRECT_ROOM -> {
+			val children = roomCache.mapNotNull { it.value.value }
+				.filter { it.type != CreateEventContent.RoomType.Space && it.isDirect }
+				.sortedBy { it.lastRelevantEventTimestamp?.epochSeconds ?: Long.MAX_VALUE  }
+				.map { RoomModel(it.roomId, it, this) }
+			MatrixSpace(null, children, emptyList())
 		}
-		return flow {
-			getRoomsFlow().collect { allRooms ->
-				val unownedRooms = allRooms.associateByTo(HashMap()) { it.roomId }
-				val parentToChildren = HashMap<String, MutableList<RoomId>>()
-				val roomOrderMap = HashMap<String, Long>()
-				val topLevelSpaces = mutableListOf<Room>()
 
-				suspend fun buildSpaceTree(space: Room?): MatrixSpace {
-					if (space == null) return MatrixSpace(
-						null,
-						unownedRooms.values
-							.sortedByDescending { it.lastRelevantEventTimestamp?.toEpochMilliseconds() }
-							.toList()
-							.map { RoomModel(it.roomId, it, this@Matrix) },
-						emptyList(),
-						Long.MIN_VALUE,
-						MatrixSpace.Type.DirectMessages
-					)
-
-					val childrenState =
-						client.room.getAllState<SpaceChildrenEventContent>(space.roomId)
-							.firstOrNull()?.values?.mapNotNull { it.first() }
-					val childCreationDates =
-						childrenState?.associateByTo(
-							HashMap(),
-							{ it.stateKey }) { it.originTimestamp }
-							?: emptyMap()
-					val childrenIds = childrenState?.map { RoomId(it.stateKey) }
-						?: parentToChildren[space.roomId.toString()]
-						?: emptyList()
-					val children = mutableListOf<RoomModel>()
-					val childSpaces = mutableListOf<MatrixSpace>()
-
-					childrenIds.forEach { childId ->
-						unownedRooms.remove(childId)?.let { child ->
-							if (child.type == CreateEventContent.RoomType.Space)
-								childSpaces.add(buildSpaceTree(child))
-							else children.add(RoomModel(child.roomId, child, this@Matrix))
-						}
-					}
-
-					return MatrixSpace(
-						space,
-						children,
-						childSpaces,
-						roomOrderMap[space.roomId.toString()]
-							?: childCreationDates[space.roomId.toString()]
-							?: Long.MAX_VALUE,
-						MatrixSpace.Type.Space
-					)
-				}
-
-				allRooms.forEach { room ->
-					val parentData =
-						client.room.getAllState<SpaceParentEventContent>(room.roomId).firstOrNull()
-					val parentId = parentData?.values?.firstOrNull()?.firstOrNull()?.stateKey
-
-					if (parentId != null) parentToChildren.getOrPut(parentId) { mutableListOf() }
-						.add(room.roomId)
-
-					val order = if (room.type == CreateEventContent.RoomType.Space)
-						client.room.getAccountData<SpaceOrderEventContent>(room.roomId)
-							.first()?.order?.firstOrNull()?.code?.toLong()
-					else null
-					order?.let { roomOrderMap[room.roomId.toString()] = it }
-
-					if (room.type == CreateEventContent.RoomType.Space && parentId == null) topLevelSpaces.add(
-						room
-					)
-				}
-
-				val res = ArrayList<MatrixSpace>()
-				topLevelSpaces.forEach { space -> res.add(buildSpaceTree(space)) }
-				res.add(buildSpaceTree(null))
-
-				emit(res.sortedBy { it.order }.toList())
-			}
+		GROUPS_ROOM -> {
+			val children = roomCache.mapNotNull { it.value.value }
+				.filter { it.type != CreateEventContent.RoomType.Space && !it.isDirect }
+				.sortedBy { it.lastRelevantEventTimestamp?.epochSeconds ?: Long.MAX_VALUE  }
+				.map { RoomModel(it.roomId, it, this) }
+			MatrixSpace(null, children, emptyList())
 		}
+
+		else -> getSpaceChildrenRecursive(roomCache[roomId]?.value)
+	}
+
+	fun getSpaceChildrenRecursive(room: Room?, seenRooms: MutableList<RoomId>? = null): MatrixSpace? {
+		val visitedRooms = seenRooms ?: mutableListOf()
+		if (room == null) return null
+		val children = getSpaceChildren(room)
+		return MatrixSpace(
+			room,
+			children
+				.filter { r ->
+					r.type != CreateEventContent.RoomType.Space && !visitedRooms.contains(r.roomId)
+				}
+				.map { r ->
+					visitedRooms.add(r.roomId)
+					RoomModel(
+						r.roomId,
+						r,
+						this
+					)
+				},
+			children
+				.filter { s ->
+					s.type == CreateEventContent.RoomType.Space && !visitedRooms.contains(s.roomId)
+				}
+				.mapNotNull { s ->
+					visitedRooms.add(s.roomId)
+					getSpaceChildrenRecursive(s, visitedRooms)
+				}
+		)
 	}
 
 	suspend fun getUser(userId: UserId, roomId: RoomId): RoomUser? {
@@ -728,7 +735,9 @@ class Matrix {
 				CustomEmojiCategoryModel(userEmojis.pack?.displayName?.takeIf { it.isNotBlank() }
 					?: "#!accountEmojiPack")
 			val images = userEmojis.images?.filter { it.value.usage?.contains("emoticon") ?: true }
-			return entry(cat, images?.map { RoomCustomEmojiModel(it.value.url, it.key) } ?: emptyList())
+			return entry(
+				cat,
+				images?.map { RoomCustomEmojiModel(it.value.url, it.key) } ?: emptyList())
 		}
 		return null
 	}
@@ -861,6 +870,9 @@ class Matrix {
 		@SuppressLint("StaticFieldLeak")
 		private lateinit var instance: Matrix
 
+		val DIRECT_ROOM = RoomId("!dms:native.sakurachat.app")
+		val GROUPS_ROOM = RoomId("!groups:native.sakurachat.app")
+
 		fun getAvailableAccounts(context: Context): List<String> {
 			return context.databaseList().map { it.replace("trixnity-", "") }
 				.filterNot { it.endsWith("-wal") || it.endsWith("-shm") }
@@ -888,12 +900,12 @@ class Matrix {
 
 		private fun prepModules(): Module {
 			val customMappings = EventContentSerializerMappingsBuilder().apply {
-				stateOf<SpaceParentEventContent>("m.space.parent")
-				stateOf<SpaceChildrenEventContent>("m.space.child")
+				//stateOf<SpaceParentEventContent>("m.space.parent")
+				//stateOf<SpaceChildrenEventContent>("m.space.child")
 				stateOf<RoomImagePackEventContent>("im.ponies.room_emotes")
 				messageOf<StickerMessageEventContent>("m.sticker")
 				messageOf<ShortcodeReactionEventContent>("m.reaction")
-				roomAccountDataOf<SpaceOrderEventContent>("org.matrix.msc3230.space_order")
+				//roomAccountDataOf<SpaceOrderEventContent>("org.matrix.msc3230.space_order")
 				globalAccountDataOf<ElementRecentEmojiEventContent>("io.element.recent_emoji")
 				globalAccountDataOf<EmoteRoomsEventContent>("im.ponies.emote_rooms")
 				globalAccountDataOf<UserImagePackEventContent>("im.ponies.user_emotes")

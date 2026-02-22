@@ -7,31 +7,5 @@ data class MatrixSpace(
 	// This is nullable because we can also return all the rooms without a parent here
 	val parent: Room?,
 	val children: List<RoomModel>,
-	val childSpaces: List<MatrixSpace>,
-	val order: Long,
-	val type: Type,
-	var onChange: (() -> Unit)? = null
-) {
-	var isUnread: Boolean = false
-	var mentions: Int = 0
-
-	init {
-		update()
-		children.forEach {
-			it.onChange = {
-				update()
-			}
-		}
-	}
-
-	private fun update() {
-		isUnread = children.any { it.isUnread } || childSpaces.any { it.isUnread }
-		mentions = children.sumOf { it.mentions } + childSpaces.sumOf { it.mentions }
-	}
-
-	enum class Type {
-		DirectMessages,
-		Groups,
-		Space
-	}
-}
+	val childSpaces: List<MatrixSpace>
+)
