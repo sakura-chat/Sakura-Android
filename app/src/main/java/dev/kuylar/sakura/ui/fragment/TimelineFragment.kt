@@ -260,6 +260,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 					.filterNot { uid -> uid == client.userId }
 					.mapNotNull { uid -> client.getUser(uid, RoomId(roomId)) }
 				val text = when (users.size) {
+					0 -> ""
 					1 -> getString(R.string.typing_indicator_1, users[0].name)
 					2 -> getString(R.string.typing_indicator_2, users[0].name, users[1].name)
 					3 -> getString(
@@ -269,7 +270,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 						users[2].name
 					)
 
-					else -> getString(R.string.typing_indicator_more)
+					else -> getString(R.string.typing_indicator_more, users[0].name, users[1].name, users.size - 2)
 				}
 				activity?.runOnUiThread {
 					binding.typingIndicator.visibility =
