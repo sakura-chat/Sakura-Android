@@ -1,6 +1,5 @@
 package dev.kuylar.sakura.ui.adapter.timeline
 
-import android.util.Log
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -11,6 +10,7 @@ import de.connect2x.trixnity.client.room.GetTimelineEventsConfig
 import de.connect2x.trixnity.client.room.Timeline
 import de.connect2x.trixnity.client.room.TimelineState
 import de.connect2x.trixnity.client.room.TimelineStateChange
+import de.connect2x.trixnity.client.store.eventId
 import de.connect2x.trixnity.client.store.relatesTo
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
@@ -52,7 +52,6 @@ class TimelineRecyclerAdapter(
 				if (scroll) {
 					recycler.post {
 						val item = (recycler.adapter?.itemCount ?: 1) - 1
-						Log.i("TimelineRecyclerAdapter", "scrollToPosition(${item})")
 						recycler.scrollToPosition(item)
 					}
 				}
@@ -77,6 +76,10 @@ class TimelineRecyclerAdapter(
 	private lateinit var timelineState: TimelineState<TimelineItem.Event>
 	private var getRecentJob: Job? = null
 	var isReady = false
+		private set
+	var lastEventId: EventId? = null
+		private set
+	var lastEventTimestamp = 0L
 		private set
 
 	init {
@@ -144,6 +147,12 @@ class TimelineRecyclerAdapter(
 
 	private suspend fun onStateChange(delta: TimelineStateChange<TimelineItem.Event>) {
 		isLoading?.invoke(false)
+		delta.addedElements.forEach {
+			if (it.timestamp > lastEventTimestamp) {
+				lastEventId = it.event.eventId
+				lastEventTimestamp = it.timestamp
+			}
+		}
 		val filteredAdded = delta.addedElements.filter { shouldDisplayEvent(it) }
 		timelineState = timeline.state.first()
 

@@ -16,13 +16,10 @@ import de.connect2x.trixnity.client.room
 import de.connect2x.trixnity.client.room.getTimelineEventReactionAggregation
 import de.connect2x.trixnity.client.room.getTimelineEventReplaceAggregation
 import de.connect2x.trixnity.client.store.TimelineEvent
-import de.connect2x.trixnity.client.store.eventId
-import de.connect2x.trixnity.client.store.roomId
 import de.connect2x.trixnity.client.store.sender
 import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
-import de.connect2x.trixnity.core.model.events.m.FullyReadEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
@@ -165,11 +162,7 @@ class EventBottomSheetFragment : BottomSheetDialogFragment() {
 		}
 		binding.unread.setOnClickListener {
 			suspendThread {
-				client.client.api.room.setAccountData(
-					FullyReadEventContent(event.previousEventId ?: event.eventId),
-					roomId!!,
-					client.userId
-				)
+				client.markRead(roomId!!, eventId!!)
 			}
 			binding.root.postDelayed(50) { dismiss() }
 		}

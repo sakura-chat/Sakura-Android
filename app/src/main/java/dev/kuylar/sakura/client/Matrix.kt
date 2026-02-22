@@ -866,6 +866,10 @@ class Matrix {
 		}
 	}
 
+	suspend fun markRead(roomId: RoomId, eventId: EventId) {
+		client.api.room.setReceipt(roomId, eventId)
+	}
+
 	companion object {
 		@SuppressLint("StaticFieldLeak")
 		private lateinit var instance: Matrix

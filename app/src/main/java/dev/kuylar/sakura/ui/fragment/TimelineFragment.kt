@@ -500,7 +500,13 @@ class TimelineFragment : Fragment(), MenuProvider {
 			}
 		}
 		if (lastVisibleItem == totalItemCount - 1) {
-			// TODO: READ INDICATOR
+			if (timelineAdapter.lastEventId != null && lastReadEventId != timelineAdapter.lastEventId) {
+				lastReadEventId = timelineAdapter.lastEventId
+				lifecycleScope.launch {
+					Log.i("TimelineFragment", "Marking event ${timelineAdapter.lastEventId!!} as read")
+					client.markRead(RoomId(roomId), timelineAdapter.lastEventId!!)
+				}
+			}
 		}
 	}
 
