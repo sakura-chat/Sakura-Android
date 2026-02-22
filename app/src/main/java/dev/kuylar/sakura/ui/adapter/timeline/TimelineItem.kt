@@ -31,12 +31,14 @@ sealed class TimelineItem(
 	) {
 		var reactions = TimelineEventAggregation.Reaction(emptyMap())
 		var edits = TimelineEventAggregation.Replace(null, emptyList())
+		var repliedToEvent: Snapshot.Reply? = null
 		fun update(snapshot: Snapshot) {
-			event = snapshot.newEvent
+			this@Event.event = snapshot.newEvent
 			user = snapshot.newUser
 			reactions = snapshot.newReactions
 			edits = snapshot.newReplace
-			content = event.content?.getOrNull()
+			repliedToEvent = snapshot.repliedTo
+			content = this@Event.event.content?.getOrNull()
 		}
 
 		data class Snapshot(
@@ -44,7 +46,13 @@ sealed class TimelineItem(
 			val newUser: RoomUser?,
 			val newReactions: TimelineEventAggregation.Reaction,
 			val newReplace: TimelineEventAggregation.Replace,
-		)
+			val repliedTo: Reply?
+		) {
+			data class Reply(
+				val event: TimelineEvent,
+				val user: RoomUser
+			)
+		}
 	}
 
 	@OptIn(ExperimentalTime::class)

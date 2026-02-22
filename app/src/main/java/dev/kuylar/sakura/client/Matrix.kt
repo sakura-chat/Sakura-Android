@@ -19,6 +19,7 @@ import de.connect2x.trixnity.client.flattenValues
 import de.connect2x.trixnity.client.media.okio.okio
 import de.connect2x.trixnity.client.notification
 import de.connect2x.trixnity.client.room
+import de.connect2x.trixnity.client.room.TimelineEventAggregation
 import de.connect2x.trixnity.client.room.TimelineStateChange
 import de.connect2x.trixnity.client.room.getAllState
 import de.connect2x.trixnity.client.room.getTimelineEventReactionAggregation
@@ -33,6 +34,7 @@ import de.connect2x.trixnity.client.store.Room
 import de.connect2x.trixnity.client.store.RoomUser
 import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.client.store.eventId
+import de.connect2x.trixnity.client.store.relatesTo
 import de.connect2x.trixnity.client.store.repository.room.TrixnityRoomDatabase
 import de.connect2x.trixnity.client.store.repository.room.room
 import de.connect2x.trixnity.client.store.roomId
@@ -101,6 +103,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import okio.Path.Companion.toPath
@@ -227,6 +230,12 @@ class Matrix {
 	fun getTimeline(onStateChange: suspend (TimelineStateChange<TimelineItem.Event>) -> Unit) =
 		client.room.getTimeline(onStateChange) {
 			val snapshot = it.first()
+			val replyId = snapshot.relatesTo?.replyTo?.eventId
+			val replyFlow = replyId?.let { repliedEventId ->
+				client.room.getTimelineEvent(snapshot.roomId, repliedEventId)
+			}
+			val replySnapshot = replyFlow?.first()
+			val replyUserId = replySnapshot?.sender
 			TimelineItem.Event(
 				snapshot,
 				combine(
@@ -240,8 +249,21 @@ class Matrix {
 						snapshot.roomId,
 						snapshot.eventId
 					),
-				) { event, user, reactions, replaces ->
-					TimelineItem.Event.Snapshot(event, user, reactions, replaces)
+					replyFlow ?: flowOf<TimelineEvent?>(null),
+					replyUserId?.let { user ->
+						client.user.getById(snapshot.roomId, user)
+					} ?: flowOf<RoomUser?>(null)
+				) { snapshots ->
+					val event = snapshots[0] as TimelineEvent
+					val user = snapshots[1] as RoomUser?
+					val reactions = snapshots[2] as TimelineEventAggregation.Reaction
+					val replaces = snapshots[3] as TimelineEventAggregation.Replace
+					val repliedEvent = snapshots[4] as TimelineEvent?
+					val repliedUser = snapshots[5] as RoomUser?
+					val reply = if (repliedEvent != null && repliedUser != null)
+						TimelineItem.Event.Snapshot.Reply(repliedEvent, repliedUser)
+					else null
+					TimelineItem.Event.Snapshot(event, user, reactions, replaces, reply)
 				}
 			)
 		}
