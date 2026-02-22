@@ -271,11 +271,11 @@ class Matrix {
 	fun getIsUnread(roomId: RoomId): Flow<Boolean> {
 		return if (roomId == DIRECT_ROOM) {
 			combine(roomCache.mapNotNull { it.value.value }
-				.filter { it.type != CreateEventContent.RoomType.Space && it.isDirect }
+				.filter { it.type != CreateEventContent.RoomType.Space && it.isDirect && isRoomAnOrphan(it.roomId) }
 				.map { getIsUnread(it.roomId) }) { it.any { r -> r } }
 		} else if (roomId == GROUPS_ROOM) {
 			combine(roomCache.mapNotNull { it.value.value }
-				.filter { it.type != CreateEventContent.RoomType.Space && !it.isDirect }
+				.filter { it.type != CreateEventContent.RoomType.Space && !it.isDirect && isRoomAnOrphan(it.roomId) }
 				.map { getIsUnread(it.roomId) }) { it.any { r -> r } }
 		} else if (roomCache[roomId]?.value?.type == CreateEventContent.RoomType.Space) {
 			combine(getSpaceChildren(roomId).map { getIsUnread(it.roomId) }) {
@@ -286,11 +286,11 @@ class Matrix {
 	fun getNotificationCount(roomId: RoomId): Flow<Int> {
 		return if (roomId == DIRECT_ROOM) {
 			combine(roomCache.mapNotNull { it.value.value }
-				.filter { it.type != CreateEventContent.RoomType.Space && it.isDirect }
+				.filter { it.type != CreateEventContent.RoomType.Space && it.isDirect && isRoomAnOrphan(it.roomId) }
 				.map { getNotificationCount(it.roomId) }) { it.sum() }
 		} else if (roomId == GROUPS_ROOM) {
 			combine(roomCache.mapNotNull { it.value.value }
-				.filter { it.type != CreateEventContent.RoomType.Space && !it.isDirect }
+				.filter { it.type != CreateEventContent.RoomType.Space && !it.isDirect && isRoomAnOrphan(it.roomId) }
 				.map { getNotificationCount(it.roomId) }) { it.sum() }
 		} else if (roomCache[roomId]?.value?.type == CreateEventContent.RoomType.Space) {
 			combine(getSpaceChildren(roomId).map { getNotificationCount(it.roomId) }) {
@@ -321,6 +321,10 @@ class Matrix {
 			}
 		}
 
+	private fun isRoomAnOrphan(roomId: RoomId) =
+		!roomCache.values.flatMap { it.value?.childEvents?.keys ?: emptySet() }
+			.contains(roomId.full)
+
 	fun getSpaceChildren(roomId: RoomId) = getSpaceChildren(roomCache[roomId]?.value)
 	fun getSpaceChildren(room: Room?): List<Room> {
 		if (room == null) return emptyList()
@@ -332,16 +336,16 @@ class Matrix {
 	fun getSpaceChildrenRecursive(roomId: RoomId) = when (roomId) {
 		DIRECT_ROOM -> {
 			val children = roomCache.mapNotNull { it.value.value }
-				.filter { it.type != CreateEventContent.RoomType.Space && it.isDirect }
-				.sortedBy { it.lastRelevantEventTimestamp?.epochSeconds ?: Long.MAX_VALUE  }
+				.filter { it.type != CreateEventContent.RoomType.Space && it.isDirect && isRoomAnOrphan(it.roomId) }
+				.sortedByDescending { it.lastRelevantEventTimestamp?.epochSeconds ?: Long.MAX_VALUE  }
 				.map { RoomModel(it.roomId, it, this) }
 			MatrixSpace(null, children, emptyList())
 		}
 
 		GROUPS_ROOM -> {
 			val children = roomCache.mapNotNull { it.value.value }
-				.filter { it.type != CreateEventContent.RoomType.Space && !it.isDirect }
-				.sortedBy { it.lastRelevantEventTimestamp?.epochSeconds ?: Long.MAX_VALUE  }
+				.filter { it.type != CreateEventContent.RoomType.Space && !it.isDirect && isRoomAnOrphan(it.roomId) }
+				.sortedByDescending { it.lastRelevantEventTimestamp?.epochSeconds ?: Long.MAX_VALUE  }
 				.map { RoomModel(it.roomId, it, this) }
 			MatrixSpace(null, children, emptyList())
 		}
