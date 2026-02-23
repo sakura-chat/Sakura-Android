@@ -53,6 +53,7 @@ class TimelineRecyclerAdapter(
 				o1.sortTimestamp.compareTo(o2.sortTimestamp)
 
 			override fun onInserted(position: Int, count: Int) {
+				if (count > 2) return
 				val scroll = recycler?.isAtBottom(-count) ?: false
 				notifyItemRangeInserted(position, count)
 				if (scroll) {
