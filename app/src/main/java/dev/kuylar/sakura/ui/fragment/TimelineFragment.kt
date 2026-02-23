@@ -27,6 +27,7 @@ import androidx.core.view.MenuProvider
 import androidx.core.view.OnReceiveContentListener
 import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
+import androidx.core.view.postDelayed
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResultListener
@@ -117,15 +118,19 @@ class TimelineFragment : Fragment(), MenuProvider {
 			return
 		}
 
-		suspendThread {
-			client.getRoom(roomId)?.let { room ->
-				(activity as? AppCompatActivity)?.let {
-					it.runOnUiThread {
-						it.supportActionBar?.title = room.name?.explicitName ?: room.roomId.full
-					}
-				}
+		setUi()
+	}
+
+	fun setUi() {
+		val room = client.getRoom(roomId)
+		if (room == null) {
+			binding.root.postDelayed(50) {
+				setUi()
 			}
+			return
 		}
+		(activity as? AppCompatActivity)?.supportActionBar?.title =
+			room.name?.explicitName ?: room.roomId.full
 
 		val menuHost: MenuHost = requireActivity()
 		menuHost.addMenuProvider(
