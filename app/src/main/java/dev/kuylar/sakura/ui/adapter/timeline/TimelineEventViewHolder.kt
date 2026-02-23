@@ -1,13 +1,19 @@
 package dev.kuylar.sakura.ui.adapter.timeline
 
 import android.text.method.LinkMovementMethod
+import android.view.LayoutInflater
 import android.view.View
+import androidx.core.os.bundleOf
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import de.connect2x.trixnity.client.room.TimelineEventAggregation
 import de.connect2x.trixnity.client.store.RoomUser
+import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.client.store.avatarUrl
 import de.connect2x.trixnity.client.store.eventId
+import de.connect2x.trixnity.client.store.roomId
+import de.connect2x.trixnity.client.store.sender
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.events.MessageEventContent
 import de.connect2x.trixnity.core.model.events.RoomEventContent
@@ -17,9 +23,14 @@ import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.content
 import dev.kuylar.sakura.Utils.lastReceipt
 import dev.kuylar.sakura.Utils.loadUser
+import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.Utils.toTimestamp
+import dev.kuylar.sakura.client.Matrix
+import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
 import dev.kuylar.sakura.databinding.ItemMessageBinding
+import dev.kuylar.sakura.databinding.ItemReactionBinding
 import dev.kuylar.sakura.markdown.MarkdownHandler
+import dev.kuylar.sakura.ui.fragment.bottomsheet.ReactionBottomSheetFragment
 import io.getstream.avatarview.glide.loadImage
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -28,6 +39,7 @@ import kotlin.time.Duration.Companion.minutes
 
 class TimelineEventViewHolder(
 	val binding: ItemMessageBinding,
+	val client: Matrix,
 	private val markdown: MarkdownHandler
 ) : RecyclerView.ViewHolder(binding.root) {
 	private var nonce = 0L
@@ -73,7 +85,10 @@ class TimelineEventViewHolder(
 		setAvatarVisibility(item, prevItem)
 		item.content?.let { setContent(currentNonce, it) }
 		item.user?.let { setUser(it) }
-		(item as? TimelineItem.Event)?.repliedToEvent?.let { setReply(currentNonce, it) }
+		if (item is TimelineItem.Event) {
+			item.repliedToEvent?.let { setReply(currentNonce, it) }
+			setReactions(item.event, item.reactions)
+		}
 	}
 
 	private fun setAvatarVisibility(item: TimelineItem, prevItem: TimelineItem?) {
@@ -142,6 +157,65 @@ class TimelineEventViewHolder(
 			is RoomMessageEventContent.FileBased -> {
 				binding.replyingBody.setText(R.string.message_attachment)
 			}
+		}
+	}
+
+	private fun setReactions(event: TimelineEvent, reactions: TimelineEventAggregation.Reaction) {
+		while (binding.reactions.childCount > 1) binding.reactions.removeViewAt(0)
+		adapter?.fragment?.let {
+			binding.reactionAdd.root.setOnClickListener { v ->
+				val f = ReactionBottomSheetFragment()
+				f.arguments = bundleOf("roomId" to event.roomId.full, "eventId" to event.eventId.full)
+				f.show(it.parentFragmentManager, "reactionBottomSheet")
+			}
+		}
+		if (reactions.reactions.isEmpty()) {
+			binding.reactions.visibility = View.GONE
+			return
+		} else {
+			binding.reactions.visibility = View.VISIBLE
+		}
+		reactions.reactions.forEach { (key, events) ->
+			val shortcode = events
+				.mapNotNull { it.content?.getOrNull() as? ShortcodeReactionEventContent }
+				.groupBy { (it.shortcode ?: it.beeperShortcode)?.trim(':') }
+				.entries.maxByOrNull { it.value.size }?.key
+			val userReaction = events.firstOrNull { it.sender == client.userId }
+
+			val reactionBinding = ItemReactionBinding.inflate(
+				LayoutInflater.from(binding.root.context),
+				binding.reactions,
+				false
+			)
+			reactionBinding.counter.text = events.size.toString()
+			if (key.startsWith("mxc://")) {
+				reactionBinding.emojiUnicode.visibility = View.GONE
+				reactionBinding.emojiImage.visibility = View.VISIBLE
+				Glide.with(reactionBinding.root)
+					.load(key)
+					.into(reactionBinding.emojiImage)
+			} else {
+				reactionBinding.emojiUnicode.visibility = View.GONE
+				reactionBinding.emojiImage.visibility = View.VISIBLE
+				reactionBinding.emojiUnicode.text = key
+			}
+			reactionBinding.root.setBackgroundResource(
+				if (userReaction != null) R.drawable.background_reaction_selected
+				else R.drawable.background_reaction
+			)
+			reactionBinding.root.setOnClickListener {
+				reactionBinding.root.setOnClickListener(null)
+				reactionBinding.root.alpha = .5f
+				suspendThread {
+					if (userReaction == null) {
+						client.reactToEvent(event.roomId, event.eventId, key, shortcode)
+					} else {
+						client.redactEvent(userReaction.roomId, userReaction.eventId)
+					}
+				}
+			}
+
+			binding.reactions.addView(reactionBinding.root, 0)
 		}
 	}
 

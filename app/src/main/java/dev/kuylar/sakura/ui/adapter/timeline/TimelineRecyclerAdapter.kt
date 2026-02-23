@@ -117,6 +117,7 @@ class TimelineRecyclerAdapter(
 
 	override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = TimelineEventViewHolder(
 		ItemMessageBinding.inflate(layoutInflater, parent, false),
+		client,
 		markdown
 	)
 
