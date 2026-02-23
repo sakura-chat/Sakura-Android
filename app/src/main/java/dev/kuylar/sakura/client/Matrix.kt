@@ -70,6 +70,7 @@ import de.connect2x.trixnity.core.serialization.events.default
 import de.connect2x.trixnity.core.serialization.events.globalAccountDataOf
 import de.connect2x.trixnity.core.serialization.events.messageOf
 import de.connect2x.trixnity.core.serialization.events.stateOf
+import dev.kuylar.sakura.Utils.compareRoomsByTimestamp
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.customevent.ElementRecentEmojiEventContent
 import dev.kuylar.sakura.client.customevent.EmoteRoomsEventContent
@@ -337,7 +338,7 @@ class Matrix {
 		DIRECT_ROOM -> {
 			val children = roomCache.mapNotNull { it.value.value }
 				.filter { it.type != CreateEventContent.RoomType.Space && it.isDirect && isRoomAnOrphan(it.roomId) }
-				.sortedByDescending { it.lastRelevantEventTimestamp?.epochSeconds ?: Long.MAX_VALUE  }
+				.sortedWith(compareRoomsByTimestamp())
 				.map { RoomModel(it.roomId, it, this) }
 			MatrixSpace(null, children, emptyList())
 		}
@@ -345,7 +346,7 @@ class Matrix {
 		GROUPS_ROOM -> {
 			val children = roomCache.mapNotNull { it.value.value }
 				.filter { it.type != CreateEventContent.RoomType.Space && !it.isDirect && isRoomAnOrphan(it.roomId) }
-				.sortedByDescending { it.lastRelevantEventTimestamp?.epochSeconds ?: Long.MAX_VALUE  }
+				.sortedWith(compareRoomsByTimestamp())
 				.map { RoomModel(it.roomId, it, this) }
 			MatrixSpace(null, children, emptyList())
 		}

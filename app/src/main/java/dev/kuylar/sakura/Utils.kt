@@ -46,6 +46,7 @@ import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.service.ReplyReceiver
 import dev.kuylar.sakura.ui.activity.BubbleActivity
 import dev.kuylar.sakura.ui.activity.MainActivity
+import dev.kuylar.sakura.ui.adapter.model.RoomModel
 import io.getstream.avatarview.AvatarView
 import io.getstream.avatarview.glide.loadImage
 import io.ktor.http.URLBuilder
@@ -74,6 +75,7 @@ import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeBytes
 import kotlin.io.path.writeText
+import kotlin.time.ExperimentalTime
 
 object Utils {
 	fun suspendThread(block: suspend (() -> Unit)): Job {
@@ -423,4 +425,14 @@ object Utils {
 		if (index >= size()) return null
 		return get(index)
 	}
+
+	@OptIn(ExperimentalTime::class)
+	fun compareRoomsByTimestamp() = compareBy<Room> { it.lastRelevantEventTimestamp == null }
+		.thenByDescending { it.lastRelevantEventTimestamp }
+		.thenBy { it.roomId.full }
+
+	@OptIn(ExperimentalTime::class)
+	fun compareRoomModelsByTimestamp() = compareBy<RoomModel> { it.snapshot.lastRelevantEventTimestamp == null }
+		.thenByDescending { it.snapshot.lastRelevantEventTimestamp }
+		.thenBy { it.snapshot.roomId.full }
 }
