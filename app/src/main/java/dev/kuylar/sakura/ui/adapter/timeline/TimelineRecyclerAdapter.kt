@@ -1,5 +1,6 @@
 package dev.kuylar.sakura.ui.adapter.timeline
 
+import android.util.Log
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
@@ -53,12 +54,14 @@ class TimelineRecyclerAdapter(
 				o1.sortTimestamp.compareTo(o2.sortTimestamp)
 
 			override fun onInserted(position: Int, count: Int) {
-				if (count > 2) return
+				Log.i("TimelineRecyclerAdapter", "onInserted($position, $count)")
+				if (count > 2 && position == 0) return
 				val scroll = recycler?.isAtBottom(-count) ?: false
 				notifyItemRangeInserted(position, count)
 				if (scroll) {
 					recycler.post {
 						val item = (recycler.adapter?.itemCount ?: 1) - 1
+						Log.i("TimelineRecyclerAdapter", "scrollToPosition($item)")
 						recycler.scrollToPosition(item)
 					}
 				}
