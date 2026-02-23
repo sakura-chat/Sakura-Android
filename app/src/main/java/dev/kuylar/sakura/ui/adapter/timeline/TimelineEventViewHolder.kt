@@ -3,6 +3,7 @@ package dev.kuylar.sakura.ui.adapter.timeline
 import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewConfiguration
 import androidx.core.os.bundleOf
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
@@ -30,6 +31,8 @@ import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
 import dev.kuylar.sakura.databinding.ItemMessageBinding
 import dev.kuylar.sakura.databinding.ItemReactionBinding
 import dev.kuylar.sakura.markdown.MarkdownHandler
+import dev.kuylar.sakura.ui.fragment.TimelineFragment
+import dev.kuylar.sakura.ui.fragment.bottomsheet.EventBottomSheetFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.ReactionBottomSheetFragment
 import io.getstream.avatarview.glide.loadImage
 import kotlinx.coroutines.Job
@@ -45,7 +48,10 @@ class TimelineEventViewHolder(
 	private var nonce = 0L
 	private var collectionJob: Job? = null
 	private val adapter: TimelineRecyclerAdapter?
-		get() = (bindingAdapter as? TimelineRecyclerAdapter)
+		get() = bindingAdapter as? TimelineRecyclerAdapter
+	private val fragment: TimelineFragment?
+		get() = adapter?.fragment as? TimelineFragment
+	private var lastClick = 0L
 
 	fun bind(item: TimelineItem, prevItem: TimelineItem?) {
 		collectionJob?.cancel()
@@ -54,7 +60,7 @@ class TimelineEventViewHolder(
 		val currentNonce = nonce
 		resetBindingState()
 		setData(currentNonce, item, prevItem)
-		collectionJob = adapter?.fragment?.lifecycleScope?.launch {
+		collectionJob = fragment?.lifecycleScope?.launch {
 			when (item) {
 				is TimelineItem.Event -> {
 					item.flow.collect { snapshot ->
@@ -88,6 +94,27 @@ class TimelineEventViewHolder(
 		if (item is TimelineItem.Event) {
 			item.repliedToEvent?.let { setReply(currentNonce, it) }
 			setReactions(item.event, item.reactions)
+
+			listOf(binding.root, binding.body, binding.attachment).forEach {
+				fragment?.let { frag ->
+					it.setOnClickListener {
+						val now = System.currentTimeMillis()
+						if (now - lastClick < ViewConfiguration.getDoubleTapTimeout()) {
+							frag.handleReply(item.event.eventId)
+						}
+						lastClick = now
+					}
+					it.setOnLongClickListener {
+						val f = EventBottomSheetFragment()
+						f.arguments = bundleOf(
+							"eventId" to item.event.eventId.full,
+							"roomId" to item.event.roomId.full,
+						)
+						f.show(frag.parentFragmentManager, "eventBottomSheet")
+						true
+					}
+				}
+			}
 		}
 	}
 
@@ -162,7 +189,7 @@ class TimelineEventViewHolder(
 
 	private fun setReactions(event: TimelineEvent, reactions: TimelineEventAggregation.Reaction) {
 		while (binding.reactions.childCount > 1) binding.reactions.removeViewAt(0)
-		adapter?.fragment?.let {
+		fragment?.let {
 			binding.reactionAdd.root.setOnClickListener { v ->
 				val f = ReactionBottomSheetFragment()
 				f.arguments = bundleOf("roomId" to event.roomId.full, "eventId" to event.eventId.full)
