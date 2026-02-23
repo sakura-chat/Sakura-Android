@@ -7,12 +7,15 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import de.connect2x.trixnity.client.store.RoomUser
 import de.connect2x.trixnity.client.store.avatarUrl
+import de.connect2x.trixnity.client.store.eventId
+import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.events.MessageEventContent
 import de.connect2x.trixnity.core.model.events.RoomEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import dev.kuylar.sakura.BuildConfig
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.content
+import dev.kuylar.sakura.Utils.lastReceipt
 import dev.kuylar.sakura.Utils.loadUser
 import dev.kuylar.sakura.Utils.toTimestamp
 import dev.kuylar.sakura.databinding.ItemMessageBinding
@@ -29,6 +32,8 @@ class TimelineEventViewHolder(
 ) : RecyclerView.ViewHolder(binding.root) {
 	private var nonce = 0L
 	private var collectionJob: Job? = null
+	private val adapter: TimelineRecyclerAdapter?
+		get() = (bindingAdapter as? TimelineRecyclerAdapter)
 
 	fun bind(item: TimelineItem, prevItem: TimelineItem?) {
 		collectionJob?.cancel()
@@ -37,19 +42,18 @@ class TimelineEventViewHolder(
 		val currentNonce = nonce
 		resetBindingState()
 		setData(currentNonce, item, prevItem)
-		collectionJob =
-			(bindingAdapter as? TimelineRecyclerAdapter)?.fragment?.lifecycleScope?.launch {
-				when (item) {
-					is TimelineItem.Event -> {
-						item.flow.collect { snapshot ->
-							item.update(snapshot)
-							setData(currentNonce, item, prevItem)
-						}
+		collectionJob = adapter?.fragment?.lifecycleScope?.launch {
+			when (item) {
+				is TimelineItem.Event -> {
+					item.flow.collect { snapshot ->
+						item.update(snapshot)
+						setData(currentNonce, item, prevItem)
 					}
-
-					else -> {}
 				}
+
+				else -> {}
 			}
+		}
 		binding.body.movementMethod = LinkMovementMethod.getInstance()
 	}
 
@@ -61,6 +65,11 @@ class TimelineEventViewHolder(
 	private fun setData(currentNonce: Long, item: TimelineItem, prevItem: TimelineItem?) {
 		binding.senderName.text = item.senderId.full
 		binding.eventTimestamp.text = item.timestamp.toTimestamp(binding.eventTimestamp.context)
+		val eventId = (item as? TimelineItem.Event)?.event?.eventId ?: EventId(item.id)
+		adapter?.selfReceipts?.let {
+			binding.unreadSeparator.visibility =
+				if (it.lastReceipt == eventId) View.VISIBLE else View.GONE
+		}
 		setAvatarVisibility(item, prevItem)
 		item.content?.let { setContent(currentNonce, it) }
 		item.user?.let { setUser(it) }

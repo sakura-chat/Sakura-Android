@@ -14,6 +14,7 @@ import com.google.android.material.shape.ShapeAppearanceModel
 import de.connect2x.trixnity.client.store.Room
 import de.connect2x.trixnity.core.model.RoomId
 import dev.kuylar.sakura.R
+import dev.kuylar.sakura.Utils.indexOfFirst
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.ItemSpaceBinding
 import dev.kuylar.sakura.databinding.ItemSpaceListDividerBinding
@@ -92,16 +93,6 @@ class TopLevelSpacesRecyclerAdapter(
 	}
 
 	override fun getItemCount() = spaces.size() + 3
-
-	private fun <T> SortedList<T>.indexOfFirst(callback: ((T) -> Boolean)): Int {
-		synchronized(this) {
-			for (i in 0 until size()) {
-				val item = get(i)
-				if (callback.invoke(item)) return i
-			}
-			return -1
-		}
-	}
 
 	fun changeSpace(spaceId: RoomId) {
 		val lastItem = when (selectedSpace) {

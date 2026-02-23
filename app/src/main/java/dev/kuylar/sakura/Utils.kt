@@ -31,6 +31,7 @@ import androidx.recyclerview.widget.SortedList
 import de.connect2x.trixnity.client.media
 import de.connect2x.trixnity.client.store.Room
 import de.connect2x.trixnity.client.store.RoomUser
+import de.connect2x.trixnity.client.store.RoomUserReceipts
 import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.client.store.avatarUrl
 import de.connect2x.trixnity.client.store.eventId
@@ -46,7 +47,6 @@ import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.service.ReplyReceiver
 import dev.kuylar.sakura.ui.activity.BubbleActivity
 import dev.kuylar.sakura.ui.activity.MainActivity
-import dev.kuylar.sakura.ui.adapter.model.RoomModel
 import io.getstream.avatarview.AvatarView
 import io.getstream.avatarview.glide.loadImage
 import io.ktor.http.URLBuilder
@@ -431,8 +431,16 @@ object Utils {
 		.thenByDescending { it.lastRelevantEventTimestamp }
 		.thenBy { it.roomId.full }
 
-	@OptIn(ExperimentalTime::class)
-	fun compareRoomModelsByTimestamp() = compareBy<RoomModel> { it.snapshot.lastRelevantEventTimestamp == null }
-		.thenByDescending { it.snapshot.lastRelevantEventTimestamp }
-		.thenBy { it.snapshot.roomId.full }
+	fun <T> SortedList<T>.indexOfFirst(callback: ((T) -> Boolean)): Int {
+		synchronized(this) {
+			for (i in 0 until size()) {
+				val item = get(i)
+				if (callback.invoke(item)) return i
+			}
+			return -1
+		}
+	}
+
+	val RoomUserReceipts.lastReceipt: EventId
+		get() = receipts.maxBy { r -> r.value.receipt.timestamp }.value.eventId
 }

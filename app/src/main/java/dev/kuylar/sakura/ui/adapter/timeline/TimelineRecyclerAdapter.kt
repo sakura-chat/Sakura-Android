@@ -2,7 +2,9 @@ package dev.kuylar.sakura.ui.adapter.timeline
 
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SortedList
 import de.connect2x.trixnity.client.room.GetTimelineEventConfig
@@ -10,8 +12,10 @@ import de.connect2x.trixnity.client.room.GetTimelineEventsConfig
 import de.connect2x.trixnity.client.room.Timeline
 import de.connect2x.trixnity.client.room.TimelineState
 import de.connect2x.trixnity.client.room.TimelineStateChange
+import de.connect2x.trixnity.client.store.RoomUserReceipts
 import de.connect2x.trixnity.client.store.eventId
 import de.connect2x.trixnity.client.store.relatesTo
+import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.RedactedEventContent
@@ -21,7 +25,9 @@ import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.room.RedactionEventContent
 import dev.kuylar.sakura.Utils.getOrNull
+import dev.kuylar.sakura.Utils.indexOfFirst
 import dev.kuylar.sakura.Utils.isAtBottom
+import dev.kuylar.sakura.Utils.lastReceipt
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
 import dev.kuylar.sakura.databinding.ItemMessageBinding
@@ -75,6 +81,8 @@ class TimelineRecyclerAdapter(
 	private lateinit var timeline: Timeline<TimelineItem.Event>
 	private lateinit var timelineState: TimelineState<TimelineItem.Event>
 	private var getRecentJob: Job? = null
+	var selfReceipts: RoomUserReceipts? = null
+		private set
 	var isReady = false
 		private set
 	var lastEventId: EventId? = null
@@ -86,9 +94,21 @@ class TimelineRecyclerAdapter(
 		setHasStableIds(true)
 		fragment.lifecycleScope.launch {
 			val room = client.getRoom(roomId)
+			val receiptsFlow = client.client.user.getReceiptsById(roomId, client.userId)
+			selfReceipts = receiptsFlow.first()
+			val lastReceipt = selfReceipts?.lastReceipt
 			timeline = client.getTimeline(::onStateChange)
-			loadAroundEvent(roomId, room?.lastRelevantEventId ?: room?.lastEventId ?: EventId(""))
+			loadAroundEvent(
+				roomId,
+				lastReceipt ?: room?.lastRelevantEventId ?: room?.lastEventId ?: EventId("")
+			)
 			isReady = true
+			fragment.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+				receiptsFlow.collect {
+					selfReceipts?.lastReceipt?.let { id -> updateEventById(id) }
+					it?.lastReceipt?.let { id -> updateEventById(id) }
+				}
+			}
 		}
 	}
 
@@ -166,6 +186,15 @@ class TimelineRecyclerAdapter(
 		if (!timelineState.canLoadAfter && (getRecentJob == null || getRecentJob?.isCancelled == true)) {
 			startListeningToRecentMessages()
 		}
+	}
+
+	private fun updateEventById(id: EventId?) {
+		if (id == null) return
+		val index = items.indexOfFirst {
+			((it as? TimelineItem.Event)?.event?.eventId ?: EventId(it.id)) == id
+		}
+		if (index >= 0)
+			notifyItemChanged(index)
 	}
 
 	fun dispose() {
