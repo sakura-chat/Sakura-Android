@@ -51,6 +51,7 @@ import de.connect2x.trixnity.clientserverapi.client.MatrixClientAuthProviderData
 import de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClientImpl
 import de.connect2x.trixnity.clientserverapi.client.SyncState
 import de.connect2x.trixnity.clientserverapi.client.classicLogin
+import de.connect2x.trixnity.clientserverapi.client.getAccountData
 import de.connect2x.trixnity.clientserverapi.model.authentication.IdentifierType
 import de.connect2x.trixnity.clientserverapi.model.authentication.LoginType
 import de.connect2x.trixnity.clientserverapi.model.push.PusherData
@@ -59,6 +60,7 @@ import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.m.DirectEventContent
+import de.connect2x.trixnity.core.model.events.m.MarkedUnreadEventContent
 import de.connect2x.trixnity.core.model.events.m.PushRulesEventContent
 import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.room.CreateEventContent
@@ -894,6 +896,11 @@ class Matrix {
 	}
 
 	suspend fun markRead(roomId: RoomId, eventId: EventId) {
+		val markedUnreadEventContent =
+			client.api.room.getAccountData<MarkedUnreadEventContent>(roomId, client.userId)
+				.getOrNull()
+		if (markedUnreadEventContent != null)
+			client.api.room.setAccountData(MarkedUnreadEventContent(false), roomId, client.userId)
 		client.api.room.setReceipt(roomId, eventId)
 	}
 
