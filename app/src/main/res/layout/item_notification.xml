@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:background="?selectableItemBackground"
+	android:clickable="true"
+	android:focusable="true"
+	android:orientation="vertical"
+	android:paddingVertical="8dp">
+
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:gravity="center_vertical"
+		android:paddingHorizontal="16dp"
+		android:paddingBottom="8dp">
+
+		<TextView
+			android:id="@+id/room_name"
+			style="?textAppearanceTitleSmall"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginEnd="8dp"
+			tools:text="Room Name" />
+
+		<TextView
+			android:id="@+id/room_parent_name"
+			style="?textAppearanceLabelMedium"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginEnd="8dp"
+			tools:text="» Parent space » Parent space" />
+	</LinearLayout>
+
+
+	<LinearLayout
+		android:id="@+id/replying_event"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="8dp"
+		android:layout_marginBottom="4dp"
+		android:background="?selectableItemBackground"
+		android:gravity="center_vertical"
+		android:orientation="horizontal"
+		android:paddingHorizontal="16dp"
+		android:visibility="gone"
+		tools:visibility="visible">
+
+		<!-- TODO: Arrow from avatar -->
+		<Space
+			android:layout_width="40dp"
+			android:layout_height="wrap_content" />
+
+		<com.google.android.material.imageview.ShapeableImageView
+			android:id="@+id/replying_avatar"
+			android:layout_width="20dp"
+			android:layout_height="20dp"
+			android:layout_marginStart="8dp"
+			android:background="?colorSecondaryContainer"
+			app:shapeAppearanceOverlay="@style/circleImageView"
+			tools:srcCompat="@tools:sample/avatars" />
+
+		<TextView
+			android:id="@+id/replying_name"
+			style="?textAppearanceBodySmall"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="8dp"
+			android:ellipsize="end"
+			android:maxWidth="100dp"
+			android:maxLines="1"
+			android:textStyle="bold"
+			tools:text="@tools:sample/full_names" />
+
+		<TextView
+			android:id="@+id/replying_body"
+			style="?textAppearanceBodySmall"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="8dp"
+			android:ellipsize="end"
+			android:maxLines="1"
+			tools:text="@tools:sample/lorem/random" />
+	</LinearLayout>
+
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:background="?selectableItemBackground"
+		android:orientation="horizontal"
+		android:paddingHorizontal="16dp">
+
+		<FrameLayout
+			android:layout_width="40dp"
+			android:layout_height="wrap_content">
+
+			<Space
+				android:layout_width="40dp"
+				android:layout_height="wrap_content" />
+
+			<io.getstream.avatarview.AvatarView
+				android:id="@+id/avatar"
+				android:layout_width="40dp"
+				android:layout_height="40dp"
+				app:avatarViewBorderColor="?colorSurfaceContainer"
+				app:avatarViewBorderWidth="0dp"
+				app:avatarViewInitialsBackgroundColor="?colorSecondaryContainer"
+				app:avatarViewInitialsTextColor="?colorOnSecondaryContainer"
+				app:avatarViewInitialsTextStyle="bold"
+				app:avatarViewShape="circle"
+				tools:avatarViewInitials="@tools:sample/full_names"
+				tools:src="@tools:sample/avatars" />
+		</FrameLayout>
+
+		<LinearLayout
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="8dp"
+			android:orientation="vertical">
+
+			<LinearLayout
+				android:id="@+id/message_info"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:gravity="center_vertical"
+				android:orientation="horizontal">
+
+				<TextView
+					android:id="@+id/sender_name"
+					style="?textAppearanceBodyMediumEmphasized"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:ellipsize="end"
+					android:maxLines="1"
+					tools:text="@tools:sample/full_names" />
+
+				<TextView
+					android:id="@+id/event_timestamp"
+					style="?textAppearanceLabelMedium"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:layout_marginStart="8dp"
+					android:ellipsize="end"
+					android:maxLines="1"
+					tools:text="@tools:sample/date/hhmm" />
+
+			</LinearLayout>
+
+
+			<TextView
+				android:id="@+id/body"
+				style="?textAppearanceBodyMedium"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:ellipsize="end"
+				tools:text="@tools:sample/lorem" />
+
+		</LinearLayout>
+	</LinearLayout>
+</LinearLayout>

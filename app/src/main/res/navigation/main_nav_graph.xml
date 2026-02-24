@@ -20,6 +20,11 @@
 	<fragment
 		android:id="@+id/nav_settings"
 		android:name="dev.kuylar.sakura.ui.fragment.settings.SettingsFragment"
-		android:label="fragment_settings"
+		android:label="@string/title_settings"
 		tools:layout="@layout/fragment_settings" />
+	<fragment
+		android:id="@+id/nav_notifications"
+		android:name="dev.kuylar.sakura.ui.fragment.notification.NotificationFragment"
+		android:label="@string/title_notifications"
+		tools:layout="@layout/fragment_notification" />
 </navigation>

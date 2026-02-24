@@ -286,6 +286,7 @@ class Matrix {
 			}
 		} else client.notification.isUnread(roomId)
 	}
+
 	fun getNotificationCount(roomId: RoomId): Flow<Int> {
 		return if (roomId == DIRECT_ROOM) {
 			combine(roomCache.mapNotNull { it.value.value }
@@ -903,6 +904,9 @@ class Matrix {
 			client.api.room.setAccountData(MarkedUnreadEventContent(false), roomId, client.userId)
 		client.api.room.setReceipt(roomId, eventId)
 	}
+
+	fun getNotifications() = client.notification.getAll()
+	suspend fun dismissNotification(id: String) = client.notification.dismiss(id)
 
 	companion object {
 		@SuppressLint("StaticFieldLeak")

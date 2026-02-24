@@ -45,6 +45,7 @@ class TimelineRecyclerAdapter(
 	val client: Matrix,
 	val markdown: MarkdownHandler,
 	val recycler: RecyclerView? = null,
+	val focusedEventId: EventId? = null,
 	val isLoading: ((Boolean) -> Unit)? = null
 ) : RecyclerView.Adapter<TimelineEventViewHolder>() {
 	val layoutInflater = fragment.layoutInflater
@@ -104,7 +105,11 @@ class TimelineRecyclerAdapter(
 			timeline = client.getTimeline(::onStateChange)
 			loadAroundEvent(
 				roomId,
-				lastReceipt ?: room?.lastRelevantEventId ?: room?.lastEventId ?: EventId("")
+				focusedEventId
+					?: lastReceipt
+					?: room?.lastRelevantEventId
+					?: room?.lastEventId
+					?: EventId("")
 			)
 			isReady = true
 			fragment.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {

@@ -72,6 +72,7 @@ import kotlin.math.max
 class TimelineFragment : Fragment(), MenuProvider {
 	private lateinit var binding: FragmentTimelineBinding
 	private lateinit var roomId: String
+	private var eventId: String? = null
 
 	@Inject
 	lateinit var client: Matrix
@@ -92,8 +93,11 @@ class TimelineFragment : Fragment(), MenuProvider {
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
-		arguments?.getString("roomId")?.let {
-			roomId = it
+		arguments?.let { args ->
+			args.getString("roomId")?.let {
+				roomId = it
+			}
+			eventId = args.getString("eventId")
 		}
 		visualMediaPicker =
 			registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -144,7 +148,8 @@ class TimelineFragment : Fragment(), MenuProvider {
 			RoomId(roomId),
 			client,
 			markdown,
-			binding.timelineRecycler
+			binding.timelineRecycler,
+			eventId?.let { EventId(it) }
 		) {
 			binding.loading.visibility = if (it) View.VISIBLE else View.GONE
 			if (!it) isLoadingMore = false

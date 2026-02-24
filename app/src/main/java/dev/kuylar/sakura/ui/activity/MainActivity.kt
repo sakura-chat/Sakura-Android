@@ -172,16 +172,20 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 						}
 
 						R.id.nav_room -> {
+							if (binding.bottomNav.isVisible) {
+								binding.bottomNav.hide()
+							}
 							binding.overlappingPanels.closePanels()
 							binding.overlappingPanels.setStartPanelUseFullPortraitWidth(false)
 							binding.overlappingPanels.setStartPanelLockState(OverlappingPanelsLayout.LockState.UNLOCKED)
 							binding.overlappingPanels.setEndPanelLockState(OverlappingPanelsLayout.LockState.UNLOCKED)
 						}
 
-						R.id.nav_settings -> {
+						R.id.nav_settings, R.id.nav_notifications -> {
 							binding.overlappingPanels.closePanels()
 							binding.overlappingPanels.setStartPanelLockState(OverlappingPanelsLayout.LockState.CLOSE)
 							binding.overlappingPanels.setEndPanelLockState(OverlappingPanelsLayout.LockState.CLOSE)
+							binding.bottomNav.show()
 						}
 					}
 				}
@@ -399,13 +403,18 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		if (startPanelState == panelState) return
 		startPanelState = panelState
 
+		val currentDestination = navController.currentDestination?.id
+		val shouldKeepBottomNavVisible = currentDestination == R.id.nav_settings ||
+				currentDestination == R.id.nav_notifications
+
 		when (panelState) {
 			PanelState.Closing -> {
-				if (getCurrentRoomId() != null)
+				if (getCurrentRoomId() != null && !shouldKeepBottomNavVisible)
 					binding.bottomNav.hide()
 			}
 
 			PanelState.Closed -> {
+				if (shouldKeepBottomNavVisible) return
 				if (opening) {
 					hideAsSoonAsOpened = true
 				} else if (binding.bottomNav.isVisible) {
@@ -439,8 +448,9 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 			}
 
 			R.id.nav_notifications -> {
-				Toast.makeText(this, "not implemented yet", Toast.LENGTH_LONG).show()
-				false
+				binding.overlappingPanels.closePanels()
+				navController.navigate(R.id.nav_notifications)
+				true
 			}
 
 			R.id.nav_settings -> {
