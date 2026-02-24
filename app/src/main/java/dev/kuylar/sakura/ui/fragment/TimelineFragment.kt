@@ -149,9 +149,8 @@ class TimelineFragment : Fragment(), MenuProvider {
 			binding.loading.visibility = if (it) View.VISIBLE else View.GONE
 			if (!it) isLoadingMore = false
 		}
-		binding.timelineRecycler.layoutManager = LinearLayoutManager(requireContext()).apply {
-			stackFromEnd = true
-		}
+		binding.timelineRecycler.layoutManager =
+			LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, true)
 		binding.timelineRecycler.adapter = timelineAdapter
 		binding.timelineRecycler.addOnScrollListener(object : RecyclerView.OnScrollListener() {
 			override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -489,14 +488,14 @@ class TimelineFragment : Fragment(), MenuProvider {
 				}
 				return
 			}
-			if (firstVisibleItem <= 10 && timelineAdapter.canLoadMoreBefore()) {
+			if (lastVisibleItem > totalItemCount - 10 && timelineAdapter.canLoadMoreBefore()) {
 				isLoadingMore = true
 				lifecycleScope.launch {
 					timelineAdapter.loadMoreBefore()
 				}
 				return
 			}
-			if (lastVisibleItem == totalItemCount - 1 && timelineAdapter.canLoadMoreAfter()) {
+			if (firstVisibleItem == 0 && timelineAdapter.canLoadMoreAfter()) {
 				isLoadingMore = true
 				lifecycleScope.launch {
 					timelineAdapter.loadMoreAfter()
@@ -504,7 +503,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 				return
 			}
 		}
-		if (lastVisibleItem == totalItemCount - 1) {
+		if (firstVisibleItem == 0) {
 			if (timelineAdapter.lastEventId != null && lastReadEventId != timelineAdapter.lastEventId) {
 				lastReadEventId = timelineAdapter.lastEventId
 				lifecycleScope.launch {

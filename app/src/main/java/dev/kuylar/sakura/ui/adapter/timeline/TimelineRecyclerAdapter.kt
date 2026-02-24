@@ -51,18 +51,18 @@ class TimelineRecyclerAdapter(
 	private val items =
 		SortedList(TimelineItem::class.java, object : SortedList.Callback<TimelineItem>() {
 			override fun compare(o1: TimelineItem, o2: TimelineItem): Int =
-				o1.sortTimestamp.compareTo(o2.sortTimestamp)
+				-o1.sortTimestamp.compareTo(o2.sortTimestamp)
 
 			override fun onInserted(position: Int, count: Int) {
 				Log.i("TimelineRecyclerAdapter", "onInserted($position, $count)")
 				if (count > 2 && position == 0) return
-				val scroll = recycler?.isAtBottom(-count) ?: false
+				val scroll = recycler?.isAtBottom(count) ?: false
 				notifyItemRangeInserted(position, count)
 				if (scroll) {
 					recycler.post {
 						val item = (recycler.adapter?.itemCount ?: 1) - 1
-						Log.i("TimelineRecyclerAdapter", "scrollToPosition($item)")
-						recycler.scrollToPosition(item)
+						Log.i("TimelineRecyclerAdapter", "scrollToPosition(0)")
+						recycler.scrollToPosition(0)
 					}
 				}
 			}
@@ -125,7 +125,7 @@ class TimelineRecyclerAdapter(
 	)
 
 	override fun onBindViewHolder(holder: TimelineEventViewHolder, position: Int) {
-		holder.bind(items[position], items.getOrNull(position - 1))
+		holder.bind(items[position], items.getOrNull(position + 1))
 	}
 
 	override fun getItemCount() = items.size()
