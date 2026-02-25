@@ -125,16 +125,26 @@ class TimelineEventViewHolder(
 	}
 
 	private fun setAvatarVisibility(item: TimelineItem, prevItem: TimelineItem?) {
-		(if (!(item.senderId == prevItem?.senderId && prevItem.timestamp - item.timestamp < 5.minutes.inWholeMilliseconds) || when (item) {
-				is TimelineItem.Event -> {
-					item.repliedToEvent != null
-				}
-
-				is TimelineItem.OutboxItem -> {
-					item.snapshot.content.relatesTo?.replyTo != null
-				}
+		var showAvatar = true
+		// If last message is less than 5 minutes ago, hide avatar
+		if (prevItem != null) {
+			if (item.senderId == prevItem.senderId &&
+				item.timestamp - prevItem.timestamp < 5.minutes.inWholeMilliseconds
+			)
+				showAvatar = false
+		}
+		if (prevItem?.timestamp?.withinSameDay(item.timestamp) == false) showAvatar = true
+		// If current message is a reply, hide avatar
+		when (item) {
+			is TimelineItem.Event -> {
+				if (item.repliedToEvent != null) showAvatar = true
 			}
-		) View.VISIBLE else View.GONE).let {
+
+			is TimelineItem.OutboxItem -> {
+				if (item.snapshot.content.relatesTo?.replyTo != null) showAvatar = true
+			}
+		}
+		(if (showAvatar) View.VISIBLE else View.GONE).let {
 			binding.avatar.visibility = it
 			binding.messageInfo.visibility = it
 		}
