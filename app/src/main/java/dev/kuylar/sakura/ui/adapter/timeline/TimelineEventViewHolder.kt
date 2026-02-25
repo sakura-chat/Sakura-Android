@@ -26,6 +26,8 @@ import dev.kuylar.sakura.Utils.lastReceipt
 import dev.kuylar.sakura.Utils.loadUser
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.Utils.toTimestamp
+import dev.kuylar.sakura.Utils.toTimestampDate
+import dev.kuylar.sakura.Utils.withinSameDay
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
 import dev.kuylar.sakura.databinding.ItemMessageBinding
@@ -89,6 +91,10 @@ class TimelineEventViewHolder(
 				if (it.lastReceipt == eventId) View.VISIBLE else View.GONE
 		}
 		setAvatarVisibility(item, prevItem)
+		if (prevItem?.timestamp?.withinSameDay(item.timestamp) == false) {
+			binding.dateSeparator.visibility = View.VISIBLE
+			binding.dateSeparatorText.text = item.timestamp.toTimestampDate(binding.root.context)
+		}
 		item.content?.let { setContent(currentNonce, it) }
 		item.user?.let { setUser(it) }
 		if (item is TimelineItem.Event) {
