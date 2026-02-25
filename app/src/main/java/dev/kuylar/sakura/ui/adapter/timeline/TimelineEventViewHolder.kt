@@ -1,5 +1,6 @@
 package dev.kuylar.sakura.ui.adapter.timeline
 
+import android.graphics.drawable.Drawable
 import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
 import android.view.View
@@ -8,6 +9,10 @@ import androidx.core.os.bundleOf
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import de.connect2x.trixnity.client.room.TimelineEventAggregation
 import de.connect2x.trixnity.client.store.RoomUser
 import de.connect2x.trixnity.client.store.TimelineEvent
@@ -22,14 +27,18 @@ import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import dev.kuylar.sakura.BuildConfig
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.content
+import dev.kuylar.sakura.Utils.getImageUrl
 import dev.kuylar.sakura.Utils.lastReceipt
 import dev.kuylar.sakura.Utils.loadUser
 import dev.kuylar.sakura.Utils.suspendThread
+import dev.kuylar.sakura.Utils.toFileSize
 import dev.kuylar.sakura.Utils.toTimestamp
 import dev.kuylar.sakura.Utils.toTimestampDate
 import dev.kuylar.sakura.Utils.withinSameDay
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
+import dev.kuylar.sakura.databinding.AttachmentFileBinding
+import dev.kuylar.sakura.databinding.AttachmentImageBinding
 import dev.kuylar.sakura.databinding.ItemMessageBinding
 import dev.kuylar.sakura.databinding.ItemReactionBinding
 import dev.kuylar.sakura.markdown.MarkdownHandler
@@ -160,6 +169,26 @@ class TimelineEventViewHolder(
 				) { updateSpans(currentNonce) }
 			}
 
+			is RoomMessageEventContent.FileBased -> {
+				if (content.fileName != null && content.body != content.fileName) {
+					markdown.setTextView(
+						binding.body,
+						content.content,
+						false
+					) { updateSpans(currentNonce) }
+				}
+				binding.attachment.visibility = View.VISIBLE
+				when (content)  {
+					is RoomMessageEventContent.FileBased.Image -> {
+						setAttachment(content)
+					}
+
+					else -> {
+						setAttachment(content)
+					}
+				}
+			}
+
 			else -> {
 				markdown.setTextView(
 					binding.body,
@@ -168,10 +197,14 @@ class TimelineEventViewHolder(
 				) { updateSpans(currentNonce) }
 			}
 		}
-		// because BuildConfig.DEBUG is not always true
-		@Suppress("SimplifyBooleanWithConstants", "KotlinConstantConditions")
-		if (BuildConfig.DEBUG && binding.body.text.isEmpty()) {
-			binding.body.text = content.javaClass.name
+		if (binding.body.text.isEmpty()) {
+			// because BuildConfig.DEBUG is not always true
+			@Suppress("SimplifyBooleanWithConstants", "KotlinConstantConditions")
+			if (BuildConfig.DEBUG) {
+				binding.body.text = content.javaClass.name
+			} else {
+				binding.body.visibility = View.GONE
+			}
 		}
 	}
 
@@ -262,6 +295,73 @@ class TimelineEventViewHolder(
 		}
 	}
 
+	private fun setAttachment(content: RoomMessageEventContent.FileBased.Image) {
+		if (fragment == null) return
+		val attachmentBinding = AttachmentImageBinding.inflate(
+			fragment!!.layoutInflater,
+			binding.attachment,
+			false
+		)
+		val displayMetrics = fragment!!.resources.displayMetrics
+		val maxWidth = minOf(
+			displayMetrics.widthPixels * 0.7f,
+			400f * displayMetrics.density
+		).toInt()
+		val maxHeight = minOf(
+			displayMetrics.heightPixels * 0.5f,
+			300f * displayMetrics.density
+		).toInt()
+
+		Glide.with(attachmentBinding.root)
+			.load(content.getImageUrl())
+			.listener(object : RequestListener<Drawable> {
+				override fun onLoadFailed(
+					e: GlideException?,
+					model: Any?,
+					target: Target<Drawable?>,
+					isFirstResource: Boolean
+				) = false
+
+				override fun onResourceReady(
+					resource: Drawable,
+					model: Any,
+					target: Target<Drawable?>?,
+					dataSource: DataSource,
+					isFirstResource: Boolean
+				): Boolean {
+					val imageWidth = resource.intrinsicWidth
+					val imageHeight = resource.intrinsicHeight
+
+					val widthRatio = maxWidth.toFloat() / imageWidth
+					val heightRatio = maxHeight.toFloat() / imageHeight
+					val ratio = minOf(widthRatio, heightRatio, 1f)
+
+					val newWidth = (imageWidth * ratio).toInt()
+					val newHeight = (imageHeight * ratio).toInt()
+
+					val params = attachmentBinding.root.layoutParams
+					params.width = newWidth
+					params.height = newHeight
+					attachmentBinding.root.layoutParams = params
+					attachmentBinding.loading.visibility = View.GONE
+					return false
+				}
+			})
+			.into(attachmentBinding.imageAttachment)
+		binding.attachment.removeAllViews()
+		binding.attachment.visibility = View.VISIBLE
+		binding.attachment.addView(attachmentBinding.root)
+	}
+
+	private fun setAttachment(content: RoomMessageEventContent.FileBased) {
+		// TODO: File downloads
+		if (fragment == null) return
+		val attachmentBinding = AttachmentFileBinding.inflate(fragment!!.layoutInflater, binding.attachment, false)
+		attachmentBinding.title.text = content.fileName ?: content.body
+		attachmentBinding.subtitle.text = content.info?.size.toFileSize()
+		binding.attachment.addView(attachmentBinding.root)
+		binding.attachment.visibility = View.VISIBLE
+	}
 
 
 	private fun resetBindingState() {
@@ -281,6 +381,7 @@ class TimelineEventViewHolder(
 		binding.senderBadge.visibility = View.GONE
 
 		binding.eventTimestamp.text = null
+		binding.body.visibility = View.VISIBLE
 		binding.body.text = null
 
 		binding.attachment.removeAllViews()

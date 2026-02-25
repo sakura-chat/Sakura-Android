@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="wrap_content"
+	android:layout_height="64dp"
+	android:clickable="true"
+	android:focusable="true">
+
+	<com.google.android.material.card.MaterialCardView
+		style="?materialCardViewFilledStyle"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent">
+
+		<LinearLayout
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:orientation="horizontal">
+
+			<ImageView
+				android:layout_width="48dp"
+				android:layout_height="48dp"
+				android:layout_margin="8dp"
+				android:background="@drawable/background_circle_icon"
+				android:padding="8dp"
+				android:src="@drawable/ic_attachment"
+				app:tint="?colorOnSecondaryContainer" />
+
+			<LinearLayout
+				android:layout_width="0dp"
+				android:layout_height="match_parent"
+				android:layout_marginEnd="16dp"
+				android:layout_weight="1"
+				android:gravity="center_vertical"
+				android:orientation="vertical">
+
+				<TextView
+					android:id="@+id/title"
+					style="?textAppearanceTitleMedium"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					tools:text="File name" />
+
+				<TextView
+					android:id="@+id/subtitle"
+					style="?textAppearanceLabelMedium"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					tools:text="123 KB" />
+			</LinearLayout>
+		</LinearLayout>
+	</com.google.android.material.card.MaterialCardView>
+</FrameLayout>

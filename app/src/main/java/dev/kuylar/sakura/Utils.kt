@@ -443,4 +443,20 @@ object Utils {
 
 	val RoomUserReceipts.lastReceipt: EventId
 		get() = receipts.maxBy { r -> r.value.receipt.timestamp }.value.eventId
+
+	val units = listOf("KB", "MB", "GB")
+	fun Long?.toFileSize(): String {
+		val size = this ?: 0
+		if (size < 1024) return "$size B"
+
+		var value = size.toDouble()
+		var unitIndex = -1
+
+		do {
+			value /= 1024
+			unitIndex++
+		} while (value >= 1024 && unitIndex < units.lastIndex)
+
+		return String.format(Locale.getDefault(), "%.2f %s", value, units[unitIndex])
+	}
 }
