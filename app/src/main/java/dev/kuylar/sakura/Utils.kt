@@ -465,13 +465,13 @@ object Utils {
 	fun getMembershipChangeText(
 		context: Context,
 		stateKey: String,
-		oldContent: MemberEventContent,
+		oldContent: MemberEventContent?,
 		newContent: MemberEventContent,
 		user: RoomUser?
 	): String {
-		val oldMembership = oldContent.membership
-		val oldDisplayName = oldContent.displayName
-		val oldAvatarUrl = oldContent.avatarUrl
+		val oldMembership = oldContent?.membership ?: Membership.LEAVE
+		val oldDisplayName = oldContent?.displayName
+		val oldAvatarUrl = oldContent?.avatarUrl
 
 		val newMembership = newContent.membership
 		val newDisplayName = newContent.displayName

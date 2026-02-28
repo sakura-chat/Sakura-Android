@@ -26,6 +26,7 @@ import de.connect2x.trixnity.core.model.events.ClientEvent
 import de.connect2x.trixnity.core.model.events.MessageEventContent
 import de.connect2x.trixnity.core.model.events.RoomEventContent
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
+import de.connect2x.trixnity.core.model.events.m.room.Membership
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import dev.kuylar.sakura.BuildConfig
 import dev.kuylar.sakura.R
@@ -221,7 +222,7 @@ class TimelineEventViewHolder(
 
 			is MemberEventContent -> {
 				val memberEvent = rawEvent as? ClientEvent.RoomEvent.StateEvent<*> ?: return
-				val oldContent = memberEvent.unsigned?.previousContent as MemberEventContent
+				val oldContent = memberEvent.unsigned?.previousContent as? MemberEventContent
 				val stateKey = memberEvent.stateKey
 				val context = binding.root.context
 				markdown.setTextView(
@@ -230,7 +231,7 @@ class TimelineEventViewHolder(
 					false
 				)
 				Utils.getMembershipChangeDrawableId(
-					oldContent.membership,
+					oldContent?.membership ?: Membership.LEAVE,
 					content.membership
 				)?.let { id ->
 					binding.avatar.setImageDrawable(ContextCompat.getDrawable(context, id))
