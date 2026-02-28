@@ -288,6 +288,9 @@ class TimelineFragment : Fragment(), MenuProvider {
 				}
 			}
 		}
+		binding.root.postDelayed(50) {
+			binding.timelineRecycler.invalidate()
+		}
 	}
 
 	private fun sendMessage() {
