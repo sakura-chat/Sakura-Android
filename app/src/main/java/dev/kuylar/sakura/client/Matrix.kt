@@ -284,7 +284,7 @@ class Matrix {
 			combine(getSpaceChildren(roomId).map { getIsUnread(it.roomId) }) {
 				it.any { v -> v }
 			}
-		} else client.notification.isUnread(roomId)
+		} else client.notification.isUnread(roomId, skipCheck = true)
 	}
 
 	fun getNotificationCount(roomId: RoomId): Flow<Int> {
@@ -300,7 +300,7 @@ class Matrix {
 			combine(getSpaceChildren(roomId).map { getNotificationCount(it.roomId) }) {
 				it.sum()
 			}
-		} else client.notification.getCount(roomId)
+		} else client.notification.getCount(roomId, includeDismissed = false)
 	}
 
 	suspend fun getTopLevelSpaces(): List<Room> =
