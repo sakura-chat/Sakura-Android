@@ -192,7 +192,7 @@ class TimelineEventViewHolder(
 			else -> {
 				markdown.setTextView(
 					binding.body,
-					"<code>${content.javaClass.name}</code>",
+					"<code>${content.javaClass.name.substringAfterLast(".").replace("$", ".")}</code>",
 					false
 				) { updateSpans(currentNonce) }
 			}
