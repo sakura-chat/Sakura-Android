@@ -21,6 +21,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.animation.doOnEnd
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.content.getSystemService
 import androidx.core.graphics.drawable.toDrawable
@@ -117,7 +118,7 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 
 		setSupportActionBar(binding.toolbar)
 		binding.toolbar.setNavigationOnClickListener {
-			binding.overlappingPanels.openStartPanel()
+			handleBackPressed()
 		}
 		binding.toolbar.setOnMenuItemClickListener {
 			return@setOnMenuItemClickListener when (it.itemId) {
@@ -137,7 +138,9 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 			override fun handleOnBackPressed() {
 				when (binding.overlappingPanels.getSelectedPanel()) {
 					OverlappingPanelsLayout.Panel.START -> finish()
-					OverlappingPanelsLayout.Panel.CENTER -> binding.overlappingPanels.openStartPanel()
+					OverlappingPanelsLayout.Panel.CENTER -> {
+						handleBackPressed()
+					}
 					OverlappingPanelsLayout.Panel.END -> binding.overlappingPanels.closePanels()
 				}
 			}
@@ -172,6 +175,8 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 						}
 
 						R.id.nav_room -> {
+							binding.toolbar.navigationIcon =
+								ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_menu)
 							if (binding.bottomNav.isVisible) {
 								binding.bottomNav.hide()
 							}
@@ -182,6 +187,8 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 						}
 
 						R.id.nav_settings, R.id.nav_notifications -> {
+							binding.toolbar.navigationIcon =
+								ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_back)
 							binding.overlappingPanels.closePanels()
 							binding.overlappingPanels.setStartPanelLockState(OverlappingPanelsLayout.LockState.CLOSE)
 							binding.overlappingPanels.setEndPanelLockState(OverlappingPanelsLayout.LockState.CLOSE)
@@ -531,6 +538,18 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 				parent.overlay.remove(drawable)
 			}
 			start()
+		}
+	}
+
+	private fun handleBackPressed() {
+		when (navController.currentDestination?.id) {
+			R.id.nav_room -> {
+				binding.overlappingPanels.openStartPanel()
+			}
+
+			else -> {
+				navController.popBackStack()
+			}
 		}
 	}
 }
