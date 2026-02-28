@@ -271,8 +271,8 @@ class TimelineEventViewHolder(
 					.load(key)
 					.into(reactionBinding.emojiImage)
 			} else {
-				reactionBinding.emojiUnicode.visibility = View.GONE
-				reactionBinding.emojiImage.visibility = View.VISIBLE
+				reactionBinding.emojiUnicode.visibility = View.VISIBLE
+				reactionBinding.emojiImage.visibility = View.GONE
 				reactionBinding.emojiUnicode.text = key
 			}
 			reactionBinding.root.setBackgroundResource(
