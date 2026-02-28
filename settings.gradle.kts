@@ -17,7 +17,8 @@ dependencyResolutionManagement {
 		google()
 		mavenCentral()
 		maven("https://jitpack.io")
-		mavenLocal()
+		// https://gitlab.com/kuylar/trixnity
+		maven("https://gitlab.com/api/v4/projects/79642625/packages/maven")
 	}
 }
 
