@@ -41,6 +41,7 @@ import dev.kuylar.sakura.Utils.toTimestampDate
 import dev.kuylar.sakura.Utils.withinSameDay
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
+import dev.kuylar.sakura.client.customevent.StickerMessageEventContent
 import dev.kuylar.sakura.databinding.AttachmentFileBinding
 import dev.kuylar.sakura.databinding.AttachmentImageBinding
 import dev.kuylar.sakura.databinding.ItemMessageBinding
@@ -236,6 +237,10 @@ class TimelineEventViewHolder(
 				}
 			}
 
+			is StickerMessageEventContent -> {
+				setAttachment(content)
+			}
+
 			else -> {
 				markdown.setTextView(
 					binding.body,
@@ -412,6 +417,50 @@ class TimelineEventViewHolder(
 		attachmentBinding.subtitle.text = content.info?.size.toFileSize()
 		binding.attachment.addView(attachmentBinding.root)
 		binding.attachment.visibility = View.VISIBLE
+	}
+
+	private fun setAttachment(content: StickerMessageEventContent) {
+		if (fragment == null) return
+		val attachmentBinding = AttachmentImageBinding.inflate(
+			fragment!!.layoutInflater,
+			binding.attachment,
+			false
+		)
+		val displayMetrics = fragment!!.resources.displayMetrics
+		val maxSize = minOf(
+			displayMetrics.widthPixels * 0.7f,
+			112f * displayMetrics.density
+		).toInt()
+
+		Glide.with(attachmentBinding.root)
+			.load(content.url)
+			.listener(object : RequestListener<Drawable> {
+				override fun onLoadFailed(
+					e: GlideException?,
+					model: Any?,
+					target: Target<Drawable?>,
+					isFirstResource: Boolean
+				) = false
+
+				override fun onResourceReady(
+					resource: Drawable,
+					model: Any,
+					target: Target<Drawable?>?,
+					dataSource: DataSource,
+					isFirstResource: Boolean
+				): Boolean {
+					val params = attachmentBinding.root.layoutParams
+					params.width = maxSize
+					params.height = maxSize
+					attachmentBinding.root.layoutParams = params
+					attachmentBinding.loading.visibility = View.GONE
+					return false
+				}
+			})
+			.into(attachmentBinding.imageAttachment)
+		binding.attachment.removeAllViews()
+		binding.attachment.visibility = View.VISIBLE
+		binding.attachment.addView(attachmentBinding.root)
 	}
 
 
