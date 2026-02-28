@@ -542,6 +542,14 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 	}
 
 	private fun handleBackPressed() {
+		var pickerClosed = false
+		navHostFragment.childFragmentManager.fragments.forEach { fragment ->
+			if (fragment is TimelineFragment) {
+				if (fragment.closeKeyboard())
+					pickerClosed = true
+			}
+		}
+		if (pickerClosed) return
 		when (navController.currentDestination?.id) {
 			R.id.nav_room -> {
 				binding.overlappingPanels.openStartPanel()

@@ -469,10 +469,14 @@ class TimelineFragment : Fragment(), MenuProvider {
 		}
 	}
 
-	fun closeKeyboard() {
+	fun closeKeyboard(): Boolean {
 		requireContext().getSystemService<InputMethodManager>()
 			?.hideSoftInputFromWindow(binding.input.windowToken, 0)
-		binding.picker.visibility = View.GONE
+		if (binding.picker.visibility == View.VISIBLE) {
+			binding.picker.visibility = View.GONE
+			return true
+		}
+		return false
 	}
 
 	private fun checkAndLoadMoreIfNeeded(recyclerView: RecyclerView) {
