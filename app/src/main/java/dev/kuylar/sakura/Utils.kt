@@ -40,6 +40,8 @@ import de.connect2x.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.m.Presence
+import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
+import de.connect2x.trixnity.core.model.events.m.room.Membership
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
 import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
@@ -458,5 +460,188 @@ object Utils {
 		} while (value >= 1024 && unitIndex < units.lastIndex)
 
 		return String.format(Locale.getDefault(), "%.2f %s", value, units[unitIndex])
+	}
+
+	fun getMembershipChangeText(
+		context: Context,
+		stateKey: String,
+		oldContent: MemberEventContent,
+		newContent: MemberEventContent,
+		user: RoomUser?
+	): String {
+		val oldMembership = oldContent.membership
+		val oldDisplayName = oldContent.displayName
+		val oldAvatarUrl = oldContent.avatarUrl
+
+		val newMembership = newContent.membership
+		val newDisplayName = newContent.displayName
+		val newAvatarUrl = newContent.avatarUrl
+		val reason = newContent.reason
+
+		return when (oldMembership) {
+			Membership.INVITE -> {
+				when (newMembership) {
+					Membership.INVITE -> context.getString(
+						R.string.member_state_invited,
+						user?.name,
+						stateKey
+					)
+
+					Membership.JOIN -> context.getString(R.string.member_state_joined, user?.name)
+
+					Membership.KNOCK -> context.getString(R.string.member_state_knocked, stateKey)
+
+					Membership.LEAVE -> {
+						if (stateKey == user?.userId?.full) {
+							context.getString(R.string.member_state_invite_rejected, user.name)
+						} else {
+							context.getString(
+								R.string.member_state_invite_rejected_by,
+								user?.name,
+								stateKey
+							)
+						}
+					}
+
+					Membership.BAN -> context.getString(
+						R.string.member_state_ban,
+						user?.name,
+						stateKey
+					)
+				}
+			}
+
+			Membership.JOIN -> when (newMembership) {
+				Membership.JOIN -> {
+					val displayNameChanged = oldDisplayName != newDisplayName
+					val avatarUrlChanged = oldAvatarUrl != newAvatarUrl
+
+					if (displayNameChanged && avatarUrlChanged) {
+						context.getString(
+							R.string.member_state_change_name_and_avatar,
+							newDisplayName,
+							oldDisplayName ?: "null",
+						)
+					} else if (displayNameChanged) {
+						context.getString(
+							R.string.member_state_change_name,
+							newDisplayName,
+							oldDisplayName ?: "null",
+						)
+					} else if (avatarUrlChanged) {
+						context.getString(R.string.member_state_change_avatar, user?.name)
+					} else {
+						"" // Must never happen
+					}
+				}
+
+				Membership.LEAVE -> {
+					if (stateKey == user?.userId?.full) {
+						context.getString(R.string.member_state_left, user.name)
+					} else {
+						context.getString(R.string.member_state_left_by, user?.name, stateKey)
+					}
+				}
+
+				Membership.BAN -> context.getString(R.string.member_state_ban, user?.name, stateKey)
+
+				Membership.KNOCK, Membership.INVITE -> "" // Must never happen
+			}
+
+			Membership.LEAVE -> when (newMembership) {
+				Membership.INVITE -> context.getString(
+					R.string.member_state_invited,
+					user?.name,
+					stateKey
+				)
+
+				Membership.JOIN -> context.getString(R.string.member_state_joined, user?.name)
+
+				Membership.LEAVE -> "" // No change
+
+				Membership.BAN -> context.getString(R.string.member_state_ban, user?.name, stateKey)
+
+				Membership.KNOCK -> context.getString(R.string.member_state_knocked, user?.name)
+			}
+
+			Membership.BAN -> when (newMembership) {
+				Membership.LEAVE -> context.getString(
+					R.string.member_state_unban,
+					user?.name,
+					stateKey
+				)
+
+				Membership.BAN -> context.getString(R.string.member_state_ban, user?.name, stateKey)
+
+				Membership.INVITE, Membership.JOIN, Membership.KNOCK -> "" // Must never happen
+			}
+
+			Membership.KNOCK -> when (newMembership) {
+				Membership.INVITE -> context.getString(
+					R.string.member_state_knock_accepted,
+					user?.name,
+					stateKey
+				)
+
+				Membership.JOIN -> "" // Must never happen
+
+				Membership.LEAVE -> {
+					if (stateKey == user?.userId?.full) {
+						context.getString(R.string.member_state_knock_cancelled, user.name)
+					} else {
+						context.getString(R.string.member_state_knock_denied, user?.name, stateKey)
+					}
+				}
+
+				Membership.BAN -> context.getString(R.string.member_state_ban, user?.name, stateKey)
+
+				Membership.KNOCK -> context.getString(R.string.member_state_knocked, user?.name)
+			}
+		}
+	}
+
+	fun getMembershipChangeDrawableId(
+		oldMembership: Membership,
+		newMembership: Membership
+	): Int? {
+		return when (oldMembership) {
+			Membership.INVITE, Membership.LEAVE -> {
+				when (newMembership) {
+					Membership.INVITE -> R.drawable.ic_member_state_invited
+					Membership.JOIN -> R.drawable.ic_member_state_joined
+					Membership.KNOCK -> R.drawable.ic_member_state_knock
+					Membership.LEAVE -> R.drawable.ic_member_state_leave
+					Membership.BAN -> R.drawable.ic_member_state_ban
+				}
+			}
+
+			Membership.JOIN -> {
+				when (newMembership) {
+					Membership.INVITE -> null
+					Membership.JOIN -> R.drawable.ic_member_state_update
+					Membership.KNOCK -> null
+					Membership.LEAVE -> R.drawable.ic_member_state_leave
+					Membership.BAN -> R.drawable.ic_member_state_ban
+				}
+			}
+			Membership.KNOCK -> {
+				when (newMembership) {
+					Membership.INVITE -> R.drawable.ic_member_state_invited
+					Membership.JOIN -> null
+					Membership.KNOCK -> R.drawable.ic_member_state_knock
+					Membership.LEAVE -> R.drawable.ic_member_state_leave
+					Membership.BAN -> R.drawable.ic_member_state_ban
+				}
+			}
+			Membership.BAN -> {
+				when (newMembership) {
+					Membership.INVITE -> null
+					Membership.JOIN -> null
+					Membership.KNOCK -> null
+					Membership.LEAVE -> R.drawable.ic_member_state_update
+					Membership.BAN -> R.drawable.ic_member_state_ban
+				}
+			}
+		}
 	}
 }

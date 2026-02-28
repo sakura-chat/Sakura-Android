@@ -24,7 +24,9 @@ import de.connect2x.trixnity.core.model.events.RoomEventContent
 import de.connect2x.trixnity.core.model.events.m.ReactionEventContent
 import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.RelationType
+import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RedactionEventContent
+import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import dev.kuylar.sakura.Utils.getOrNull
 import dev.kuylar.sakura.Utils.indexOfFirst
 import dev.kuylar.sakura.Utils.isAtBottom
@@ -32,6 +34,8 @@ import dev.kuylar.sakura.Utils.lastReceipt
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
 import dev.kuylar.sakura.databinding.ItemMessageBinding
+import dev.kuylar.sakura.databinding.ItemMessageMemberBinding
+import dev.kuylar.sakura.databinding.ItemMessageMiniBinding
 import dev.kuylar.sakura.markdown.MarkdownHandler
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
@@ -123,11 +127,39 @@ class TimelineRecyclerAdapter(
 
 	override fun getItemId(position: Int) = items[position].id.hashCode().toLong()
 
+	override fun getItemViewType(position: Int): Int {
+		return when (items.get(position).content) {
+			is MemberEventContent -> 2
+			is RoomMessageEventContent.TextBased.Emote -> 1
+			else -> 0
+		}
+	}
+
 	override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = TimelineEventViewHolder(
-		ItemMessageBinding.inflate(layoutInflater, parent, false),
+		inflateBinding(parent, viewType),
 		client,
 		markdown
 	)
+
+	private fun inflateBinding(parent: ViewGroup, viewType: Int): ItemMessageBinding {
+		return when (viewType) {
+			1 -> ItemMessageBinding.bind(
+				ItemMessageMiniBinding.inflate(
+					layoutInflater,
+					parent,
+					false
+				).root
+			)
+			2 -> ItemMessageBinding.bind(
+				ItemMessageMemberBinding.inflate(
+					layoutInflater,
+					parent,
+					false
+				).root
+			)
+			else -> ItemMessageBinding.inflate(layoutInflater, parent, false)
+		}
+	}
 
 	override fun onBindViewHolder(holder: TimelineEventViewHolder, position: Int) {
 		holder.bind(items[position], items.getOrNull(position + 1))

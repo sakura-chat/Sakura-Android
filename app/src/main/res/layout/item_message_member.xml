@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:layout_marginBottom="8dp"
+	android:orientation="vertical"
+	tools:background="?colorSurfaceContainer">
+
+	<LinearLayout
+		android:id="@+id/unread_separator"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginVertical="8dp"
+		android:gravity="center_vertical"
+		android:orientation="horizontal"
+		android:paddingHorizontal="16dp"
+		android:visibility="gone"
+		tools:visibility="visible">
+
+		<View
+			android:layout_width="0dp"
+			android:layout_height="1dp"
+			android:layout_weight="1"
+			android:background="?colorPrimary" />
+
+		<TextView
+			style="?textAppearanceLabelMedium"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginHorizontal="12dp"
+			android:text="@string/unread_messages"
+			android:textColor="?colorPrimary" />
+
+		<View
+			android:layout_width="0dp"
+			android:layout_height="1dp"
+			android:layout_weight="1"
+			android:background="?colorPrimary" />
+	</LinearLayout>
+
+	<LinearLayout
+		android:id="@+id/date_separator"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginVertical="8dp"
+		android:gravity="center_vertical"
+		android:orientation="horizontal"
+		android:paddingHorizontal="16dp"
+		android:visibility="gone"
+		tools:visibility="visible">
+
+		<View
+			android:layout_width="0dp"
+			android:layout_height="1dp"
+			android:layout_weight="1"
+			android:background="?android:attr/listDivider" />
+
+		<TextView
+			android:id="@+id/date_separator_text"
+			style="?textAppearanceLabelMedium"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginHorizontal="12dp"
+			tools:text="January 1st, 1970" />
+
+		<View
+			android:layout_width="0dp"
+			android:layout_height="1dp"
+			android:layout_weight="1"
+			android:background="?android:attr/listDivider" />
+	</LinearLayout>
+
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:background="?selectableItemBackground"
+		android:gravity="center_vertical"
+		android:orientation="horizontal"
+		android:paddingHorizontal="16dp">
+
+		<io.getstream.avatarview.AvatarView
+			android:id="@+id/avatar"
+			android:layout_width="32dp"
+			android:layout_height="32dp"
+			android:background="@color/transparent"
+			app:avatarViewBorderColor="@color/transparent"
+			app:avatarViewBorderWidth="0dp"
+			app:avatarViewShape="rounded_rect"
+			tools:src="@drawable/ic_member_state_joined" />
+
+		<LinearLayout
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="8dp"
+			android:orientation="vertical">
+
+			<TextView
+				android:id="@+id/body"
+				style="?textAppearanceBodyMedium"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:ellipsize="end"
+				android:text="@string/member_state_joined" />
+
+			<TextView
+				android:id="@+id/event_timestamp"
+				style="?textAppearanceLabelMedium"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginEnd="8dp"
+				android:ellipsize="end"
+				android:maxLines="1"
+				tools:text="@tools:sample/date/hhmm" />
+		</LinearLayout>
+	</LinearLayout>
+
+	<!-- Stuff that's required for ItemMessageBinding but isn't required for this kind -->
+	<FrameLayout
+		android:layout_width="0dp"
+		android:layout_height="0dp"
+		android:visibility="gone">
+
+		<LinearLayout
+			android:id="@+id/replying_event"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content">
+
+			<com.google.android.material.imageview.ShapeableImageView
+				android:id="@+id/replying_avatar"
+				android:layout_width="20dp"
+				android:layout_height="20dp" />
+
+			<TextView
+				android:id="@+id/replying_name"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+
+			<TextView
+				android:id="@+id/replying_body"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+		</LinearLayout>
+
+		<LinearLayout
+			android:id="@+id/message_info"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content">
+
+			<TextView
+				android:id="@+id/sender_name"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+
+			<TextView
+				android:id="@+id/sender_badge"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+
+		</LinearLayout>
+
+		<FrameLayout
+			android:id="@+id/attachment"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content" />
+
+		<LinearLayout
+			android:id="@+id/embeds"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:orientation="horizontal" />
+
+		<com.google.android.material.chip.ChipGroup
+			android:id="@+id/reactions"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content">
+
+			<include
+				android:id="@+id/reaction_add"
+				layout="@layout/item_reaction_add" />
+		</com.google.android.material.chip.ChipGroup>
+
+	</FrameLayout>
+</LinearLayout>

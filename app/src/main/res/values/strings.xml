@@ -108,4 +108,19 @@
 	<string name="title_notifications">Notifications</string>
 	<string name="title_settings">Settings</string>
 	<string name="message_attachment">Attachment</string>
+	<string name="member_state_ban"><![CDATA[<b>%s</b> has banned <b>%s</b> from the room.]]></string>
+	<string name="member_state_unban"><![CDATA[<b>%s</b> has unbanned <b>%s</b>.]]></string>
+	<string name="member_state_invited"><![CDATA[<b>%s</b> has invited <b>%s</b> to the room.]]></string>
+	<string name="member_state_invite_rejected"><![CDATA[<b>%s</b> has rejected their invite.]]></string>
+	<string name="member_state_invite_rejected_by"><![CDATA[<b>%s</b> has revoked the invitation of <b>%s</b>.]]></string>
+	<string name="member_state_joined"><![CDATA[<b>%s</b> has joined the room.]]></string>
+	<string name="member_state_knocked"><![CDATA[<b>%s</b> has knocking.]]></string>
+	<string name="member_state_knock_accepted"><![CDATA[<b>%s</b> has accepted the knock of <b>%s</b>.]]></string>
+	<string name="member_state_knock_denied"><![CDATA[<b>%s</b> has accepted the knock of <b>%s</b>.]]></string>
+	<string name="member_state_knock_cancelled"><![CDATA[<b>%s</b> has stopped knocking.]]></string>
+	<string name="member_state_left"><![CDATA[<b>%s</b> has left the room.]]></string>
+	<string name="member_state_left_by"><![CDATA[<b>%s</b> has kicked <b>%s</b> from the room.]]></string>
+	<string name="member_state_change_name"><![CDATA[<b>%s</b> has changed their display name to <b>%s</b>.]]></string>
+	<string name="member_state_change_avatar"><![CDATA[<b>%s</b> has changed their avatar.]]></string>
+	<string name="member_state_change_name_and_avatar"><![CDATA[<b>%s</b> has changed their display name to <b>%s</b>, and changed their avatar.]]></string>
 </resources>

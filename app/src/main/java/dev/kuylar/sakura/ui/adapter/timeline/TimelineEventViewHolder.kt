@@ -5,6 +5,7 @@ import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewConfiguration
+import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
@@ -21,11 +22,14 @@ import de.connect2x.trixnity.client.store.eventId
 import de.connect2x.trixnity.client.store.roomId
 import de.connect2x.trixnity.client.store.sender
 import de.connect2x.trixnity.core.model.EventId
+import de.connect2x.trixnity.core.model.events.ClientEvent
 import de.connect2x.trixnity.core.model.events.MessageEventContent
 import de.connect2x.trixnity.core.model.events.RoomEventContent
+import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import dev.kuylar.sakura.BuildConfig
 import dev.kuylar.sakura.R
+import dev.kuylar.sakura.Utils
 import dev.kuylar.sakura.Utils.content
 import dev.kuylar.sakura.Utils.getImageUrl
 import dev.kuylar.sakura.Utils.lastReceipt
@@ -104,8 +108,15 @@ class TimelineEventViewHolder(
 			binding.dateSeparator.visibility = View.VISIBLE
 			binding.dateSeparatorText.text = item.timestamp.toTimestampDate(binding.root.context)
 		}
-		item.content?.let { setContent(currentNonce, it) }
 		item.user?.let { setUser(it) }
+		item.content?.let {
+			setContent(
+				currentNonce,
+				it,
+				item.user,
+				(item as TimelineItem.Event).event.event
+			)
+		}
 		if (item is TimelineItem.Event) {
 			item.repliedToEvent?.let { setReply(currentNonce, it) }
 			setReactions(item.event, item.reactions)
@@ -159,14 +170,32 @@ class TimelineEventViewHolder(
 		}
 	}
 
-	private fun setContent(currentNonce: Long, content: RoomEventContent) {
+	private fun setContent(
+		currentNonce: Long,
+		content: RoomEventContent,
+		user: RoomUser?,
+		rawEvent: ClientEvent.RoomEvent<*>?,
+		edited: Boolean = false
+	) {
 		when (content) {
-			is RoomMessageEventContent.TextBased -> {
+			is RoomMessageEventContent.TextBased.Text, RoomMessageEventContent.TextBased.Notice -> {
 				markdown.setTextView(
 					binding.body,
-					content.content,
-					false
+					(content as? RoomMessageEventContent.TextBased)?.content,
+					edited
+				)
+			}
+
+			is RoomMessageEventContent.TextBased.Emote -> {
+				markdown.setTextView(
+					binding.body,
+					"* <b>%s</b> %s".format(
+						user?.name,
+						(content as? RoomMessageEventContent.TextBased)?.content
+					),
+					edited
 				) { updateSpans(currentNonce) }
+				binding.senderName.visibility = View.GONE
 			}
 
 			is RoomMessageEventContent.FileBased -> {
@@ -174,11 +203,11 @@ class TimelineEventViewHolder(
 					markdown.setTextView(
 						binding.body,
 						content.content,
-						false
+						edited
 					) { updateSpans(currentNonce) }
 				}
 				binding.attachment.visibility = View.VISIBLE
-				when (content)  {
+				when (content) {
 					is RoomMessageEventContent.FileBased.Image -> {
 						setAttachment(content)
 					}
@@ -189,11 +218,31 @@ class TimelineEventViewHolder(
 				}
 			}
 
+			is MemberEventContent -> {
+				val memberEvent = rawEvent as? ClientEvent.RoomEvent.StateEvent<*> ?: return
+				val oldContent = memberEvent.unsigned?.previousContent as MemberEventContent
+				val stateKey = memberEvent.stateKey
+				val context = binding.root.context
+				markdown.setTextView(
+					binding.body,
+					Utils.getMembershipChangeText(context, stateKey, oldContent, content, user),
+					false
+				)
+				Utils.getMembershipChangeDrawableId(
+					oldContent.membership,
+					content.membership
+				)?.let { id ->
+					binding.avatar.setImageDrawable(ContextCompat.getDrawable(context, id))
+				}
+			}
+
 			else -> {
 				markdown.setTextView(
 					binding.body,
-					"<code>${content.javaClass.name.substringAfterLast(".").replace("$", ".")}</code>",
-					false
+					"<code>${
+						content.javaClass.name.substringAfterLast(".").replace("$", ".")
+					}</code>",
+					edited
 				) { updateSpans(currentNonce) }
 			}
 		}
@@ -241,7 +290,8 @@ class TimelineEventViewHolder(
 		fragment?.let {
 			binding.reactionAdd.root.setOnClickListener { v ->
 				val f = ReactionBottomSheetFragment()
-				f.arguments = bundleOf("roomId" to event.roomId.full, "eventId" to event.eventId.full)
+				f.arguments =
+					bundleOf("roomId" to event.roomId.full, "eventId" to event.eventId.full)
 				f.show(it.parentFragmentManager, "reactionBottomSheet")
 			}
 		}
@@ -356,7 +406,8 @@ class TimelineEventViewHolder(
 	private fun setAttachment(content: RoomMessageEventContent.FileBased) {
 		// TODO: File downloads
 		if (fragment == null) return
-		val attachmentBinding = AttachmentFileBinding.inflate(fragment!!.layoutInflater, binding.attachment, false)
+		val attachmentBinding =
+			AttachmentFileBinding.inflate(fragment!!.layoutInflater, binding.attachment, false)
 		attachmentBinding.title.text = content.fileName ?: content.body
 		attachmentBinding.subtitle.text = content.info?.size.toFileSize()
 		binding.attachment.addView(attachmentBinding.root)
@@ -376,6 +427,7 @@ class TimelineEventViewHolder(
 		binding.avatar.avatarInitials = null
 		binding.avatar.loadImage(null)
 
+		binding.senderName.visibility = View.VISIBLE
 		binding.senderName.text = null
 		binding.senderBadge.text = null
 		binding.senderBadge.visibility = View.GONE
