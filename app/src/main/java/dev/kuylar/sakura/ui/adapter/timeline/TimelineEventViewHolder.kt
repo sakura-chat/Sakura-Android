@@ -166,6 +166,7 @@ class TimelineEventViewHolder(
 				if (item.snapshot.content.relatesTo?.replyTo != null) showAvatar = true
 			}
 		}
+		if (prevItem?.content is MemberEventContent || item.content is MemberEventContent) showAvatar = true
 		(if (showAvatar) View.VISIBLE else View.GONE).let {
 			binding.avatar.visibility = it
 			binding.messageInfo.visibility = it
