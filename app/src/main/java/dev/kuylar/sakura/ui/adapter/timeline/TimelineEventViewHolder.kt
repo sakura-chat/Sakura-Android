@@ -51,6 +51,7 @@ import dev.kuylar.sakura.databinding.ItemReactionBinding
 import dev.kuylar.sakura.markdown.MarkdownHandler
 import dev.kuylar.sakura.ui.fragment.TimelineFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.EventBottomSheetFragment
+import dev.kuylar.sakura.ui.fragment.bottomsheet.ProfileBottomSheetFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.ReactionBottomSheetFragment
 import io.getstream.avatarview.glide.loadImage
 import kotlinx.coroutines.Job
@@ -275,6 +276,12 @@ class TimelineEventViewHolder(
 	private fun setUser(user: RoomUser) {
 		binding.avatar.loadUser(user)
 		binding.senderName.text = user.name
+		binding.avatar.setOnLongClickListener {
+			val f = ProfileBottomSheetFragment()
+			f.arguments = bundleOf("roomId" to user.roomId.full, "userId" to user.userId.full)
+			f.show(fragment!!.parentFragmentManager, "profileBottomSheet")
+			true
+		}
 	}
 
 	private fun setReply(currentNonce: Long, reply: TimelineItem.Event.Snapshot.Reply) {

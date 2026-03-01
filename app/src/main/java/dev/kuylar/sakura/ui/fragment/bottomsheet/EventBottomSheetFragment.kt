@@ -137,6 +137,12 @@ class EventBottomSheetFragment : BottomSheetDialogFragment() {
 			}
 			binding.root.postDelayed(50) { dismiss() }
 		}
+		binding.profile.setOnClickListener {
+			val f = ProfileBottomSheetFragment()
+			f.arguments = bundleOf("roomId" to roomId?.full, "userId" to event.sender.full)
+			f.show(parentFragmentManager, "profileBottomSheet")
+			binding.root.postDelayed(50) { dismiss() }
+		}
 		binding.editHistory.setOnClickListener {
 			// TODO: EditHistoryBottomSheetFragment
 			Toast.makeText(requireContext(), "not yet implemented", Toast.LENGTH_LONG).show()
