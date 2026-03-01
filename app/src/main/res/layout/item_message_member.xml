@@ -84,6 +84,7 @@
 			android:id="@+id/avatar"
 			android:layout_width="32dp"
 			android:layout_height="32dp"
+			android:layout_marginHorizontal="4dp"
 			android:background="@color/transparent"
 			app:avatarViewBorderColor="@color/transparent"
 			app:avatarViewBorderWidth="0dp"
