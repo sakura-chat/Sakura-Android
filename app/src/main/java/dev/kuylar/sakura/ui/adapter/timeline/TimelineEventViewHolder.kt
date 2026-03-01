@@ -180,10 +180,10 @@ class TimelineEventViewHolder(
 		edited: Boolean = false
 	) {
 		when (content) {
-			is RoomMessageEventContent.TextBased.Text, RoomMessageEventContent.TextBased.Notice -> {
+			is RoomMessageEventContent.TextBased.Text, is RoomMessageEventContent.TextBased.Notice -> {
 				markdown.setTextView(
 					binding.body,
-					(content as? RoomMessageEventContent.TextBased)?.content,
+					content.content,
 					edited
 				)
 			}
