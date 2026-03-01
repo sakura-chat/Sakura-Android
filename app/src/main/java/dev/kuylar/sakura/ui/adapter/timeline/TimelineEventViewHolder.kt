@@ -19,6 +19,7 @@ import de.connect2x.trixnity.client.store.RoomUser
 import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.client.store.avatarUrl
 import de.connect2x.trixnity.client.store.eventId
+import de.connect2x.trixnity.client.store.originTimestamp
 import de.connect2x.trixnity.client.store.roomId
 import de.connect2x.trixnity.client.store.sender
 import de.connect2x.trixnity.core.model.EventId
@@ -310,48 +311,51 @@ class TimelineEventViewHolder(
 		} else {
 			binding.reactions.visibility = View.VISIBLE
 		}
-		reactions.reactions.forEach { (key, events) ->
-			val shortcode = events
-				.mapNotNull { it.content?.getOrNull() as? ShortcodeReactionEventContent }
-				.groupBy { (it.shortcode ?: it.beeperShortcode)?.trim(':') }
-				.entries.maxByOrNull { it.value.size }?.key
-			val userReaction = events.firstOrNull { it.sender == client.userId }
+		reactions.reactions
+			.map { Pair(it.key, it.value) }
+			.sortedByDescending { it.second.minOf { e -> e.originTimestamp } }
+			.forEach { (key, events) ->
+				val shortcode = events
+					.mapNotNull { it.content?.getOrNull() as? ShortcodeReactionEventContent }
+					.groupBy { (it.shortcode ?: it.beeperShortcode)?.trim(':') }
+					.entries.maxByOrNull { it.value.size }?.key
+				val userReaction = events.firstOrNull { it.sender == client.userId }
 
-			val reactionBinding = ItemReactionBinding.inflate(
-				LayoutInflater.from(binding.root.context),
-				binding.reactions,
-				false
-			)
-			reactionBinding.counter.text = events.size.toString()
-			if (key.startsWith("mxc://")) {
-				reactionBinding.emojiUnicode.visibility = View.GONE
-				reactionBinding.emojiImage.visibility = View.VISIBLE
-				Glide.with(reactionBinding.root)
-					.load(key)
-					.into(reactionBinding.emojiImage)
-			} else {
-				reactionBinding.emojiUnicode.visibility = View.VISIBLE
-				reactionBinding.emojiImage.visibility = View.GONE
-				reactionBinding.emojiUnicode.text = key
-			}
-			reactionBinding.root.setBackgroundResource(
-				if (userReaction != null) R.drawable.background_reaction_selected
-				else R.drawable.background_reaction
-			)
-			reactionBinding.root.setOnClickListener {
-				reactionBinding.root.setOnClickListener(null)
-				reactionBinding.root.alpha = .5f
-				suspendThread {
-					if (userReaction == null) {
-						client.reactToEvent(event.roomId, event.eventId, key, shortcode)
-					} else {
-						client.redactEvent(userReaction.roomId, userReaction.eventId)
+				val reactionBinding = ItemReactionBinding.inflate(
+					LayoutInflater.from(binding.root.context),
+					binding.reactions,
+					false
+				)
+				reactionBinding.counter.text = events.size.toString()
+				if (key.startsWith("mxc://")) {
+					reactionBinding.emojiUnicode.visibility = View.GONE
+					reactionBinding.emojiImage.visibility = View.VISIBLE
+					Glide.with(reactionBinding.root)
+						.load(key)
+						.into(reactionBinding.emojiImage)
+				} else {
+					reactionBinding.emojiUnicode.visibility = View.VISIBLE
+					reactionBinding.emojiImage.visibility = View.GONE
+					reactionBinding.emojiUnicode.text = key
+				}
+				reactionBinding.root.setBackgroundResource(
+					if (userReaction != null) R.drawable.background_reaction_selected
+					else R.drawable.background_reaction
+				)
+				reactionBinding.root.setOnClickListener {
+					reactionBinding.root.setOnClickListener(null)
+					reactionBinding.root.alpha = .5f
+					suspendThread {
+						if (userReaction == null) {
+							client.reactToEvent(event.roomId, event.eventId, key, shortcode)
+						} else {
+							client.redactEvent(userReaction.roomId, userReaction.eventId)
+						}
 					}
 				}
-			}
 
-			binding.reactions.addView(reactionBinding.root, 0)
-		}
+				binding.reactions.addView(reactionBinding.root, 0)
+			}
 	}
 
 	private fun setAttachment(content: RoomMessageEventContent.FileBased.Image) {
