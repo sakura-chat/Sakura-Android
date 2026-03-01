@@ -39,6 +39,8 @@
 					style="?textAppearanceTitleMedium"
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content"
+					android:ellipsize="middle"
+					android:maxLines="1"
 					tools:text="File name" />
 
 				<TextView
