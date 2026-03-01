@@ -53,19 +53,27 @@ class TimelineRecyclerAdapter(
 	val isLoading: ((Boolean) -> Unit)? = null
 ) : RecyclerView.Adapter<TimelineEventViewHolder>() {
 	val layoutInflater = fragment.layoutInflater
-	private val items =
+	private val items: SortedList<TimelineItem> =
 		SortedList(TimelineItem::class.java, object : SortedList.Callback<TimelineItem>() {
 			override fun compare(o1: TimelineItem, o2: TimelineItem): Int =
 				-o1.sortTimestamp.compareTo(o2.sortTimestamp)
 
 			override fun onInserted(position: Int, count: Int) {
 				Log.i("TimelineRecyclerAdapter", "onInserted($position, $count)")
+				notifyItemRangeInserted(position, count)
+				if (position > 0) {
+					notifyItemChanged(position - 1)
+					Log.i("TimelineRecyclerAdapter", "notifyItemChanged(${position - 1})")
+				}
+				if (position + count < items.size()) {
+					notifyItemChanged(position + count)
+					Log.i("TimelineRecyclerAdapter", "notifyItemChanged(${position + count})")
+				}
+
 				if (count > 2 && position == 0) return
 				val scroll = recycler?.isAtBottom(count) ?: false
-				notifyItemRangeInserted(position, count)
 				if (scroll) {
 					recycler.post {
-						val item = (recycler.adapter?.itemCount ?: 1) - 1
 						Log.i("TimelineRecyclerAdapter", "scrollToPosition(0)")
 						recycler.scrollToPosition(0)
 					}
