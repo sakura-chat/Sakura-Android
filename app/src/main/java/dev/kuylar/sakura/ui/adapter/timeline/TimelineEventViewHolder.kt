@@ -25,6 +25,7 @@ import de.connect2x.trixnity.client.store.sender
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.events.ClientEvent
 import de.connect2x.trixnity.core.model.events.MessageEventContent
+import de.connect2x.trixnity.core.model.events.RedactedEventContent
 import de.connect2x.trixnity.core.model.events.RoomEventContent
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership
@@ -118,7 +119,8 @@ class TimelineEventViewHolder(
 				currentNonce,
 				it,
 				item.user,
-				(item as TimelineItem.Event).event.event
+				(item as TimelineItem.Event).event.event,
+				item.edits.history.isNotEmpty()
 			)
 		}
 		if (item is TimelineItem.Event) {
@@ -247,6 +249,16 @@ class TimelineEventViewHolder(
 				setAttachment(content)
 			}
 
+			is RedactedEventContent -> {
+				markdown.setTextView(
+					binding.body,
+					"<sub><i>${
+						binding.body.context.getString(R.string.message_deleted)
+					}</i></sub>",
+					edited
+				)
+			}
+
 			else -> {
 				markdown.setTextView(
 					binding.body,
@@ -254,7 +266,7 @@ class TimelineEventViewHolder(
 						content.javaClass.name.substringAfterLast(".").replace("$", ".")
 					}</code>",
 					edited
-				) { updateSpans(currentNonce) }
+				)
 			}
 		}
 		if (binding.body.text.isEmpty()) {

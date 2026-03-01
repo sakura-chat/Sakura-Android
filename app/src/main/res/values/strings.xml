@@ -123,4 +123,5 @@
 	<string name="member_state_change_name"><![CDATA[<b>%s</b> has changed their display name to <b>%s</b>.]]></string>
 	<string name="member_state_change_avatar"><![CDATA[<b>%s</b> has changed their avatar.]]></string>
 	<string name="member_state_change_name_and_avatar"><![CDATA[<b>%s</b> has changed their display name to <b>%s</b>, and changed their avatar.]]></string>
+	<string name="message_deleted">Message deleted</string>
 </resources>
