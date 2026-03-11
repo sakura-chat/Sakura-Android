@@ -289,7 +289,7 @@ class HtmlSpannableRenderer {
 				val span = if (state.listState?.isOrdered == true) {
 					NumberIndentSpan(40, state.listState?.index++ ?: 1)
 				} else {
-					BulletSpan(40)
+					BulletSpan(20)
 				}
 
 				val contentStart = state.builder.length
