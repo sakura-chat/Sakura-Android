@@ -26,7 +26,7 @@ import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RedactionEventContent
-import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import dev.kuylar.sakura.client.customevent.message.RoomMessageEventContent
 import dev.kuylar.sakura.Utils.getOrNull
 import dev.kuylar.sakura.Utils.indexOfFirst
 import dev.kuylar.sakura.Utils.isAtBottom

@@ -45,9 +45,9 @@ import de.connect2x.trixnity.client.store.roomId
 import de.connect2x.trixnity.client.store.sender
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
-import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
-import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
-import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
+import dev.kuylar.sakura.client.customevent.message.RoomMessageEventContent
+import dev.kuylar.sakura.client.customevent.message.bodyWithoutFallback
+import dev.kuylar.sakura.client.customevent.message.formattedBodyWithoutFallback
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.bytesToString
 import dev.kuylar.sakura.Utils.suspendThread

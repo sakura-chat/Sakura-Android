@@ -29,7 +29,7 @@ import de.connect2x.trixnity.core.model.events.RedactedEventContent
 import de.connect2x.trixnity.core.model.events.RoomEventContent
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership
-import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import dev.kuylar.sakura.client.customevent.message.RoomMessageEventContent
 import dev.kuylar.sakura.BuildConfig
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils

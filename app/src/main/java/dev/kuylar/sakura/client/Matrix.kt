@@ -64,7 +64,6 @@ import de.connect2x.trixnity.core.model.events.m.MarkedUnreadEventContent
 import de.connect2x.trixnity.core.model.events.m.PushRulesEventContent
 import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.room.CreateEventContent
-import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.push.PushRuleSet
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappingsBuilder
@@ -83,6 +82,7 @@ import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
 import dev.kuylar.sakura.client.customevent.StickerMessageEventContent
 import dev.kuylar.sakura.client.customevent.UserImagePackEventContent
 import dev.kuylar.sakura.client.customevent.UserNoteEventContent
+import dev.kuylar.sakura.client.customevent.message.RoomMessageEventContent
 import dev.kuylar.sakura.emoji.CustomEmojiCategoryModel
 import dev.kuylar.sakura.emoji.CustomEmojiModel
 import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
@@ -943,6 +943,7 @@ class Matrix {
 		private fun prepModules(): Module {
 			val customMappings = EventContentSerializerMappingsBuilder().apply {
 				stateOf<RoomImagePackEventContent>("im.ponies.room_emotes")
+				messageOf<RoomMessageEventContent>("m.room.message")
 				messageOf<StickerMessageEventContent>("m.sticker")
 				messageOf<ShortcodeReactionEventContent>("m.reaction")
 				globalAccountDataOf<ElementRecentEmojiEventContent>("io.element.recent_emoji")
@@ -960,6 +961,7 @@ class Matrix {
 
 		private fun prepClient(config: MatrixClientConfiguration) {
 			config.deleteRooms = MatrixClientConfiguration.DeleteRooms.OnLeave
+			config.lastRelevantEventFilter = { it is RoomMessageEventContent }
 			config.modulesFactories += ::prepModules
 		}
 

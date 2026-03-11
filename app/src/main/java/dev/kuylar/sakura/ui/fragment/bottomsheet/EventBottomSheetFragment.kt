@@ -20,10 +20,10 @@ import de.connect2x.trixnity.client.store.sender
 import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
-import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.RecentEmoji
+import dev.kuylar.sakura.client.customevent.message.RoomMessageEventContent
 import dev.kuylar.sakura.databinding.FragmentEventBottomSheetBinding
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.firstOrNull

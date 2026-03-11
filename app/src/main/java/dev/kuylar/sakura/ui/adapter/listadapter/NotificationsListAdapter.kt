@@ -15,13 +15,13 @@ import de.connect2x.trixnity.client.store.roomId
 import de.connect2x.trixnity.client.store.sender
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
-import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.content
 import dev.kuylar.sakura.Utils.loadAvatar
 import dev.kuylar.sakura.Utils.loadUser
 import dev.kuylar.sakura.Utils.toTimestamp
 import dev.kuylar.sakura.client.Matrix
+import dev.kuylar.sakura.client.customevent.message.RoomMessageEventContent
 import dev.kuylar.sakura.databinding.ItemNotificationBinding
 import dev.kuylar.sakura.markdown.MarkdownHandler
 import kotlinx.coroutines.launch

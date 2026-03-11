@@ -17,7 +17,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import de.connect2x.trixnity.client.room
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
-import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.getBubbleMetadata
 import dev.kuylar.sakura.Utils.getIntent
@@ -26,6 +25,7 @@ import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.Utils.toNotificationPerson
 import dev.kuylar.sakura.Utils.toShortcut
 import dev.kuylar.sakura.client.Matrix
+import dev.kuylar.sakura.client.customevent.message.RoomMessageEventContent
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject

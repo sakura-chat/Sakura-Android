@@ -42,10 +42,10 @@ import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.m.Presence
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership
-import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
-import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
-import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
 import dev.kuylar.sakura.client.Matrix
+import dev.kuylar.sakura.client.customevent.message.RoomMessageEventContent
+import dev.kuylar.sakura.client.customevent.message.bodyWithoutFallback
+import dev.kuylar.sakura.client.customevent.message.formattedBodyWithoutFallback
 import dev.kuylar.sakura.service.ReplyReceiver
 import dev.kuylar.sakura.ui.activity.BubbleActivity
 import dev.kuylar.sakura.ui.activity.MainActivity
