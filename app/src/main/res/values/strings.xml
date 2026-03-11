@@ -124,4 +124,7 @@
 	<string name="member_state_change_avatar"><![CDATA[<b>%s</b> has changed their avatar.]]></string>
 	<string name="member_state_change_name_and_avatar"><![CDATA[<b>%s</b> has changed their display name to <b>%s</b>, and changed their avatar.]]></string>
 	<string name="message_deleted">Message deleted</string>
+	<string name="room_hint_encrypted">🛡 Message %s</string>
+	<string name="room_hint_unencrypted">🔓 Message %s</string>
+	<string name="room_hint_no_permission">You are not allowed to send messages to this room.</string>
 </resources>

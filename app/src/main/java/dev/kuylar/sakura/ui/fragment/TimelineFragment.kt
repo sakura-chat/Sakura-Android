@@ -33,6 +33,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResultListener
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -43,16 +44,18 @@ import de.connect2x.trixnity.client.room
 import de.connect2x.trixnity.client.store.eventId
 import de.connect2x.trixnity.client.store.roomId
 import de.connect2x.trixnity.client.store.sender
+import de.connect2x.trixnity.client.user
+import de.connect2x.trixnity.client.user.canSendEvent
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
-import dev.kuylar.sakura.client.customevent.message.RoomMessageEventContent
-import dev.kuylar.sakura.client.customevent.message.bodyWithoutFallback
-import dev.kuylar.sakura.client.customevent.message.formattedBodyWithoutFallback
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.bytesToString
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.MatrixEmote
+import dev.kuylar.sakura.client.customevent.message.RoomMessageEventContent
+import dev.kuylar.sakura.client.customevent.message.bodyWithoutFallback
+import dev.kuylar.sakura.client.customevent.message.formattedBodyWithoutFallback
 import dev.kuylar.sakura.databinding.FragmentTimelineBinding
 import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
 import dev.kuylar.sakura.markdown.MarkdownHandler
@@ -288,6 +291,25 @@ class TimelineFragment : Fragment(), MenuProvider {
 				}
 			}
 		}
+		lifecycleScope.launch {
+			lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+				client.client.user.canSendEvent<RoomMessageEventContent>(RoomId(roomId)).collect { canSend ->
+					activity?.runOnUiThread {
+						binding.input.hint = getString(
+							if (!canSend) R.string.room_hint_no_permission
+							else if (room.encrypted) R.string.room_hint_encrypted
+							else R.string.room_hint_unencrypted,
+							room.name?.explicitName ?: room.roomId.full
+						).replace(" ", "\u00A0")
+						val vis = if (canSend) View.VISIBLE else View.GONE
+						binding.input.isEnabled = canSend
+						binding.buttonSend.visibility = vis
+						binding.buttonEmoji.visibility = vis
+						binding.buttonAttachment.visibility = vis
+					}
+				}
+			}
+		}
 		binding.root.postDelayed(50) {
 			binding.timelineRecycler.invalidate()
 		}
@@ -463,7 +485,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 	}
 
 	fun onImeHeightChanged(bottom: Int) {
-		if (bottom == 0) {
+		if (bottom <= 0) {
 			onKeyboardClosed()
 		} else {
 			onKeyboardOpened()
