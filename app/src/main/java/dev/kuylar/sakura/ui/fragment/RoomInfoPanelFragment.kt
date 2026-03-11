@@ -4,11 +4,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.postDelayed
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import dagger.hilt.android.AndroidEntryPoint
-import dev.kuylar.sakura.Utils.suspendThread
+import de.connect2x.trixnity.client.store.joinedMemberCount
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentRoomInfoPanelBinding
 import dev.kuylar.sakura.ui.adapter.listadapter.UserListAdapter
@@ -42,20 +43,33 @@ class RoomInfoPanelFragment : Fragment() {
 			return
 		}
 
-		suspendThread {
-			client.getRoom(roomId)?.let { room ->
-				activity?.runOnUiThread {
-					Glide.with(this)
-						.load(room.avatarUrl)
-						.into(binding.roomIcon)
-					binding.roomName.text = room.name?.explicitName ?: room.roomId.full
-					binding.roomTopic.visibility = View.GONE
-				}
+		setUi()
+	}
+
+	private fun setUi() {
+		val room = client.getRoom(roomId)
+		if (room == null) {
+			binding.root.postDelayed(50) {
+				setUi()
 			}
+			return
 		}
 
-		binding.recycler.layoutManager = LinearLayoutManager(requireContext())
-		binding.recycler.adapter = UserListAdapter(this, roomId, client, binding.recycler)
+		activity?.runOnUiThread {
+			Glide.with(this)
+				.load(room.avatarUrl)
+				.into(binding.roomIcon)
+			binding.roomName.text = room.name?.explicitName ?: room.roomId.full
+			binding.roomTopic.visibility = View.GONE
+		}
+
+		// Don't load the users list if there are way too many people in a room
+		// Or else loading & unloading the room lags the app a *lot*.
+		// Either find a way to not make the app struggle or just fix this altogether
+		if ((room.joinedMemberCount ?: 1L) < 500) {
+			binding.recycler.layoutManager = LinearLayoutManager(requireContext())
+			binding.recycler.adapter = UserListAdapter(this, roomId, client, binding.recycler)
+		}
 	}
 
 	override fun onDestroy() {
