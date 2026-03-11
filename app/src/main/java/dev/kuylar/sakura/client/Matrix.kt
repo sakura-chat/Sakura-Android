@@ -961,7 +961,7 @@ class Matrix {
 
 		private fun prepClient(config: MatrixClientConfiguration) {
 			config.deleteRooms = MatrixClientConfiguration.DeleteRooms.OnLeave
-			config.lastRelevantEventFilter = { it is RoomMessageEventContent }
+			config.lastRelevantEventFilter = { it.content is RoomMessageEventContent }
 			config.modulesFactories += ::prepModules
 		}
 
