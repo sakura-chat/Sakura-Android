@@ -190,7 +190,7 @@ class TimelineEventViewHolder(
 					binding.body,
 					content.content,
 					edited
-				)
+				) { updateSpans(currentNonce) }
 			}
 
 			is RoomMessageEventContent.TextBased.Emote -> {
@@ -254,8 +254,7 @@ class TimelineEventViewHolder(
 					binding.body,
 					"<sub><i>${
 						binding.body.context.getString(R.string.message_deleted)
-					}</i></sub>",
-					edited
+					}</i></sub>"
 				)
 			}
 
