@@ -40,6 +40,7 @@ class HtmlSpannableRenderer {
 		val sb = SpannableStringBuilder()
 		val state = State(context, sb)
 		visitChildren(state, doc.body().childNodes())
+		collapseConsecutiveNewlines(sb)
 		return sb.trim() as Spannable
 	}
 
@@ -397,5 +398,23 @@ class HtmlSpannableRenderer {
 		val typedValue = TypedValue()
 		theme.resolveAttribute(attr, typedValue, true)
 		return typedValue.data
+	}
+
+	private fun collapseConsecutiveNewlines(builder: SpannableStringBuilder) {
+		var i = 0
+		while (i < builder.length) {
+			if (builder[i] == '\n') {
+				var consecutiveNewlines = 1
+				while (i + consecutiveNewlines < builder.length && builder[i + consecutiveNewlines] == '\n') {
+					consecutiveNewlines++
+				}
+				if (consecutiveNewlines > 2) {
+					builder.delete(i + 2, i + consecutiveNewlines)
+				}
+				i += 2
+			} else {
+				i++
+			}
+		}
 	}
 }
