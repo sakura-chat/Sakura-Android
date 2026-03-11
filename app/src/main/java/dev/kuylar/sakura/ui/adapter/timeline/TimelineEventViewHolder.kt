@@ -106,7 +106,7 @@ class TimelineEventViewHolder(
 		val eventId = (item as? TimelineItem.Event)?.event?.eventId ?: EventId(item.id)
 		adapter?.selfReceipts?.let {
 			binding.unreadSeparator.visibility =
-				if (it.lastReceipt == eventId) View.VISIBLE else View.GONE
+				if (it.lastReceipt == eventId && (item as? TimelineItem.Event)?.event?.nextEventId != null) View.VISIBLE else View.GONE
 		}
 		setAvatarVisibility(item, prevItem)
 		if (prevItem?.timestamp?.withinSameDay(item.timestamp) == false) {
