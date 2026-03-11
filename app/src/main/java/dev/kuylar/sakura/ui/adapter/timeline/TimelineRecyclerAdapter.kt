@@ -55,8 +55,7 @@ class TimelineRecyclerAdapter(
 	val layoutInflater = fragment.layoutInflater
 	private val items: SortedList<TimelineItem> =
 		SortedList(TimelineItem::class.java, object : SortedList.Callback<TimelineItem>() {
-			override fun compare(o1: TimelineItem, o2: TimelineItem): Int =
-				-o1.sortTimestamp.compareTo(o2.sortTimestamp)
+			override fun compare(o1: TimelineItem, o2: TimelineItem): Int = -o1.compareTo(o2)
 
 			override fun onInserted(position: Int, count: Int) {
 				Log.i("TimelineRecyclerAdapter", "onInserted($position, $count)")

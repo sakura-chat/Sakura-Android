@@ -22,6 +22,19 @@ sealed class TimelineItem(
 	val timestamp: Long
 ) {
 	var user: RoomUser? = null
+
+	fun compareTo(other: TimelineItem): Int {
+		if (this is Event && other is Event) {
+			if (this.event.eventId == other.event.previousEventId || other.event.eventId == this.event.nextEventId)
+				return -1
+
+			if (this.event.eventId == other.event.nextEventId || other.event.eventId == this.event.previousEventId)
+				return 1
+		}
+
+		return sortTimestamp.compareTo(other.sortTimestamp)
+	}
+
 	data class Event(var event: TimelineEvent, var flow: Flow<Snapshot>) : TimelineItem(
 		event.unsigned?.transactionId ?: event.eventId.full,
 		event.sender,
