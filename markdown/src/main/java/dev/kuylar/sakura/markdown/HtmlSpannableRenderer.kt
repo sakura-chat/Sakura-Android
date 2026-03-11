@@ -22,7 +22,6 @@ import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
 import dev.kuylar.mentionsedittext.TextMentionSpan
 import dev.kuylar.sakura.markdown.emoji.CustomEmojiExtension
-import dev.kuylar.sakura.markdown.span.ClickableSpoilerSpan
 import dev.kuylar.sakura.markdown.span.NumberIndentSpan
 import dev.kuylar.sakura.markdown.span.SpoilerSpan
 import org.jsoup.Jsoup
@@ -264,12 +263,6 @@ class HtmlSpannableRenderer {
 							state.context.getColorFromAttr(MaterialR.attr.colorSecondaryContainer),
 							state.context.getColorFromAttr(MaterialR.attr.colorOnSecondaryContainer),
 						),
-						spoilerStart,
-						state.builder.length,
-						Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-					)
-					state.builder.setSpan(
-						ClickableSpoilerSpan(),
 						spoilerStart,
 						state.builder.length,
 						Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
