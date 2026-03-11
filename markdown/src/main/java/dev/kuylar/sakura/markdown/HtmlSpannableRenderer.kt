@@ -144,13 +144,19 @@ class HtmlSpannableRenderer {
 			}
 
 			"blockquote" -> {
-				if (state.builder.isNotEmpty() && state.builder.last() != '\n') state.builder.append(
-					"\n"
-				)
+				if (state.builder.isNotEmpty() && state.builder.last() != '\n')
+					state.builder.append("\n")
 				visitChildren(state, element.childNodes())
+				var quoteStart = start
+				for (i in start until state.builder.length) {
+					if (!state.builder[i].isWhitespace()) {
+						quoteStart = i
+						break
+					}
+				}
 				state.builder.setSpan(
 					QuoteSpan(Color.WHITE, 6, 8 * 2),
-					start,
+					quoteStart,
 					state.builder.length,
 					Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
 				)
