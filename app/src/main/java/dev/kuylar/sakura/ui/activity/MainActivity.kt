@@ -97,7 +97,7 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 			supportFragmentManager.findFragmentById(binding.navHostFragment.id) as NavHostFragment
 		navController = navHostFragment.navController
 
-		ViewCompat.setOnApplyWindowInsetsListener(binding.timelinePanel) { v, insets ->
+		ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
 			val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
 			val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
 
@@ -107,12 +107,20 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 				}
 			}
 
-			v.setPadding(
-				systemBars.left,
-				ime.top,
-				systemBars.right,
+			binding.syncIndicator.setPadding(
+				binding.syncIndicator.paddingLeft,
+				systemBars.top,
+				binding.syncIndicator.paddingRight,
+				binding.syncIndicator.paddingBottom
+			)
+
+			binding.overlappingPanels.setPadding(
+				binding.overlappingPanels.paddingLeft,
+				binding.overlappingPanels.paddingTop,
+				binding.overlappingPanels.paddingRight,
 				max(ime.bottom, systemBars.bottom)
 			)
+
 			insets
 		}
 
@@ -356,10 +364,22 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		if (state == SyncState.RUNNING) {
 			binding.syncIndicator.postDelayed(1000) {
 				binding.syncIndicator.visibility = View.GONE
+				binding.coordinator.setPadding(
+					binding.coordinator.paddingLeft,
+					binding.syncIndicator.paddingTop,
+					binding.coordinator.paddingRight,
+					binding.coordinator.paddingBottom
+				)
 			}
 		} else {
 			binding.syncIndicator.post {
 				binding.syncIndicator.visibility = View.VISIBLE
+				binding.coordinator.setPadding(
+					binding.coordinator.paddingLeft,
+					0,
+					binding.coordinator.paddingRight,
+					binding.coordinator.paddingBottom
+				)
 			}
 		}
 		binding.syncIndicatorText.setText(resId)
