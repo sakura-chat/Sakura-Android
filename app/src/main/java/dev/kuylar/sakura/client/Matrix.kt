@@ -942,12 +942,9 @@ class Matrix {
 
 		private fun prepModules(): Module {
 			val customMappings = EventContentSerializerMappingsBuilder().apply {
-				//stateOf<SpaceParentEventContent>("m.space.parent")
-				//stateOf<SpaceChildrenEventContent>("m.space.child")
 				stateOf<RoomImagePackEventContent>("im.ponies.room_emotes")
 				messageOf<StickerMessageEventContent>("m.sticker")
 				messageOf<ShortcodeReactionEventContent>("m.reaction")
-				//roomAccountDataOf<SpaceOrderEventContent>("org.matrix.msc3230.space_order")
 				globalAccountDataOf<ElementRecentEmojiEventContent>("io.element.recent_emoji")
 				globalAccountDataOf<EmoteRoomsEventContent>("im.ponies.emote_rooms")
 				globalAccountDataOf<UserImagePackEventContent>("im.ponies.user_emotes")
