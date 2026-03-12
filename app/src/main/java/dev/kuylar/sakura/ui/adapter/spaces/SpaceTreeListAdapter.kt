@@ -12,6 +12,7 @@ import com.bumptech.glide.Glide
 import de.connect2x.trixnity.client.store.Room
 import de.connect2x.trixnity.core.model.RoomId
 import dev.kuylar.sakura.R
+import dev.kuylar.sakura.Utils.getName
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.MatrixSpace
 import dev.kuylar.sakura.databinding.ItemRoomBinding
@@ -91,7 +92,7 @@ class SpaceTreeListAdapter(
 			val url = space.avatarUrl
 			if (url != null) Glide.with(binding.root).load(url).into(binding.icon)
 			else binding.icon.visibility = View.GONE
-			binding.title.text = space.name?.explicitName ?: "null"
+			binding.title.text = space.getName(binding.title.context)
 			binding.root.setOnClickListener {
 				handleIndicator(adapter.toggleSpace(space.roomId))
 			}
@@ -127,7 +128,7 @@ class SpaceTreeListAdapter(
 			job?.cancel()
 
 			// TODO: if room.isDirect, show avatar & presence
-			binding.title.text = room.name?.explicitName ?: "null"
+			binding.title.text = room.getName(binding.title.context)
 			binding.subtitle.visibility = View.GONE
 
 			handleUnread(item.isUnread, item.mentions)

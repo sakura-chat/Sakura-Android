@@ -52,6 +52,7 @@ import de.connect2x.trixnity.client.verification.ActiveDeviceVerification
 import de.connect2x.trixnity.clientserverapi.client.SyncState
 import de.connect2x.trixnity.core.model.RoomId
 import dev.kuylar.sakura.R
+import dev.kuylar.sakura.Utils.getName
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.ActivityMainBinding
@@ -276,7 +277,13 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		getSharedPreferences("main", MODE_PRIVATE).edit {
 			putString("selectedSpaceId", id.full)
 		}
-		binding.roomsPanel.title.text = room?.name?.explicitName ?: "Home"
+		binding.roomsPanel.title.text = when (room?.roomId) {
+
+			Matrix.DIRECT_ROOM -> getString(R.string.room_direct)
+			Matrix.GROUPS_ROOM -> getString(R.string.room_groups)
+			null -> getString(R.string.room_home)
+			else ->room.getName(this)
+		}
 		binding.roomsPanel.topic.visibility = View.GONE
 		(binding.roomsPanel.roomsRecycler.adapter as? SpaceTreeListAdapter)?.changeSpace(id)
 	}

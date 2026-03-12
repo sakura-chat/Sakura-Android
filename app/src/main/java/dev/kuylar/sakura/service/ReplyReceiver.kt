@@ -20,6 +20,7 @@ import de.connect2x.trixnity.core.model.RoomId
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.getBubbleMetadata
 import dev.kuylar.sakura.Utils.getIntent
+import dev.kuylar.sakura.Utils.getName
 import dev.kuylar.sakura.Utils.getReplyIntent
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.Utils.toNotificationPerson
@@ -84,14 +85,14 @@ class ReplyReceiver : BroadcastReceiver() {
 							}
 					}
 					style.addMessage(replyMessage, System.currentTimeMillis(), person)
-					style.setConversationTitle(room.name?.explicitName ?: room.roomId.full)
+					style.setConversationTitle(room.getName(context))
 					style.messages
 						.mapNotNull { it.person }
 						.distinctBy { it.key }.forEach {
 							addPerson(it)
 						}
 
-					setContentTitle(room.name?.explicitName)
+					setContentTitle(room.getName(context))
 					setContentText(replyMessage)
 					setContentIntent(
 						PendingIntent.getActivity(

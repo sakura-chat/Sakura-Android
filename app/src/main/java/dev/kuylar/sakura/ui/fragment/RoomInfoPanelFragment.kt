@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import dagger.hilt.android.AndroidEntryPoint
 import de.connect2x.trixnity.client.store.joinedMemberCount
+import dev.kuylar.sakura.Utils.getName
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentRoomInfoPanelBinding
 import dev.kuylar.sakura.ui.adapter.listadapter.UserListAdapter
@@ -59,7 +60,7 @@ class RoomInfoPanelFragment : Fragment() {
 			Glide.with(this)
 				.load(room.avatarUrl)
 				.into(binding.roomIcon)
-			binding.roomName.text = room.name?.explicitName ?: room.roomId.full
+			binding.roomName.text = room.getName(binding.roomName.context)
 			binding.roomTopic.visibility = View.GONE
 		}
 

@@ -306,7 +306,7 @@ object Utils {
 			setIntent(Intent(Intent.ACTION_VIEW, "dev.kuylar.sakura://room/${roomId.full}".toUri()))
 			setLongLived(true)
 			setLocusId(LocusIdCompat(roomId.full))
-			setShortLabel(name?.explicitName ?: roomId.full)
+			setShortLabel(getName(context))
 		}.build()
 	}
 
@@ -643,5 +643,9 @@ object Utils {
 				}
 			}
 		}
+	}
+
+	fun Room.getName(context: Context): String {
+		return name?.explicitName ?: roomId.full
 	}
 }

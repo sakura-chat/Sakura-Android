@@ -50,6 +50,7 @@ import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.bytesToString
+import dev.kuylar.sakura.Utils.getName
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.MatrixEmote
@@ -137,7 +138,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 			return
 		}
 		(activity as? AppCompatActivity)?.supportActionBar?.title =
-			room.name?.explicitName ?: room.roomId.full
+			room.getName(requireContext())
 
 		val menuHost: MenuHost = requireActivity()
 		menuHost.addMenuProvider(
@@ -299,7 +300,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 							if (!canSend) R.string.room_hint_no_permission
 							else if (room.encrypted) R.string.room_hint_encrypted
 							else R.string.room_hint_unencrypted,
-							room.name?.explicitName ?: room.roomId.full
+							room.getName(requireContext())
 						).replace(" ", "\u00A0")
 						val vis = if (canSend) View.VISIBLE else View.GONE
 						binding.input.isEnabled = canSend

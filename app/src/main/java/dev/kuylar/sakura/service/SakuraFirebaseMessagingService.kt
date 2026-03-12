@@ -36,6 +36,7 @@ import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils
 import dev.kuylar.sakura.Utils.getBubbleMetadata
 import dev.kuylar.sakura.Utils.getIntent
+import dev.kuylar.sakura.Utils.getName
 import dev.kuylar.sakura.Utils.getReplyIntent
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.Utils.toNotificationPerson
@@ -150,14 +151,14 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 					}
 			}
 			style.addMessage(Utils.getEventBodyText(event), event.originTimestamp, person)
-			style.setConversationTitle(room.name?.explicitName ?: room.roomId.full)
+			style.setConversationTitle(room.getName(applicationContext))
 			style.messages
 				.mapNotNull { it.person }
 				.distinctBy { it.key }.forEach {
 					addPerson(it)
 				}
 
-			setContentTitle(room.name?.explicitName ?: room.roomId.full)
+			setContentTitle(room.getName(applicationContext))
 			setContentText(Utils.getEventBodyText(event))
 			setContentIntent(
 				PendingIntent.getActivity(
@@ -264,7 +265,7 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 			room?.let {
 				NotificationChannel(
 					"dev.kuylar.sakura.room.${room.roomId.full}",
-					room.name?.explicitName ?: room.roomId.full,
+					room.getName(applicationContext),
 					NotificationManager.IMPORTANCE_HIGH
 				).apply {
 					setConversationId("dev.kuylar.sakura.room", room.roomId.full)

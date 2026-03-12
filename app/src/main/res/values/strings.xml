@@ -127,4 +127,7 @@
 	<string name="room_hint_encrypted">🛡 Message %s</string>
 	<string name="room_hint_unencrypted">🔓 Message %s</string>
 	<string name="room_hint_no_permission">You are not allowed to send messages to this room.</string>
+	<string name="room_direct">Direct Messages</string>
+	<string name="room_groups">Groups</string>
+	<string name="room_home">Home</string>
 </resources>

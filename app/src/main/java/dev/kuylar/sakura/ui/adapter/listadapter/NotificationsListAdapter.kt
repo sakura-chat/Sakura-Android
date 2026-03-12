@@ -17,6 +17,7 @@ import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.content
+import dev.kuylar.sakura.Utils.getName
 import dev.kuylar.sakura.Utils.loadAvatar
 import dev.kuylar.sakura.Utils.loadUser
 import dev.kuylar.sakura.Utils.toTimestamp
@@ -140,7 +141,7 @@ class NotificationsListAdapter(
 
 		private fun setRoom(roomId: RoomId?) {
 			if (roomId == null) return
-			binding.roomName.text = client.getRoom(roomId)?.name?.explicitName
+			binding.roomName.text = client.getRoom(roomId)?.getName(binding.roomName.context)
 		}
 	}
 }

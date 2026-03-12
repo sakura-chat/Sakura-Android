@@ -5,7 +5,6 @@ import android.content.ClipboardManager
 import android.content.Intent
 import android.os.Bundle
 import android.text.format.DateFormat
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -24,6 +23,7 @@ import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.getIndicatorColor
+import dev.kuylar.sakura.Utils.getName
 import dev.kuylar.sakura.Utils.loadAvatar
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
@@ -238,6 +238,6 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 	}
 
 	private fun updateRoom(room: Room) {
-		binding.roomName.text = room.name?.explicitName ?: room.roomId.full
+		binding.roomName.text = room.getName(requireContext())
 	}
 }
