@@ -23,7 +23,8 @@ import javax.inject.Inject
 class RoomInfoPanelFragment : Fragment() {
 	private lateinit var binding: FragmentRoomInfoPanelBinding
 	private lateinit var roomId: String
-	@Inject lateinit var client: Matrix
+	@Inject
+	lateinit var client: Matrix
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -59,13 +60,13 @@ class RoomInfoPanelFragment : Fragment() {
 			return
 		}
 
-		activity?.runOnUiThread {
-			Glide.with(this)
-				.load(room.avatarUrl)
-				.into(binding.roomIcon)
-			binding.roomName.text = room.getName(binding.roomName.context)
-			binding.roomTopic.visibility = View.GONE
+		Glide.with(this)
+			.load(room.avatarUrl)
+			.into(binding.roomIcon)
+		lifecycleScope.launch {
+			binding.roomName.text = room.getName(binding.roomName.context, client)
 		}
+		binding.roomTopic.visibility = View.GONE
 
 		// Don't load the users list if there are way too many people in a room
 		// Or else loading & unloading the room lags the app a *lot*.

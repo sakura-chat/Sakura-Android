@@ -4,6 +4,7 @@ import android.graphics.Color
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -47,10 +48,10 @@ class SpaceTreeListAdapter(
 	override fun onBindViewHolder(holder: ViewHolder, position: Int) {
 		val item = getItem(position)
 		if (holder is RoomViewHolder && item is SpaceTreeModel.Room) {
-			holder.bind(item)
+			holder.bind(item, client, activity.lifecycleScope)
 		}
 		if (holder is CategoryViewHolder && item is SpaceTreeModel.Category) {
-			holder.bind(item)
+			holder.bind(item, client, activity.lifecycleScope)
 		}
 	}
 
@@ -86,13 +87,19 @@ class SpaceTreeListAdapter(
 
 	open class ViewHolder(binding: ViewBinding) : RecyclerView.ViewHolder(binding.root)
 	class CategoryViewHolder(val binding: ItemRoomCategoryBinding) : ViewHolder(binding) {
-		fun bind(item: SpaceTreeModel.Category) {
+		fun bind(
+			item: SpaceTreeModel.Category,
+			client: Matrix,
+			lifecycleScope: LifecycleCoroutineScope
+		) {
 			val space = item.room
 			val adapter = (bindingAdapter as SpaceTreeListAdapter)
 			val url = space.avatarUrl
 			if (url != null) Glide.with(binding.root).load(url).into(binding.icon)
 			else binding.icon.visibility = View.GONE
-			binding.title.text = space.getName(binding.title.context)
+			lifecycleScope.launch {
+				binding.title.text = space.getName(binding.title.context, client)
+			}
 			binding.root.setOnClickListener {
 				handleIndicator(adapter.toggleSpace(space.roomId))
 			}
@@ -123,12 +130,18 @@ class SpaceTreeListAdapter(
 	class RoomViewHolder(val binding: ItemRoomBinding) : ViewHolder(binding) {
 		private var job: Job? = null
 
-		fun bind(item: SpaceTreeModel.Room) {
+		fun bind(
+			item: SpaceTreeModel.Room,
+			client: Matrix,
+			lifecycleScope: LifecycleCoroutineScope
+		) {
 			val room = item.room
 			job?.cancel()
 
 			// TODO: if room.isDirect, show avatar & presence
-			binding.title.text = room.getName(binding.title.context)
+			lifecycleScope.launch {
+				binding.title.text = room.getName(binding.title.context, client)
+			}
 			binding.subtitle.visibility = View.GONE
 
 			handleUnread(item.isUnread, item.mentions)

@@ -82,7 +82,9 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 			"SakuraFirebaseMessagingService",
 			"Received notification: [$roomId/$eventId] ($unread/$missedCalls)"
 		)
-		createNotificationChannel(null)
+		runBlocking {
+			createNotificationChannel(null)
+		}
 		if (eventId != null && roomId != null) {
 			suspendThread {
 				val onPush = client.client.notification.onPush(roomId, eventId)
@@ -115,7 +117,9 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 			}
 		} else {
 			Log.d("SakuraFirebaseMessagingService", "Somehow ended up here?")
-			buildNotification(priority == "high", unread, missedCalls)
+			runBlocking {
+				buildNotification(priority == "high", unread, missedCalls)
+			}
 		}
 	}
 
@@ -151,14 +155,14 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 					}
 			}
 			style.addMessage(Utils.getEventBodyText(event), event.originTimestamp, person)
-			style.setConversationTitle(room.getName(applicationContext))
+			style.setConversationTitle(room.getName(applicationContext, client))
 			style.messages
 				.mapNotNull { it.person }
 				.distinctBy { it.key }.forEach {
 					addPerson(it)
 				}
 
-			setContentTitle(room.getName(applicationContext))
+			setContentTitle(room.getName(applicationContext, client))
 			setContentText(Utils.getEventBodyText(event))
 			setContentIntent(
 				PendingIntent.getActivity(
@@ -193,7 +197,7 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 		postNotification(channel, notification)
 	}
 
-	private fun buildNotification(
+	private suspend fun buildNotification(
 		isHighPriority: Boolean,
 		unread: Int,
 		@Suppress("unused") missedCalls: Int
@@ -236,7 +240,7 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 		}
 	}
 
-	private fun createDefaultNotificationChannels(extraChannel: (() -> NotificationChannel?)? = null) {
+	private suspend fun createDefaultNotificationChannels(extraChannel: (suspend () -> NotificationChannel?)? = null) {
 		val notificationManager: NotificationManager =
 			getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 		notificationManager.createNotificationChannel(
@@ -260,12 +264,12 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 		extraChannel?.invoke()?.let { notificationManager.createNotificationChannel(it) }
 	}
 
-	private fun createNotificationChannel(room: Room? = null) {
+	private suspend fun createNotificationChannel(room: Room? = null) {
 		createDefaultNotificationChannels {
 			room?.let {
 				NotificationChannel(
 					"dev.kuylar.sakura.room.${room.roomId.full}",
-					room.getName(applicationContext),
+					room.getName(applicationContext, client),
 					NotificationManager.IMPORTANCE_HIGH
 				).apply {
 					setConversationId("dev.kuylar.sakura.room", room.roomId.full)

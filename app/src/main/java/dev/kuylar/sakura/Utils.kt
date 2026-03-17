@@ -34,6 +34,8 @@ import de.connect2x.trixnity.client.store.RoomUserReceipts
 import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.client.store.avatarUrl
 import de.connect2x.trixnity.client.store.eventId
+import de.connect2x.trixnity.client.store.invitedMemberCount
+import de.connect2x.trixnity.client.store.joinedMemberCount
 import de.connect2x.trixnity.client.store.roomId
 import de.connect2x.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import de.connect2x.trixnity.core.model.EventId
@@ -318,7 +320,7 @@ object Utils {
 			setIntent(Intent(Intent.ACTION_VIEW, "dev.kuylar.sakura://room/${roomId.full}".toUri()))
 			setLongLived(true)
 			setLocusId(LocusIdCompat(roomId.full))
-			setShortLabel(getName(context))
+			setShortLabel(getName(context, client))
 			downloadIconIfNeeded(
 				context,
 				client,
@@ -661,7 +663,33 @@ object Utils {
 		}
 	}
 
-	fun Room.getName(context: Context): String {
-		return name?.explicitName ?: roomId.full
+	suspend fun Room.getName(context: Context, client: Matrix): String {
+		val name = this.name
+		val memberCount = (joinedMemberCount ?: 0) + (invitedMemberCount ?: 0)
+		if (name != null) {
+			if (name.explicitName?.isNotBlank() == true) return name.explicitName!!
+			// TODO: We're not checking for `m.room.canonical_alias`
+			val heroNames = name.heroes.filterNot { it == client.userId }.take(3).map {
+				client.getUser(it, roomId)?.name ?: it.full
+			}
+			if (name.heroes.size >= memberCount - 1) {
+				return context.getString(
+					R.string.room_name_template_heroes,
+					heroNames.joinToString(", ")
+				)
+			} else if (name.heroes.size < memberCount) {
+				return context.getString(
+					R.string.room_name_template_heroes_more,
+					heroNames.joinToString(", "),
+					name.heroes.size - heroNames.size
+				)
+			} else if (memberCount <= 1) {
+				return context.getString(
+					R.string.room_name_template_empty,
+					heroNames.joinToString(", ")
+				)
+			}
+		}
+		return roomId.full
 	}
 }

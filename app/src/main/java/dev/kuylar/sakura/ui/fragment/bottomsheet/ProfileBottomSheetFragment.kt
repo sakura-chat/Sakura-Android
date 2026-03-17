@@ -119,9 +119,7 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 		roomJob = suspendThread {
 			client.client.room.getById(roomId).collect {
 				it?.let { room ->
-					activity?.runOnUiThread {
-						updateRoom(room)
-					}
+					updateRoom(room)
 				}
 			}
 		}
@@ -237,7 +235,11 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 		)
 	}
 
-	private fun updateRoom(room: Room) {
-		binding.roomName.text = room.getName(requireContext())
+	private suspend fun updateRoom(room: Room) {
+		room.getName(requireContext(), client).let {
+			activity?.runOnUiThread {
+				binding.roomName.text = it
+			}
+		}
 	}
 }

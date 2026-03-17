@@ -130,4 +130,7 @@
 	<string name="room_direct">Direct Messages</string>
 	<string name="room_groups">Groups</string>
 	<string name="room_home">Home</string>
+	<string name="room_name_template_heroes">%s</string>
+	<string name="room_name_template_heroes_more">%s (and %d more)</string>
+	<string name="room_name_template_empty">Empty room (was %s)</string>
 </resources>

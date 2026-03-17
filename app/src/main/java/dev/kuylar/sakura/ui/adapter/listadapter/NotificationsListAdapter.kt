@@ -141,7 +141,10 @@ class NotificationsListAdapter(
 
 		private fun setRoom(roomId: RoomId?) {
 			if (roomId == null) return
-			binding.roomName.text = client.getRoom(roomId)?.getName(binding.roomName.context)
+			fragment.lifecycleScope.launch {
+				binding.roomName.text =
+					client.getRoom(roomId)?.getName(binding.roomName.context, client)
+			}
 		}
 	}
 }

@@ -296,12 +296,13 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		getSharedPreferences("main", MODE_PRIVATE).edit {
 			putString("selectedSpaceId", id.full)
 		}
-		binding.roomsPanel.title.text = when (room?.roomId) {
-
-			Matrix.DIRECT_ROOM -> getString(R.string.room_direct)
-			Matrix.GROUPS_ROOM -> getString(R.string.room_groups)
-			null -> getString(R.string.room_home)
-			else ->room.getName(this)
+		lifecycleScope.launch {
+			binding.roomsPanel.title.text = when (room?.roomId) {
+				Matrix.DIRECT_ROOM -> getString(R.string.room_direct)
+				Matrix.GROUPS_ROOM -> getString(R.string.room_groups)
+				null -> getString(R.string.room_home)
+				else -> room.getName(this@MainActivity, client)
+			}
 		}
 		binding.roomsPanel.topic.visibility = View.GONE
 		(binding.roomsPanel.roomsRecycler.adapter as? SpaceTreeListAdapter)?.changeSpace(id)

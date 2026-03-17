@@ -151,8 +151,10 @@ class TimelineFragment : Fragment(), MenuProvider {
 			}
 			return
 		}
-		(activity as? AppCompatActivity)?.supportActionBar?.title =
-			room.getName(requireContext())
+		lifecycleScope.launch {
+			(activity as? AppCompatActivity)?.supportActionBar?.title =
+				room.getName(requireContext(), client)
+		}
 
 		val menuHost: MenuHost = requireActivity()
 		menuHost.addMenuProvider(
@@ -415,7 +417,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 					val channelId = "dev.kuylar.sakura.room.${roomId}"
 					val channel = NotificationChannel(
 						"dev.kuylar.sakura.room.${roomId}",
-						room.getName(requireContext()),
+						room.getName(requireContext(), client),
 						NotificationManager.IMPORTANCE_HIGH
 					).apply {
 						setConversationId("dev.kuylar.sakura.room", room.roomId.full)
@@ -433,14 +435,14 @@ class TimelineFragment : Fragment(), MenuProvider {
 						style.isGroupConversation = !room.isDirect
 
 						style.addMessage("Bubble notification!", System.currentTimeMillis(), person)
-						style.setConversationTitle(room.getName(requireContext()))
+						style.setConversationTitle(room.getName(requireContext(), client))
 						style.messages
 							.mapNotNull { it.person }
 							.distinctBy { it.key }.forEach {
 								addPerson(it)
 							}
 
-						setContentTitle(room.getName(requireContext()))
+						setContentTitle(room.getName(requireContext(), client))
 						setContentText("Bubble notification!")
 						//setContentIntent(
 						//	PendingIntent.getActivity(

@@ -85,14 +85,14 @@ class ReplyReceiver : BroadcastReceiver() {
 							}
 					}
 					style.addMessage(replyMessage, System.currentTimeMillis(), person)
-					style.setConversationTitle(room.getName(context))
+					style.setConversationTitle(room.getName(context, matrix))
 					style.messages
 						.mapNotNull { it.person }
 						.distinctBy { it.key }.forEach {
 							addPerson(it)
 						}
 
-					setContentTitle(room.getName(context))
+					setContentTitle(room.getName(context, matrix))
 					setContentText(replyMessage)
 					setContentIntent(
 						PendingIntent.getActivity(
