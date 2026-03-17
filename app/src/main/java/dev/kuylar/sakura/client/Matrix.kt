@@ -59,10 +59,12 @@ import de.connect2x.trixnity.clientserverapi.model.push.SetPushers
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
+import de.connect2x.trixnity.core.model.events.ClientEvent
 import de.connect2x.trixnity.core.model.events.m.DirectEventContent
 import de.connect2x.trixnity.core.model.events.m.MarkedUnreadEventContent
 import de.connect2x.trixnity.core.model.events.m.PushRulesEventContent
 import de.connect2x.trixnity.core.model.events.m.RelatesTo
+import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.room.CreateEventContent
 import de.connect2x.trixnity.core.model.push.PushRuleSet
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
@@ -961,8 +963,21 @@ class Matrix {
 
 		private fun prepClient(config: MatrixClientConfiguration) {
 			config.deleteRooms = MatrixClientConfiguration.DeleteRooms.OnLeave
-			config.lastRelevantEventFilter = { it.content is RoomMessageEventContent }
+			config.lastRelevantEventFilter = ::relevantEventFilter
 			config.modulesFactories += ::prepModules
+		}
+
+		private fun relevantEventFilter(event: ClientEvent.RoomEvent<*>): Boolean {
+			if (event !is ClientEvent.RoomEvent.MessageEvent) return false
+			val content = event.content
+			if (content is RoomMessageEventContent) {
+				// Don't mark edits as unread messages
+				if (content.relatesTo?.relationType == RelationType.Replace) return false
+				// Don't mark reactions as unread messages
+				if (content.relatesTo?.relationType == RelationType.Annotation) return false
+				return true
+			}
+			return false
 		}
 
 		fun startLoginFlow(homeserver: Uri): MatrixClientServerApiClientImpl {
