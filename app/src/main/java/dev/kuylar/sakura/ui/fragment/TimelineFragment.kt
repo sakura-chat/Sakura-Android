@@ -104,7 +104,6 @@ class TimelineFragment : Fragment(), MenuProvider {
 	private var replyingEvent: EventId? = null
 	private var typingUsersJob: Job? = null
 	private var lastReadEventId: EventId? = null
-	private var lastReadEventTimestamp: Long = 0
 	private var clearCacheUnlocked = false
 	private var attachment: AttachmentInfo? = null
 	private var typing = false
@@ -594,7 +593,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 	fun closeKeyboard(): Boolean {
 		requireContext().getSystemService<InputMethodManager>()
 			?.hideSoftInputFromWindow(binding.input.windowToken, 0)
-		if (binding.picker.visibility == View.VISIBLE) {
+		if (binding.picker.isVisible) {
 			binding.picker.visibility = View.GONE
 			return true
 		}
