@@ -214,41 +214,47 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 				}
 			}
 		}
-		suspendThread {
-			try {
-				client.initialize("main")
-			} catch (e: Exception) {
-				Log.wtf("MainActivity", "Failed to initialize client", e)
-				// Failed to load client. Give up and send the user to the login screen
-				this@MainActivity.runOnUiThread {
-					startActivity(Intent(this, LoginActivity::class.java))
-					finish()
+		lifecycleScope.launch {
+			lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+				if (client.initialized) return@repeatOnLifecycle
+				try {
+					client.initialize("main")
+				} catch (e: Exception) {
+					Log.wtf("MainActivity", "Failed to initialize client", e)
+					// Failed to load client. Give up and send the user to the login screen
+					this@MainActivity.runOnUiThread {
+						startActivity(Intent(this@MainActivity, LoginActivity::class.java))
+						finish()
+					}
+					return@repeatOnLifecycle
 				}
-				return@suspendThread
-			}
-			lifecycleScope.launch {
-				repeatOnLifecycle(Lifecycle.State.STARTED) {
+				runOnUiThread {
+					onClientReady()
+				}
+				client.startSync()
+				// These live under here since they run .collect() inside them.
+				// There is definitely a better way to do this.
+				lifecycleScope.launch {
 					client.initializeRoomCache()
 				}
-			}
-			runOnUiThread {
-				onClientReady()
-			}
-			client.startSync()
-			lifecycleScope.launch {
-				client.addSyncStateListener {
-					Log.i("MainActivity", "Sync state: $it")
-					runOnUiThread {
-						handleStateChange(it)
+				lifecycleScope.launch {
+					client.addSyncStateListener {
+						Log.i("MainActivity", "Sync state: $it")
+						runOnUiThread {
+							handleStateChange(it)
+						}
 					}
 				}
-			}
-			lifecycleScope.launch {
-				client.addOnDeviceVerificationRequestListener { it: ActiveDeviceVerification ->
-					Log.i("MainActivity", "Got device verification request: ${it.transactionId}")
-					val bottomSheet = VerificationBottomSheetFragment()
-					bottomSheet.arguments = bundleOf("verification" to it.transactionId)
-					bottomSheet.show(supportFragmentManager, "verification")
+				lifecycleScope.launch {
+					client.addOnDeviceVerificationRequestListener { it: ActiveDeviceVerification ->
+						Log.i(
+							"MainActivity",
+							"Got device verification request: ${it.transactionId}"
+						)
+						val bottomSheet = VerificationBottomSheetFragment()
+						bottomSheet.arguments = bundleOf("verification" to it.transactionId)
+						bottomSheet.show(supportFragmentManager, "verification")
+					}
 				}
 			}
 		}

@@ -711,6 +711,10 @@ class Matrix {
 	}
 
 	suspend fun getRoomImagePacks(roomId: RoomId): Map<String, RoomImagePackEventContent> {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "getRoomImagePacks() called before client was initialized.")
+			return emptyMap()
+		}
 		val res = mutableMapOf<String, RoomImagePackEventContent>()
 		return try {
 			client.room.getAllState<RoomImagePackEventContent>(roomId).firstOrNull()
@@ -723,6 +727,10 @@ class Matrix {
 	}
 
 	suspend fun getRoomEmoji(roomId: RoomId): Map<RoomEmojiCategoryModel, List<CustomEmojiModel>> {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "getRoomEmoji() called before client was initialized.")
+			return emptyMap()
+		}
 		startUpdatingRecentEmojiCache()
 		val packs = getRoomImagePacks(roomId)
 		return packs.mapNotNull {
@@ -744,6 +752,10 @@ class Matrix {
 	}
 
 	suspend fun getSavedEmoji(): Map<CategoryModel, List<CustomEmojiModel>> {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "getSavedEmoji() called before client was initialized.")
+			return emptyMap()
+		}
 		startUpdatingRecentEmojiCache()
 		val savedRooms =
 			client.user.getAccountData<EmoteRoomsEventContent>().firstOrNull() ?: return emptyMap()
@@ -756,10 +768,19 @@ class Matrix {
 		return res.filter { it.value.isNotEmpty() }
 	}
 
-	suspend fun getAccountEmojiPack() =
-		client.user.getAccountData<UserImagePackEventContent>().firstOrNull()
+	suspend fun getAccountEmojiPack(): UserImagePackEventContent? {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "getAccountEmojiPack() called before client was initialized.")
+			return null
+		}
+		return client.user.getAccountData<UserImagePackEventContent>().firstOrNull()
+	}
 
 	suspend fun getAccountEmoji(): Map.Entry<CategoryModel, List<CustomEmojiModel>>? {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "getAccountEmoji() called before client was initialized.")
+			return null
+		}
 		startUpdatingRecentEmojiCache()
 		val userEmojis = getAccountEmojiPack()
 		if (!userEmojis?.images.isNullOrEmpty()) {
@@ -775,6 +796,10 @@ class Matrix {
 	}
 
 	suspend fun getRoomStickers(roomId: RoomId): Map<RoomEmojiCategoryModel, List<CustomEmojiModel>> {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "getRoomStickers() called before client was initialized.")
+			return emptyMap()
+		}
 		val packs = getRoomImagePacks(roomId)
 		return packs.mapNotNull {
 			it.let {
@@ -793,6 +818,10 @@ class Matrix {
 	}
 
 	suspend fun getAccountStickers(): Map.Entry<CategoryModel, List<CustomEmojiModel>>? {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "getAccountStickers() called before client was initialized.")
+			return null
+		}
 		val userEmojis = getAccountEmojiPack()
 		if (!userEmojis?.images.isNullOrEmpty()) {
 			val cat =
@@ -805,6 +834,10 @@ class Matrix {
 	}
 
 	suspend fun getSavedStickers(): Map<CategoryModel, List<CustomEmojiModel>> {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "getSavedStickers() called before client was initialized.")
+			return emptyMap()
+		}
 		val savedRooms =
 			client.user.getAccountData<EmoteRoomsEventContent>().firstOrNull() ?: return emptyMap()
 		val res = mutableMapOf<CategoryModel, List<CustomEmojiModel>>()
@@ -823,6 +856,10 @@ class Matrix {
 	}
 
 	private suspend fun updateRecentEmojiCache() {
+		if (!this::client.isInitialized) {
+			Log.w("MatrixClient", "updateRecentEmojiCache() called before client was initialized.")
+			return
+		}
 		try {
 			client.user.getAccountData<ElementRecentEmojiEventContent>().collect { data ->
 				loadedRecentEmoji = true
