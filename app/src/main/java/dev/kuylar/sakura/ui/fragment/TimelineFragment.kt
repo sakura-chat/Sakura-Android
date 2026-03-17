@@ -48,7 +48,6 @@ import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.client.user.canSendEvent
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
-import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent as TrixnityRoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
 import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
 import dev.kuylar.sakura.R
@@ -73,6 +72,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import kotlin.math.max
+import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent as TrixnityRoomMessageEventContent
 
 @Suppress("EmptyMethod")
 @AndroidEntryPoint
@@ -302,9 +302,8 @@ class TimelineFragment : Fragment(), MenuProvider {
 						binding.input.hint = getString(
 							if (!canSend) R.string.room_hint_no_permission
 							else if (room.encrypted) R.string.room_hint_encrypted
-							else R.string.room_hint_unencrypted,
-							room.getName(requireContext())
-						).replace(" ", "\u00A0")
+							else R.string.room_hint_unencrypted
+						)
 						val vis = if (canSend) View.VISIBLE else View.GONE
 						binding.input.isEnabled = canSend
 						binding.buttonSend.visibility = vis

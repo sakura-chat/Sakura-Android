@@ -42,7 +42,6 @@ import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.m.Presence
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership
-import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent as TrixnityRoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
 import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
 import dev.kuylar.sakura.client.Matrix
@@ -81,6 +80,7 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeBytes
 import kotlin.io.path.writeText
 import kotlin.time.ExperimentalTime
+import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent as TrixnityRoomMessageEventContent
 
 object Utils {
 	fun suspendThread(block: suspend (() -> Unit)): Job {
@@ -525,14 +525,14 @@ object Utils {
 					if (displayNameChanged && avatarUrlChanged) {
 						context.getString(
 							R.string.member_state_change_name_and_avatar,
+							oldDisplayName ?: stateKey,
 							newDisplayName,
-							oldDisplayName ?: "null",
 						)
 					} else if (displayNameChanged) {
 						context.getString(
 							R.string.member_state_change_name,
+							oldDisplayName ?: stateKey,
 							newDisplayName,
-							oldDisplayName ?: "null",
 						)
 					} else if (avatarUrlChanged) {
 						context.getString(R.string.member_state_change_avatar, user?.name)
