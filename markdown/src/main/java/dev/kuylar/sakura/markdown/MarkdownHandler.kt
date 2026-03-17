@@ -67,13 +67,16 @@ class MarkdownHandler {
 	) {
 		val spannable = htmlSpannableRenderer.fromHtml(
 			if (html != null && isEdited) "$html <sub><i>(edited)</i></sub>" else html,
-			textView.context
+			textView
 		)
 		spannable.getSpans<ImageMentionSpan>().forEach {
 			it.onImageLoaded = { onUpdated?.invoke() }
 		}
 		spannable.getSpans<SpoilerSpan>().forEach {
 			it.onReveal = { onUpdated?.invoke() }
+		}
+		spannable.getSpans<BlockImageSpan>().forEach {
+			it.onImageLoaded = { onUpdated?.invoke() }
 		}
 		textView.text = spannable
 	}

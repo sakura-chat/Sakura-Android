@@ -19,8 +19,10 @@ import android.text.style.TypefaceSpan
 import android.text.style.URLSpan
 import android.text.style.UnderlineSpan
 import android.util.TypedValue
+import android.widget.TextView
 import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
+import com.bumptech.glide.Glide
 import dev.kuylar.mentionsedittext.TextMentionSpan
 import dev.kuylar.sakura.markdown.emoji.CustomEmojiExtension
 import dev.kuylar.sakura.markdown.span.NumberIndentSpan
@@ -34,12 +36,12 @@ import com.google.android.material.R as MaterialR
 class HtmlSpannableRenderer {
 	private val allowedUrlSchemes = listOf("https", "http", "ftp", "mailto", "magnet")
 	private val allowedImageUrlSchemes = listOf("mxc")
-	fun fromHtml(html: String?, context: Context): Spannable {
+	fun fromHtml(html: String?, textView: TextView): Spannable {
 		if (html == null) return SpannableString("")
 		val doc = Jsoup.parseBodyFragment(html)
 		doc.outputSettings().prettyPrint(false)
 		val sb = SpannableStringBuilder()
-		val state = State(context, sb)
+		val state = State(textView.context, sb) { textView.width }
 		visitChildren(state, doc.body().childNodes())
 		collapseConsecutiveNewlines(sb)
 		return sb.trim() as Spannable
@@ -365,15 +367,23 @@ class HtmlSpannableRenderer {
 						element.attr("alt"),
 						element.attr("title")
 					).firstNotNullOfOrNull { it.takeIf { it.isNotBlank() } }
+					state.builder.append("\n")
+					val imageStart = state.builder.length
 					state.builder.append(text ?: "￼")
-					//val src = element.attr("src").toUri()
-					//if (allowedImageUrlSchemes.contains(src.scheme))
-					//	state.builder.setSpan(
-					//		ImageSpan(context, src),
-					//		start,
-					//		state.builder.length,
-					//		Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-					//	)
+					val imageEnd = state.builder.length
+					state.builder.append("\n")
+					val src = element.attr("src").toUri()
+					if (allowedImageUrlSchemes.contains(src.scheme))
+						state.builder.setSpan(
+							BlockImageSpan(
+								src.toString(),
+								maxWidthPx = state.getWidth,
+								glide = Glide.with(state.context)
+							),
+							imageStart,
+							imageEnd,
+							Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+						)
 				}
 			}
 
@@ -395,7 +405,8 @@ class HtmlSpannableRenderer {
 		val context: Context,
 		val builder: SpannableStringBuilder,
 		var listState: ListState? = null,
-		var preserveLineBreaks: Boolean = false
+		var preserveLineBreaks: Boolean = false,
+		val getWidth: () -> Int
 	) {
 		data class ListState(
 			val isOrdered: Boolean,
