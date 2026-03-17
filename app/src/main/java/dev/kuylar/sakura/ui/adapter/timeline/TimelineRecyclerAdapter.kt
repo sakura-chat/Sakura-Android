@@ -26,13 +26,13 @@ import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RedactionEventContent
-import dev.kuylar.sakura.client.customevent.message.RoomMessageEventContent
 import dev.kuylar.sakura.Utils.getOrNull
 import dev.kuylar.sakura.Utils.indexOfFirst
 import dev.kuylar.sakura.Utils.isAtBottom
 import dev.kuylar.sakura.Utils.lastReceipt
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
+import dev.kuylar.sakura.client.customevent.message.RoomMessageEventContent
 import dev.kuylar.sakura.databinding.ItemMessageBinding
 import dev.kuylar.sakura.databinding.ItemMessageMemberBinding
 import dev.kuylar.sakura.databinding.ItemMessageMiniBinding
@@ -101,10 +101,9 @@ class TimelineRecyclerAdapter(
 		private set
 	var isReady = false
 		private set
-	var lastEventId: EventId? = null
-		private set
-	var lastEventTimestamp = 0L
-		private set
+	private var lastEvent: TimelineItem.Event? = null
+	val lastEventId: EventId?
+		get() = lastEvent?.event?.eventId
 
 	init {
 		setHasStableIds(true)
@@ -217,10 +216,8 @@ class TimelineRecyclerAdapter(
 	private suspend fun onStateChange(delta: TimelineStateChange<TimelineItem.Event>) {
 		isLoading?.invoke(false)
 		delta.addedElements.forEach {
-			if (it.timestamp > lastEventTimestamp) {
-				lastEventId = it.event.eventId
-				lastEventTimestamp = it.timestamp
-			}
+			if (lastEvent == null || it.compareTo(lastEvent!!) > 0)
+				lastEvent = it
 		}
 		val filteredAdded = delta.addedElements.filter { shouldDisplayEvent(it) }
 		timelineState = timeline.state.first()
