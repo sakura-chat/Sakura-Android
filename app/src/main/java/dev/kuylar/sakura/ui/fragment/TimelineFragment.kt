@@ -450,7 +450,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 						//)
 						setStyle(style)
 						setShortcutId(shortcut.id)
-						setBubbleMetadata(room.getBubbleMetadata(requireContext()))
+						setBubbleMetadata(room.getBubbleMetadata(requireContext(), client))
 						setLocusId(LocusIdCompat(roomId))
 						setPriority(NotificationCompat.PRIORITY_MAX)
 						setSmallIcon(R.drawable.ic_notification_icon)

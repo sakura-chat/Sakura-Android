@@ -168,7 +168,7 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 			)
 			setStyle(style)
 			setShortcutId(shortcut.id)
-			setBubbleMetadata(event.getBubbleMetadata(applicationContext))
+			setBubbleMetadata(event.getBubbleMetadata(applicationContext, client))
 			setLocusId(LocusIdCompat(event.roomId.full))
 			setPriority(if (isHighPriority) NotificationCompat.PRIORITY_MAX else NotificationCompat.PRIORITY_HIGH)
 			setSmallIcon(R.drawable.ic_notification_icon)

@@ -12,14 +12,14 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import dagger.hilt.android.AndroidEntryPoint
+import de.connect2x.trixnity.client.verification.ActiveDeviceVerification
+import de.connect2x.trixnity.clientserverapi.client.SyncState
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.ActivityBubbleBinding
 import dev.kuylar.sakura.ui.fragment.verification.VerificationBottomSheetFragment
 import kotlinx.coroutines.launch
-import de.connect2x.trixnity.client.verification.ActiveDeviceVerification
-import de.connect2x.trixnity.clientserverapi.client.SyncState
 import javax.inject.Inject
 import com.google.android.material.R as MaterialR
 
@@ -63,6 +63,9 @@ class BubbleActivity : AppCompatActivity() {
 				return@suspendThread
 			}
 			client.startSync()
+			intent.extras?.keySet()?.forEach {
+				Log.i("BubbleActivity", "[$it] ${intent.extras?.get(it)}")
+			}
 			intent.getStringExtra("roomId")?.let {
 				runOnUiThread {
 					navController.navigate(R.id.nav_room, bundleOf("roomId" to it))

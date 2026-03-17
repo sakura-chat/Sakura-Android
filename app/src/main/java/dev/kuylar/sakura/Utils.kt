@@ -234,13 +234,15 @@ object Utils {
 		}
 	}
 
-	private fun getBubbleMetadata(
+	private suspend fun getBubbleMetadata(
 		context: Context,
+		client: Matrix,
 		roomId: RoomId,
 		eventId: EventId? = null
 	): NotificationCompat.BubbleMetadata {
 		val bubbleIntent = Intent(context, BubbleActivity::class.java).apply {
 			flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+			setData("dev.kuylar.sakura://room/${roomId.full}".toUri())
 			putExtra("roomId", roomId.full)
 			if (eventId != null)
 				putExtra("eventId", eventId.full)
@@ -248,14 +250,20 @@ object Utils {
 
 		val bubblePendingIntent = PendingIntent.getActivity(
 			context,
-			0,
+			roomId.full.hashCode(),
 			bubbleIntent,
 			PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
 		)
+		val icon = downloadIconIfNeeded(
+			context,
+			client,
+			client.getRoom(roomId)?.avatarUrl,
+			"r${roomId.full}"
+		)
 		return NotificationCompat.BubbleMetadata.Builder(
 			bubblePendingIntent,
-			// TODO: Room icon
-			IconCompat.createWithResource(context, R.drawable.ic_notification_icon)
+			if (icon != null) IconCompat.createWithContentUri(icon)
+			else IconCompat.createWithResource(context, R.drawable.ic_notification_icon)
 		).apply {
 			setDesiredHeight(600)
 			setAutoExpandBubble(false)
@@ -263,10 +271,11 @@ object Utils {
 		}.build()
 	}
 
-	fun TimelineEvent.getBubbleMetadata(context: Context) =
-		getBubbleMetadata(context, roomId, eventId)
+	suspend fun TimelineEvent.getBubbleMetadata(context: Context, client: Matrix) =
+		getBubbleMetadata(context, client, roomId, eventId)
 
-	fun Room.getBubbleMetadata(context: Context) = getBubbleMetadata(context, roomId)
+	suspend fun Room.getBubbleMetadata(context: Context, client: Matrix) =
+		getBubbleMetadata(context, client, roomId)
 
 	fun TimelineEvent.getIntent(context: Context): Intent {
 		return Intent(context, MainActivity::class.java).apply {
@@ -286,13 +295,14 @@ object Utils {
 				.run { setLabel(context.resources.getString(R.string.notification_reply_label)) }
 				.build()
 		val replyIntent = Intent(context, ReplyReceiver::class.java).apply {
+			setData("dev.kuylar.sakura://room/${roomId.full}".toUri())
 			putExtra("roomId", roomId.full)
 			if (eventId != null)
 				putExtra("eventId", eventId.full)
 		}
 		val replyPendingIntent = PendingIntent.getBroadcast(
 			context,
-			0,
+			roomId.full.hashCode(),
 			replyIntent,
 			PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
 		)

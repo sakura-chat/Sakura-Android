@@ -102,7 +102,7 @@ class ReplyReceiver : BroadcastReceiver() {
 					)
 					setStyle(style)
 					setShortcutId(shortcut.id)
-					setBubbleMetadata(room.getBubbleMetadata(context))
+					setBubbleMetadata(room.getBubbleMetadata(context, matrix))
 					setLocusId(LocusIdCompat(room.roomId.full))
 					setPriority(NotificationCompat.PRIORITY_DEFAULT)
 					setSmallIcon(R.drawable.ic_notification_icon)
