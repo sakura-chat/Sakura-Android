@@ -17,6 +17,7 @@ kotlinx-serialization-json = "1.9.0"
 recyclerviewbuilder = "1.0.1"
 navigationRuntimeKtx = "2.9.6"
 navigationFragmentKtx = "2.9.6"
+navigationUiKtx = "2.9.7"
 glide = "4.16.0"
 overlappingpanels = "0.1.5"
 mentionsedittext = "1.0.1"
@@ -51,6 +52,7 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 recyclerviewbuilder = { group = "com.github.kuylar", name = "RecyclerViewBuilder", version.ref = "recyclerviewbuilder" }
 androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
 androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
+androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigationUiKtx" }
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
 glide-compiler = { group = "com.github.bumptech.glide", name = "ksp", version.ref = "glide" }
 overlappingpanels = { group = "com.github.discord", name = "OverlappingPanels", version.ref = "overlappingpanels" }

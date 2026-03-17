@@ -38,6 +38,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.setupWithNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.discord.panels.OverlappingPanelsLayout
 import com.discord.panels.PanelState
@@ -126,6 +128,9 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		}
 
 		setSupportActionBar(binding.toolbar)
+		val appBarConfiguration = AppBarConfiguration(setOf(R.id.nav_room, R.id.nav_empty))
+		binding.toolbar.setupWithNavController(navController, appBarConfiguration)
+
 		binding.toolbar.setNavigationOnClickListener {
 			handleBackPressed()
 		}
@@ -139,6 +144,8 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 				else -> false
 			}
 		}
+
+		binding.bottomNav.setupWithNavController(navController)
 		binding.bottomNav.setOnItemSelectedListener(this)
 
 		PanelsChildGestureRegionObserver.Provider.get().addGestureRegionsUpdateListener(this)
@@ -193,6 +200,7 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 						R.id.nav_room -> {
 							binding.toolbar.navigationIcon =
 								ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_menu)
+							binding.bottomNav.selectedItemId = R.id.nav_main
 							if (binding.bottomNav.isVisible) {
 								binding.bottomNav.hide()
 							}
@@ -203,8 +211,6 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 						}
 
 						R.id.nav_settings, R.id.nav_notifications -> {
-							binding.toolbar.navigationIcon =
-								ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_back)
 							binding.overlappingPanels.closePanels()
 							binding.overlappingPanels.setStartPanelLockState(OverlappingPanelsLayout.LockState.CLOSE)
 							binding.overlappingPanels.setEndPanelLockState(OverlappingPanelsLayout.LockState.CLOSE)
