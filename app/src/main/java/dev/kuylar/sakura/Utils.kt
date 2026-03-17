@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.pm.ShortcutInfo
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.ImageDecoder
 import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
@@ -369,18 +368,7 @@ object Utils {
 	suspend fun RoomUser.toNotificationPerson(context: Context, client: Matrix): Person {
 		val uri =
 			downloadIconIfNeeded(context, client, avatarUrl, "r${roomId.full}_u${userId.full}")
-		val icon = uri?.let {
-			val bitmap = ImageDecoder.decodeBitmap(
-				ImageDecoder.createSource(
-					context.contentResolver,
-					it
-				)
-			) { decoder, _, _ ->
-				decoder.isMutableRequired = true
-				decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
-			}
-			IconCompat.createWithBitmap(bitmap.toCircularBitmap())
-		}
+		val icon = uri?.let { IconCompat.createWithContentUri(it) }
 		return Person.Builder().apply {
 			setName(name)
 			setKey(userId.full)
@@ -420,7 +408,11 @@ object Utils {
 		val icon = client.client.media.getThumbnail(mxcId, 128, 128, ThumbnailResizingMethod.SCALE)
 		val data = icon.getOrNull() ?: return uri
 		data.toByteArray()?.let { bytes ->
-			filePath.writeBytes(bytes)
+			val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+			val circularBitmap = bitmap.toCircularBitmap()
+			val outputStream = java.io.ByteArrayOutputStream()
+			circularBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+			filePath.writeBytes(outputStream.toByteArray())
 			metaPath.writeText(Json.encodeToString(meta))
 		}
 		return uri
