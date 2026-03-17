@@ -8,6 +8,7 @@ import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import android.text.style.BackgroundColorSpan
 import android.text.style.BulletSpan
+import android.text.style.LineBackgroundSpan
 import android.text.style.QuoteSpan
 import android.text.style.RelativeSizeSpan
 import android.text.style.StrikethroughSpan
@@ -50,7 +51,10 @@ class HtmlSpannableRenderer {
 	) {
 		childNodes.forEach { node ->
 			when (node) {
-				is TextNode -> state.builder.append(node.nodeValue().replace("\n", ""))
+				is TextNode -> state.builder.append(
+					if (state.preserveLineBreaks) node.nodeValue()
+					else node.nodeValue().replace("\n", "")
+				)
 
 				is Element -> visitChildren(state, node)
 				else -> Pair(node.nodeValue(), null)
@@ -317,32 +321,30 @@ class HtmlSpannableRenderer {
 					state.builder.length,
 					Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
 				)
-				state.builder.setSpan(
-					BackgroundColorSpan(state.context.getColorFromAttr(MaterialR.attr.colorSurfaceContainerLowest)),
-					start,
-					state.builder.length,
-					Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-				)
+				if (!state.preserveLineBreaks) // Don't set the background color twice
+					state.builder.setSpan(
+						BackgroundColorSpan(state.context.getColorFromAttr(MaterialR.attr.colorSurfaceContainerLowest)),
+						start,
+						state.builder.length,
+						Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+					)
 			}
 
 			"pre" -> {
-				if (state.builder.isNotEmpty() && state.builder.last() != '\n') state.builder.append(
-					"\n"
-				)
-				visitChildren(state, element.childNodes())
+				if (state.builder.isNotEmpty() && state.builder.last() != '\n')
+					state.builder.append("\n")
 				state.builder.append("\n")
+				val bgStart = state.builder.length
+				state.preserveLineBreaks = true
+				visitChildren(state, element.childNodes())
+				state.preserveLineBreaks = false
 				state.builder.setSpan(
-					TypefaceSpan(Typeface.MONOSPACE),
-					start,
-					state.builder.length - 1,
-					Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-				)
-				state.builder.setSpan(
-					BackgroundColorSpan(state.context.getColorFromAttr(MaterialR.attr.colorSurfaceContainerLowest)),
-					start,
+					LineBackgroundSpan.Standard(state.context.getColorFromAttr(MaterialR.attr.colorSurfaceContainerLowest)),
+					bgStart,
 					state.builder.length,
 					Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
 				)
+				state.builder.append("\n")
 			}
 
 			"img" -> {
@@ -392,7 +394,8 @@ class HtmlSpannableRenderer {
 	private data class State(
 		val context: Context,
 		val builder: SpannableStringBuilder,
-		var listState: ListState? = null
+		var listState: ListState? = null,
+		var preserveLineBreaks: Boolean = false
 	) {
 		data class ListState(
 			val isOrdered: Boolean,
