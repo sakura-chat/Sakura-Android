@@ -262,9 +262,7 @@ class TimelineEventViewHolder(
 					oldContent?.membership ?: Membership.LEAVE,
 					content.membership
 				)?.let { id ->
-					binding.avatar.loadImage(null)
-					binding.avatar.avatarInitials = null
-					binding.avatar.setImageDrawable(ContextCompat.getDrawable(context, id))
+					binding.replyingAvatar.setImageDrawable(ContextCompat.getDrawable(context, id))
 				}
 			}
 
