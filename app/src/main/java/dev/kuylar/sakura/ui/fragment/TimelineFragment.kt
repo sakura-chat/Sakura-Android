@@ -1,7 +1,10 @@
 package dev.kuylar.sakura.ui.fragment
 
+import android.Manifest
+import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ClipData
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -19,7 +22,12 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import androidx.core.content.LocusIdCompat
 import androidx.core.content.getSystemService
+import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.net.toUri
 import androidx.core.view.ContentInfoCompat
 import androidx.core.view.MenuHost
@@ -52,8 +60,11 @@ import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
 import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.bytesToString
+import dev.kuylar.sakura.Utils.getBubbleMetadata
 import dev.kuylar.sakura.Utils.getName
 import dev.kuylar.sakura.Utils.suspendThread
+import dev.kuylar.sakura.Utils.toNotificationPerson
+import dev.kuylar.sakura.Utils.toShortcut
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.MatrixEmote
 import dev.kuylar.sakura.client.customevent.message.RoomMessageEventContent
@@ -380,6 +391,83 @@ class TimelineFragment : Fragment(), MenuProvider {
 				nm.notificationChannels?.forEach {
 					nm.deleteNotificationChannel(it.id)
 					Log.i("TimelineFragment", "- [${it.id}] ${it.name} [${it.importance}]")
+				}
+				true
+			}
+
+			"/notification bubble list" -> {
+				Log.i("TimelineFragment", "Shortcuts:")
+				ShortcutManagerCompat.getDynamicShortcuts(requireContext()).forEachIndexed { i, it ->
+					Log.i("TimelineFragment", "- [$i] [${it.id}] ${it.longLabel ?: it.shortLabel}")
+				}
+				true
+			}
+
+			"/notification bubble clear" -> {
+				ShortcutManagerCompat.removeAllDynamicShortcuts(requireContext())
+				true
+			}
+
+			"/notification bubble" -> {
+				lifecycleScope.launch {
+					val sender = client.getUser(client.userId, RoomId(roomId)) ?: return@launch
+					val room = client.getRoom(roomId) ?: return@launch
+					val channelId = "dev.kuylar.sakura.room.${roomId}"
+					val channel = NotificationChannel(
+						"dev.kuylar.sakura.room.${roomId}",
+						room.getName(requireContext()),
+						NotificationManager.IMPORTANCE_HIGH
+					).apply {
+						setConversationId("dev.kuylar.sakura.room", room.roomId.full)
+						setAllowBubbles(true)
+					}
+					val notification = NotificationCompat.Builder(requireContext(), channelId).apply {
+						val person = sender.toNotificationPerson(requireContext(), client)
+
+						val shortcut = room.toShortcut(requireContext(), client)
+						val shortcuts = ShortcutManagerCompat.getDynamicShortcuts(requireContext())
+						if (ShortcutManagerCompat.getMaxShortcutCountPerActivity(requireContext()) > shortcuts.size)
+							ShortcutManagerCompat.addDynamicShortcuts(requireContext(), listOf(shortcut))
+
+						val style = NotificationCompat.MessagingStyle(person)
+						style.isGroupConversation = !room.isDirect
+
+						style.addMessage("Bubble notification!", System.currentTimeMillis(), person)
+						style.setConversationTitle(room.getName(requireContext()))
+						style.messages
+							.mapNotNull { it.person }
+							.distinctBy { it.key }.forEach {
+								addPerson(it)
+							}
+
+						setContentTitle(room.getName(requireContext()))
+						setContentText("Bubble notification!")
+						//setContentIntent(
+						//	PendingIntent.getActivity(
+						//		requireContext(), 0, event.getIntent(requireContext()),
+						//		PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+						//	)
+						//)
+						setStyle(style)
+						setShortcutId(shortcut.id)
+						setBubbleMetadata(room.getBubbleMetadata(requireContext()))
+						setLocusId(LocusIdCompat(roomId))
+						setPriority(NotificationCompat.PRIORITY_MAX)
+						setSmallIcon(R.drawable.ic_notification_icon)
+						setCategory(NotificationCompat.CATEGORY_MESSAGE)
+						setAutoCancel(true)
+						setOnlyAlertOnce(false)
+					}.build()
+					with(NotificationManagerCompat.from(requireContext())) {
+						// Check if we have the notification permission
+						if (ContextCompat.checkSelfPermission(
+								requireContext(),
+								Manifest.permission.POST_NOTIFICATIONS
+							) != PackageManager.PERMISSION_GRANTED
+						) return@with
+						createNotificationChannel(channel)
+						notify(channelId.hashCode(), notification)
+					}
 				}
 				true
 			}

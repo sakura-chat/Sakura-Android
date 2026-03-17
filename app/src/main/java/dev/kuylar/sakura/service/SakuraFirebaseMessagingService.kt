@@ -130,7 +130,7 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 		val notification = NotificationCompat.Builder(applicationContext, channel).apply {
 			val person = sender.toNotificationPerson(applicationContext, client)
 
-			val shortcut = room.toShortcut(applicationContext)
+			val shortcut = room.toShortcut(applicationContext, client)
 			val shortcuts = ShortcutManagerCompat.getDynamicShortcuts(applicationContext)
 			if (ShortcutManagerCompat.getMaxShortcutCountPerActivity(applicationContext) > shortcuts.size)
 				ShortcutManagerCompat.addDynamicShortcuts(applicationContext, listOf(shortcut))

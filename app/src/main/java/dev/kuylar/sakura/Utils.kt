@@ -303,13 +303,21 @@ object Utils {
 	fun TimelineEvent.getReplyIntent(context: Context) = getReplyIntent(context, roomId, eventId)
 	fun Room.getReplyIntent(context: Context) = getReplyIntent(context, roomId)
 
-	fun Room.toShortcut(context: Context): ShortcutInfoCompat {
+	suspend fun Room.toShortcut(context: Context, client: Matrix): ShortcutInfoCompat {
 		return ShortcutInfoCompat.Builder(context, roomId.full).apply {
 			setCategories(mutableSetOf(ShortcutInfo.SHORTCUT_CATEGORY_CONVERSATION))
 			setIntent(Intent(Intent.ACTION_VIEW, "dev.kuylar.sakura://room/${roomId.full}".toUri()))
 			setLongLived(true)
 			setLocusId(LocusIdCompat(roomId.full))
 			setShortLabel(getName(context))
+			downloadIconIfNeeded(
+				context,
+				client,
+				client.getRoom(roomId)?.avatarUrl,
+				"r${roomId.full}"
+			)?.let {
+				setIcon(IconCompat.createWithContentUri(it))
+			}
 		}.build()
 	}
 

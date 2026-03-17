@@ -67,7 +67,7 @@ class ReplyReceiver : BroadcastReceiver() {
 			val notification =
 				NotificationCompat.Builder(context, channel).apply {
 					val person = replyUser.toNotificationPerson(context, matrix)
-					val shortcut = room.toShortcut(context)
+					val shortcut = room.toShortcut(context, matrix)
 
 					val style = NotificationCompat.MessagingStyle(person)
 					style.isGroupConversation = !room.isDirect
