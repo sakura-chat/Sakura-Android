@@ -1,11 +1,13 @@
 package dev.kuylar.sakura.ui.fragment
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.postDelayed
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import dagger.hilt.android.AndroidEntryPoint
@@ -14,6 +16,7 @@ import dev.kuylar.sakura.Utils.getName
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentRoomInfoPanelBinding
 import dev.kuylar.sakura.ui.adapter.listadapter.UserListAdapter
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -70,6 +73,13 @@ class RoomInfoPanelFragment : Fragment() {
 		if ((room.joinedMemberCount ?: 1L) < 500) {
 			binding.recycler.layoutManager = LinearLayoutManager(requireContext())
 			binding.recycler.adapter = UserListAdapter(this, roomId, client, binding.recycler)
+		}
+	}
+
+	fun load() {
+		Log.i("RoomInfoPanelFragment", "Loading user list")
+		lifecycleScope.launch {
+			(binding.recycler.adapter as? UserListAdapter)?.load()
 		}
 	}
 

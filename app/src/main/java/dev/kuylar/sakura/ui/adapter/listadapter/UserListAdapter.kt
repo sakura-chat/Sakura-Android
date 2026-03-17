@@ -15,7 +15,6 @@ import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.m.Presence
 import dev.kuylar.sakura.Utils.getIndicatorColor
 import dev.kuylar.sakura.Utils.loadAvatar
-import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.ItemUserBinding
 import dev.kuylar.sakura.ui.adapter.model.UserModel
@@ -36,30 +35,31 @@ class UserListAdapter(
 	private val layoutInflater = fragment.layoutInflater
 	private var users = mutableMapOf<UserId, UserModel>()
 	private var layoutManager = recycler.layoutManager as LinearLayoutManager
+	private var isLoaded = false
 
-	init {
-		suspendThread {
-			client.getRoom(roomId)?.let {
-				client.client.user.getAll(RoomId(roomId)).collect { newUsers ->
-					val addedUsers = newUsers.filter { it.key !in users.keys }
-					val removedUsers = users.filter { it.key !in newUsers.keys }
-					removedUsers.forEach { (id, _) ->
-						users.remove(id)?.dispose()
-					}
-					addedUsers.forEach { (id, flow) ->
-						val snapshot = flow.first()
-						val model = UserModel(id, flow, client, snapshot) {
-							val lastPos = layoutManager.findFirstCompletelyVisibleItemPosition()
-							submit(users.values) {
-								recycler.post {
-									recycler.scrollToPosition(lastPos)
-								}
+	suspend fun load() {
+		if (isLoaded) return
+		isLoaded = true
+		client.getRoom(roomId)?.let {
+			client.client.user.getAll(RoomId(roomId)).collect { newUsers ->
+				val addedUsers = newUsers.filter { it.key !in users.keys }
+				val removedUsers = users.filter { it.key !in newUsers.keys }
+				removedUsers.forEach { (id, _) ->
+					users.remove(id)?.dispose()
+				}
+				addedUsers.forEach { (id, flow) ->
+					val snapshot = flow.first()
+					val model = UserModel(id, flow, client, snapshot) {
+						val lastPos = layoutManager.findFirstCompletelyVisibleItemPosition()
+						submit(users.values) {
+							recycler.post {
+								recycler.scrollToPosition(lastPos)
 							}
 						}
-						users[id] = model
 					}
-					submit(users.values)
+					users[id] = model
 				}
+				submit(users.values)
 			}
 		}
 	}

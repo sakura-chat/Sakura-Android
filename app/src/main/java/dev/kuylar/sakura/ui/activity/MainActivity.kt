@@ -68,7 +68,6 @@ import com.google.android.material.R as MaterialR
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.GestureRegionsListener,
-	OverlappingPanelsLayout.PanelStateListener,
 	NavigationBarView.OnItemSelectedListener {
 	@Inject
 	lateinit var client: Matrix
@@ -83,6 +82,7 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 			}
 		}
 	private var startPanelState: PanelState = PanelState.Closed
+	private var endPanelState: PanelState = PanelState.Closed
 	private var spaceTreeLoaded = false
 
 	override fun onCreate(savedInstanceState: Bundle?) {
@@ -164,15 +164,22 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 
 		binding.roomsPanel.spacesRecycler.layoutManager = LinearLayoutManager(this)
 		binding.roomsPanel.roomsRecycler.layoutManager = LinearLayoutManager(this)
-		binding.overlappingPanels.registerStartPanelStateListeners(this)
+		binding.overlappingPanels.registerStartPanelStateListeners(object: OverlappingPanelsLayout.PanelStateListener {
+			override fun onPanelStateChange(panelState: PanelState) {
+				onStartPanelStateChange(panelState)
+			}
+		})
+		binding.overlappingPanels.registerEndPanelStateListeners(object: OverlappingPanelsLayout.PanelStateListener {
+			override fun onPanelStateChange(panelState: PanelState) {
+				onEndPanelStateChange(panelState)
+			}
+		})
 
 		binding.bottomNav.post {
 			binding.bottomNav.hide()
+			onStartPanelStateChange(PanelState.Opened)
 		}
 		handleStateChange(SyncState.STOPPED)
-		binding.bottomNav.post {
-			onPanelStateChange(PanelState.Opened)
-		}
 		lifecycleScope.launch {
 			lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
 				navController.addOnDestinationChangedListener { _, destination, _ ->
@@ -433,7 +440,7 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		binding.overlappingPanels.setChildGestureRegions(gestureRegions)
 	}
 
-	override fun onPanelStateChange(panelState: PanelState) {
+	fun onStartPanelStateChange(panelState: PanelState) {
 		if (startPanelState == panelState) return
 		startPanelState = panelState
 
@@ -464,6 +471,17 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		navHostFragment.childFragmentManager.fragments.forEach { fragment ->
 			if (fragment is TimelineFragment) {
 				fragment.closeKeyboard()
+			}
+		}
+	}
+
+	fun onEndPanelStateChange(panelState: PanelState) {
+		if (endPanelState == panelState) return
+		endPanelState = panelState
+
+		if (panelState is PanelState.Opened) {
+			supportFragmentManager.findFragmentById(binding.usersPanel.id)?.let {
+				(it as? RoomInfoPanelFragment)?.load()
 			}
 		}
 	}
