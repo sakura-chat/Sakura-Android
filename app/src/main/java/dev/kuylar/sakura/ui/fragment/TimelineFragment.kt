@@ -48,6 +48,9 @@ import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.client.user.canSendEvent
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent as TrixnityRoomMessageEventContent
+import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
+import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.bytesToString
 import dev.kuylar.sakura.Utils.getName
@@ -439,6 +442,10 @@ class TimelineFragment : Fragment(), MenuProvider {
 					binding.input.editableText?.clear()
 					// TODO: Handle spans for this
 					(event.content?.getOrNull() as? RoomMessageEventContent.TextBased)?.let {
+						val str = it.formattedBodyWithoutFallback ?: it.bodyWithoutFallback
+						binding.input.editableText?.insert(0, markdown.htmlToMarkdown(str))
+					}
+					(event.content?.getOrNull() as? TrixnityRoomMessageEventContent.TextBased)?.let {
 						val str = it.formattedBodyWithoutFallback ?: it.bodyWithoutFallback
 						binding.input.editableText?.insert(0, markdown.htmlToMarkdown(str))
 					}

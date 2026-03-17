@@ -29,7 +29,6 @@ import de.connect2x.trixnity.core.model.events.RedactedEventContent
 import de.connect2x.trixnity.core.model.events.RoomEventContent
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership
-import dev.kuylar.sakura.client.customevent.message.RoomMessageEventContent
 import dev.kuylar.sakura.BuildConfig
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils
@@ -45,6 +44,7 @@ import dev.kuylar.sakura.Utils.withinSameDay
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
 import dev.kuylar.sakura.client.customevent.StickerMessageEventContent
+import dev.kuylar.sakura.client.customevent.message.RoomMessageEventContent
 import dev.kuylar.sakura.databinding.AttachmentFileBinding
 import dev.kuylar.sakura.databinding.AttachmentImageBinding
 import dev.kuylar.sakura.databinding.ItemMessageBinding
@@ -59,6 +59,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.minutes
+import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent as TrixnityRoomMessageEventContent
 
 class TimelineEventViewHolder(
 	val binding: ItemMessageBinding,
@@ -223,6 +224,28 @@ class TimelineEventViewHolder(
 						setAttachment(content)
 					}
 				}
+			}
+
+			// Because Trixnity has a bug as of 5.1.2 where edited messages
+			// turn into Trixnity's RoomMessageEventContent
+			is TrixnityRoomMessageEventContent.TextBased.Text, is TrixnityRoomMessageEventContent.TextBased.Notice -> {
+				markdown.setTextView(
+					binding.body,
+					content.content,
+					edited
+				) { updateSpans(currentNonce) }
+			}
+
+			is TrixnityRoomMessageEventContent.TextBased.Emote -> {
+				markdown.setTextView(
+					binding.body,
+					"* <b>%s</b> %s".format(
+						user?.name,
+						(content as? TrixnityRoomMessageEventContent.TextBased)?.content
+					),
+					edited
+				) { updateSpans(currentNonce) }
+				binding.senderName.visibility = View.GONE
 			}
 
 			is MemberEventContent -> {

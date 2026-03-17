@@ -28,6 +28,7 @@ import dev.kuylar.sakura.databinding.FragmentEventBottomSheetBinding
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
+import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent as TrixnityRoomMessageEventContent
 
 @AndroidEntryPoint
 class EventBottomSheetFragment : BottomSheetDialogFragment() {
@@ -103,7 +104,7 @@ class EventBottomSheetFragment : BottomSheetDialogFragment() {
 		binding.editHistory.visibility = if (isEdited) View.VISIBLE else View.GONE
 		binding.reactions.visibility = if (hasReactions) View.VISIBLE else View.GONE
 		binding.copy.visibility =
-			if (event.content?.getOrNull() is RoomMessageEventContent.TextBased) View.VISIBLE else View.GONE
+			if (event.content?.getOrNull() is RoomMessageEventContent.TextBased || event.content?.getOrNull() is TrixnityRoomMessageEventContent.TextBased) View.VISIBLE else View.GONE
 
 		binding.edit.setOnClickListener {
 			binding.root.postDelayed(50) {

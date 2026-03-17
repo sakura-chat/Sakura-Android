@@ -42,6 +42,9 @@ import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.m.Presence
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership
+import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent as TrixnityRoomMessageEventContent
+import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
+import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.message.RoomMessageEventContent
 import dev.kuylar.sakura.client.customevent.message.bodyWithoutFallback
@@ -420,6 +423,9 @@ object Utils {
 	}
 
 	val RoomMessageEventContent.content: String
+		get() = this.formattedBodyWithoutFallback ?: this.bodyWithoutFallback
+
+	val TrixnityRoomMessageEventContent.content: String
 		get() = this.formattedBodyWithoutFallback ?: this.bodyWithoutFallback
 
 	fun <T> SortedList<T>.getOrNull(index: Int): T? {
