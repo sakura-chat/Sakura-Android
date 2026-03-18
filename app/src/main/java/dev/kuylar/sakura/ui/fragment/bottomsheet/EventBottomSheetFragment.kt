@@ -28,17 +28,16 @@ import de.connect2x.trixnity.client.store.sender
 import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import dev.kuylar.mentionsedittext.ImageMentionSpan
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.RecentEmoji
-import dev.kuylar.sakura.client.customevent.message.RoomMessageEventContent
 import dev.kuylar.sakura.databinding.FragmentEventBottomSheetBinding
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
-import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent as TrixnityRoomMessageEventContent
 
 @AndroidEntryPoint
 class EventBottomSheetFragment : BottomSheetDialogFragment() {
@@ -115,7 +114,7 @@ class EventBottomSheetFragment : BottomSheetDialogFragment() {
 		binding.editHistory.visibility = if (isEdited) View.VISIBLE else View.GONE
 		binding.reactions.visibility = if (hasReactions) View.VISIBLE else View.GONE
 		binding.copy.visibility =
-			if (event.content?.getOrNull() is RoomMessageEventContent.TextBased || event.content?.getOrNull() is TrixnityRoomMessageEventContent.TextBased) View.VISIBLE else View.GONE
+			if (event.content?.getOrNull() is RoomMessageEventContent.TextBased) View.VISIBLE else View.GONE
 
 		binding.edit.setOnClickListener {
 			binding.root.postDelayed(50) {

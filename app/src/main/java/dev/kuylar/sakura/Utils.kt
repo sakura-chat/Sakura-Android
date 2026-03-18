@@ -43,12 +43,10 @@ import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.m.Presence
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership
+import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
 import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
 import dev.kuylar.sakura.client.Matrix
-import dev.kuylar.sakura.client.customevent.message.RoomMessageEventContent
-import dev.kuylar.sakura.client.customevent.message.bodyWithoutFallback
-import dev.kuylar.sakura.client.customevent.message.formattedBodyWithoutFallback
 import dev.kuylar.sakura.service.ReplyReceiver
 import dev.kuylar.sakura.ui.activity.BubbleActivity
 import dev.kuylar.sakura.ui.activity.MainActivity
@@ -81,7 +79,6 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeBytes
 import kotlin.io.path.writeText
 import kotlin.time.ExperimentalTime
-import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent as TrixnityRoomMessageEventContent
 
 object Utils {
 	fun suspendThread(block: suspend (() -> Unit)): Job {
@@ -435,9 +432,6 @@ object Utils {
 	}
 
 	val RoomMessageEventContent.content: String
-		get() = this.formattedBodyWithoutFallback ?: this.bodyWithoutFallback
-
-	val TrixnityRoomMessageEventContent.content: String
 		get() = this.formattedBodyWithoutFallback ?: this.bodyWithoutFallback
 
 	fun <T> SortedList<T>.getOrNull(index: Int): T? {

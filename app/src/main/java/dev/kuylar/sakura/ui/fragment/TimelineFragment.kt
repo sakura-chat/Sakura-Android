@@ -56,6 +56,7 @@ import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.client.user.canSendEvent
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
 import de.connect2x.trixnity.core.model.events.m.room.formattedBodyWithoutFallback
 import dev.kuylar.sakura.R
@@ -67,9 +68,6 @@ import dev.kuylar.sakura.Utils.toNotificationPerson
 import dev.kuylar.sakura.Utils.toShortcut
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.MatrixEmote
-import dev.kuylar.sakura.client.customevent.message.RoomMessageEventContent
-import dev.kuylar.sakura.client.customevent.message.bodyWithoutFallback
-import dev.kuylar.sakura.client.customevent.message.formattedBodyWithoutFallback
 import dev.kuylar.sakura.databinding.FragmentTimelineBinding
 import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
 import dev.kuylar.sakura.markdown.MarkdownHandler
@@ -83,7 +81,6 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import kotlin.math.max
-import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent as TrixnityRoomMessageEventContent
 
 @Suppress("EmptyMethod")
 @AndroidEntryPoint
@@ -530,10 +527,6 @@ class TimelineFragment : Fragment(), MenuProvider {
 					binding.input.editableText?.clear()
 					// TODO: Handle spans for this
 					(event.content?.getOrNull() as? RoomMessageEventContent.TextBased)?.let {
-						val str = it.formattedBodyWithoutFallback ?: it.bodyWithoutFallback
-						binding.input.editableText?.insert(0, markdown.htmlToMarkdown(str))
-					}
-					(event.content?.getOrNull() as? TrixnityRoomMessageEventContent.TextBased)?.let {
 						val str = it.formattedBodyWithoutFallback ?: it.bodyWithoutFallback
 						binding.input.editableText?.insert(0, markdown.htmlToMarkdown(str))
 					}
