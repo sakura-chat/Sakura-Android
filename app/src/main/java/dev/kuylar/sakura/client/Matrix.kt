@@ -33,6 +33,7 @@ import de.connect2x.trixnity.client.store.AccountStore
 import de.connect2x.trixnity.client.store.Room
 import de.connect2x.trixnity.client.store.RoomUser
 import de.connect2x.trixnity.client.store.TimelineEvent
+import de.connect2x.trixnity.client.store.UserPresence
 import de.connect2x.trixnity.client.store.eventId
 import de.connect2x.trixnity.client.store.relatesTo
 import de.connect2x.trixnity.client.store.repository.room.TrixnityRoomDatabase
@@ -949,6 +950,23 @@ class Matrix {
 
 	fun getNotifications() = client.notification.getAll()
 	suspend fun dismissNotification(id: String) = client.notification.dismiss(id)
+	suspend fun getRoomPresence(room: Room): Flow<UserPresence?>? {
+		if (room.isDirect) {
+			val directEvent =
+				client.user.getAccountData<DirectEventContent>().firstOrNull() ?: return null
+			var userId: UserId? = null
+			for ((user, rooms) in directEvent.mappings) {
+				if (rooms == null) continue
+				if (rooms.contains(room.roomId)) {
+					userId = user
+					break
+				}
+			}
+			if (userId == null) return null
+			return client.user.getPresence(userId)
+		}
+		return null
+	}
 
 	companion object {
 		@SuppressLint("StaticFieldLeak")

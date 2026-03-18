@@ -12,8 +12,11 @@ import androidx.viewbinding.ViewBinding
 import com.bumptech.glide.Glide
 import de.connect2x.trixnity.client.store.Room
 import de.connect2x.trixnity.core.model.RoomId
+import de.connect2x.trixnity.core.model.events.m.Presence
 import dev.kuylar.sakura.R
+import dev.kuylar.sakura.Utils.getIndicatorColor
 import dev.kuylar.sakura.Utils.getName
+import dev.kuylar.sakura.Utils.loadAvatar
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.MatrixSpace
 import dev.kuylar.sakura.databinding.ItemRoomBinding
@@ -22,6 +25,7 @@ import dev.kuylar.sakura.databinding.ItemSpaceListDividerBinding
 import dev.kuylar.sakura.ui.activity.MainActivity
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlin.time.ExperimentalTime
 import com.google.android.material.R as MaterialR
@@ -139,21 +143,21 @@ class SpaceTreeListAdapter(
 		) {
 			val room = item.room
 			job?.cancel()
+			binding.avatar.indicatorEnabled = false
+			binding.avatar.indicatorColor =
+				Presence.OFFLINE.getIndicatorColor(binding.avatar.context)
 
 			// TODO: if room.isDirect, show avatar & presence
 			lifecycleScope.launch {
-				binding.title.text = room.getName(binding.title.context, client)
+				room.getName(binding.title.context, client).let {
+					binding.title.text = it
+					binding.avatar.loadAvatar(room.avatarUrl, it)
+				}
 			}
 			binding.subtitle.visibility = View.VISIBLE
 			binding.subtitle.text = room.lastRelevantEventTimestamp?.toString() ?: "null"
 
 			handleUnread(item.isUnread, item.mentions)
-
-			if (room.avatarUrl == null) {
-				binding.icon.visibility = View.GONE
-			} else {
-				Glide.with(binding.root).load(room.avatarUrl).into(binding.icon)
-			}
 
 			with((bindingAdapter as SpaceTreeListAdapter)) {
 				binding.root.setOnClickListener {
@@ -168,13 +172,21 @@ class SpaceTreeListAdapter(
 					)
 					binding.container.setBackgroundColor(typedValue.data)
 				}
-				job = activity.lifecycleScope.launch {
+				job = lifecycleScope.launch {
 					combine(
 						client.getIsUnread(room.roomId),
-						client.getNotificationCount(room.roomId)
-					) { a, b -> Pair(a, b) }.collect {
+						client.getNotificationCount(room.roomId),
+						client.getRoomPresence(room) ?: flowOf(null)
+					) { a, b, c -> Triple(a, b, c) }.collect {
 						item.isUnread = it.first
 						item.mentions = it.second
+						if (it.third != null) {
+							binding.avatar.indicatorEnabled = true
+							binding.avatar.indicatorColor =
+								it.third!!.presence.getIndicatorColor(binding.avatar.context)
+						} else {
+							binding.avatar.indicatorEnabled = false
+						}
 						handleUnread(it.first, it.second)
 					}
 				}

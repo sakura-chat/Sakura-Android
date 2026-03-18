@@ -29,24 +29,25 @@
 			android:baselineAligned="false"
 			android:gravity="center">
 
-			<FrameLayout
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:layout_marginHorizontal="8dp">
-
-				<ImageView
-					android:layout_width="32dp"
-					android:layout_height="32dp"
-					android:layout_gravity="center"
-					app:srcCompat="@drawable/ic_room" />
-
-				<com.google.android.material.imageview.ShapeableImageView
-					android:id="@+id/icon"
-					android:layout_width="40dp"
-					android:layout_height="40dp"
-					android:background="?colorSecondaryContainer"
-					android:scaleType="centerCrop" />
-			</FrameLayout>
+			<io.getstream.avatarview.AvatarView
+				android:id="@+id/avatar"
+				android:layout_width="40dp"
+				android:layout_height="40dp"
+				android:layout_margin="8dp"
+				android:scaleType="centerCrop"
+				app:avatarViewBorderWidth="0dp"
+				app:avatarViewIndicatorBorderColor="?colorSurface"
+				app:avatarViewIndicatorBorderSizeCriteria="9"
+				app:avatarViewIndicatorColor="@color/status_offline"
+				app:avatarViewIndicatorEnabled="false"
+				app:avatarViewIndicatorPosition="bottomRight"
+				app:avatarViewIndicatorSizeCriteria="6"
+				app:avatarViewInitialsBackgroundColor="?colorSecondaryContainer"
+				app:avatarViewInitialsTextColor="?colorOnSecondaryContainer"
+				app:avatarViewInitialsTextStyle="bold"
+				app:avatarViewShape="circle"
+				tools:avatarViewInitials="#"
+				tools:src="@tools:sample/avatars" />
 
 			<LinearLayout
 				android:layout_width="0dp"
