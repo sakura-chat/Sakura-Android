@@ -289,7 +289,8 @@ class Matrix {
 		} else client.notification.isUnread(roomId, skipCheck = true)
 	}
 
-	fun getNotificationCount(roomId: RoomId): Flow<Int> {
+	fun getNotificationCount(roomId: RoomId, seen: MutableList<RoomId>? = null): Flow<Int> {
+		val seenRooms = seen ?: mutableListOf()
 		return if (roomId == DIRECT_ROOM) {
 			combine(roomCache.mapNotNull { it.value.value }
 				.filter { it.type != CreateEventContent.RoomType.Space && it.isDirect && isRoomAnOrphan(it.roomId) }
@@ -299,7 +300,9 @@ class Matrix {
 				.filter { it.type != CreateEventContent.RoomType.Space && !it.isDirect && isRoomAnOrphan(it.roomId) }
 				.map { getNotificationCount(it.roomId) }) { it.sum() }
 		} else if (roomCache[roomId]?.value?.type == CreateEventContent.RoomType.Space) {
-			combine(getSpaceChildren(roomId).map { getNotificationCount(it.roomId) }) {
+			val children = getSpaceChildren(roomId).filterNot { seenRooms.contains(it.roomId) }
+			seenRooms.addAll(children.map { it.roomId })
+			combine(children.map { getNotificationCount(it.roomId, seenRooms) }) {
 				it.sum()
 			}
 		} else client.notification.getCount(roomId, includeDismissed = false)
