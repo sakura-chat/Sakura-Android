@@ -23,6 +23,7 @@ import dev.kuylar.sakura.ui.activity.MainActivity
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlin.time.ExperimentalTime
 import com.google.android.material.R as MaterialR
 
 class SpaceTreeListAdapter(
@@ -130,6 +131,7 @@ class SpaceTreeListAdapter(
 	class RoomViewHolder(val binding: ItemRoomBinding) : ViewHolder(binding) {
 		private var job: Job? = null
 
+		@OptIn(ExperimentalTime::class)
 		fun bind(
 			item: SpaceTreeModel.Room,
 			client: Matrix,
@@ -142,7 +144,8 @@ class SpaceTreeListAdapter(
 			lifecycleScope.launch {
 				binding.title.text = room.getName(binding.title.context, client)
 			}
-			binding.subtitle.visibility = View.GONE
+			binding.subtitle.visibility = View.VISIBLE
+			binding.subtitle.text = room.lastRelevantEventTimestamp?.toString() ?: "null"
 
 			handleUnread(item.isUnread, item.mentions)
 
