@@ -27,14 +27,16 @@ data class UserModel(
 		userId,
 		snapshot?.avatarUrl,
 		snapshot?.name ?: userId.full,
-		presence?.presence ?: Presence.OFFLINE
+		presence?.presence ?: Presence.OFFLINE,
+		null
 	)
 
 	data class State(
 		val userId: UserId,
 		val avatar: String?,
 		val username: String,
-		val presence: Presence
+		val presence: Presence,
+		val statusMessage: String?
 	)
 
 	private var collectJob: Job? = null
@@ -46,7 +48,8 @@ data class UserModel(
 					userId,
 					user?.avatarUrl,
 					user?.name ?: userId.full,
-					presence?.presence ?: Presence.OFFLINE
+					presence?.presence ?: Presence.OFFLINE,
+					presence?.statusMessage
 				)
 			}.collect {
 				state = it

@@ -8,7 +8,6 @@ import androidx.recyclerview.widget.AsyncDifferConfig
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import de.connect2x.trixnity.client.store.UserPresence
 import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
@@ -22,7 +21,6 @@ import dev.kuylar.sakura.ui.fragment.bottomsheet.ProfileBottomSheetFragment
 import io.getstream.avatarview.glide.loadImage
 import kotlinx.coroutines.flow.first
 import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
 
 class UserListAdapter(
 	val fragment: Fragment,
@@ -103,16 +101,12 @@ class UserListAdapter(
 			binding.avatar.avatarInitials = null
 			binding.avatar.loadAvatar(user.avatar, user.username)
 			binding.name.text = user.username
-			val presence = UserPresence(
-				user.presence ?: Presence.OFFLINE,
-				Instant.fromEpochMilliseconds(0)
-			)
 
 			binding.avatar.indicatorColor =
-				presence.presence.getIndicatorColor(binding.root.context)
+				user.presence.getIndicatorColor(binding.root.context)
 			binding.status.visibility =
-				if (presence.statusMessage.isNullOrBlank()) View.GONE else View.VISIBLE
-			binding.status.text = presence.statusMessage?.replace("\n", "\t")
+				if (user.statusMessage.isNullOrBlank()) View.GONE else View.VISIBLE
+			binding.status.text = user.statusMessage?.replace("\n", "\t")
 			binding.root.setOnClickListener {
 				val f = ProfileBottomSheetFragment()
 				f.arguments = Bundle().apply {
