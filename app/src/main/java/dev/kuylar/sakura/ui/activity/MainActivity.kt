@@ -2,6 +2,7 @@ package dev.kuylar.sakura.ui.activity
 
 import android.Manifest
 import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.app.ComponentCaller
 import android.app.NotificationManager
 import android.content.Intent
@@ -29,6 +30,7 @@ import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.drawToBitmap
+import androidx.core.view.get
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.core.view.postDelayed
@@ -46,6 +48,7 @@ import com.discord.panels.PanelState
 import com.discord.panels.PanelsChildGestureRegionObserver
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.navigation.NavigationBarMenuView
 import com.google.android.material.navigation.NavigationBarView
 import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
@@ -87,6 +90,7 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 	private var endPanelState: PanelState = PanelState.Closed
 	private var spaceTreeLoaded = false
 
+	@SuppressLint("RestrictedApi")
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		enableEdgeToEdge()
@@ -200,7 +204,9 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 						R.id.nav_room -> {
 							binding.toolbar.navigationIcon =
 								ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_menu)
-							binding.bottomNav.selectedItemId = R.id.nav_main
+							// Just calling .selectedItemId = R.id.nav_main doesn't work :(
+							(binding.bottomNav.menuView as NavigationBarMenuView)
+								.setCheckedItem(binding.bottomNav.menu[0])
 							if (binding.bottomNav.isVisible) {
 								binding.bottomNav.hide()
 							}
