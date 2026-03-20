@@ -228,17 +228,18 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		}
 		lifecycleScope.launch {
 			lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-				if (client.initialized) return@repeatOnLifecycle
-				try {
-					client.initialize("main")
-				} catch (e: Exception) {
-					Log.wtf("MainActivity", "Failed to initialize client", e)
-					// Failed to load client. Give up and send the user to the login screen
-					this@MainActivity.runOnUiThread {
-						startActivity(Intent(this@MainActivity, LoginActivity::class.java))
-						finish()
+				if (!client.initialized) {
+					try {
+						client.initialize("main")
+					} catch (e: Exception) {
+						Log.wtf("MainActivity", "Failed to initialize client", e)
+						// Failed to load client. Give up and send the user to the login screen
+						this@MainActivity.runOnUiThread {
+							startActivity(Intent(this@MainActivity, LoginActivity::class.java))
+							finish()
+						}
+						return@repeatOnLifecycle
 					}
-					return@repeatOnLifecycle
 				}
 				runOnUiThread {
 					onClientReady()

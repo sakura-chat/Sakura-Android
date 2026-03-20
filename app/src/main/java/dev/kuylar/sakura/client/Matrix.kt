@@ -136,7 +136,6 @@ class Matrix {
 	private val activeVerifications = HashMap<String, ActiveVerification>()
 	private var recentEmojiCache: List<RecentEmoji> = emptyList()
 	private var loadedRecentEmoji = false
-	private var syncStarted = false
 	lateinit var pushRules: Flow<PushRuleSet>
 	private val roomCache = HashMap<RoomId, StateFlow<Room?>>()
 	var spaceTree: Flow<List<MatrixSpace>> = emptyFlow()
@@ -551,14 +550,13 @@ class Matrix {
 			Log.w("MatrixClient", "startSync() called before client was initialized.")
 			return
 		}
-		if (syncStarted) {
+		if (client.syncState.value == SyncState.RUNNING) {
 			Log.w(
 				"MatrixClient",
 				"startSync() called after sync was already started from elsewhere."
 			)
 			return
 		}
-		syncStarted = true
 		client.startSync()
 		Log.i("MatrixClient", "Sync started from $from")
 	}
