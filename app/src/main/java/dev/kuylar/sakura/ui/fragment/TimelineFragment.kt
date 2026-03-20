@@ -46,6 +46,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.discord.panels.PanelsChildGestureRegionObserver
 import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
 import de.connect2x.trixnity.client.room
@@ -136,7 +137,14 @@ class TimelineFragment : Fragment(), MenuProvider {
 			return
 		}
 
+		PanelsChildGestureRegionObserver.Provider.get().unregister(binding.picker)
+		PanelsChildGestureRegionObserver.Provider.get().register(binding.picker)
 		setUi()
+	}
+
+	override fun onPause() {
+		PanelsChildGestureRegionObserver.Provider.get().unregister(binding.picker)
+		super.onPause()
 	}
 
 	fun setUi() {
