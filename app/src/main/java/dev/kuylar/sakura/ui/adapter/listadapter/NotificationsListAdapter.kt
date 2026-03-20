@@ -57,8 +57,10 @@ class NotificationsListAdapter(
 		val client: Matrix
 	) : RecyclerView.ViewHolder(binding.root) {
 		private var nonce = 0
+		private var id: String = ""
 		fun bind(item: Notification) {
 			nonce = Random.nextInt()
+			id = item.id
 			when (item) {
 				is Notification.Message -> {
 					bindMessage(nonce, item)
@@ -145,6 +147,10 @@ class NotificationsListAdapter(
 				binding.roomName.text =
 					client.getRoom(roomId)?.getName(binding.roomName.context, client)
 			}
+		}
+
+		suspend fun swipe() {
+			client.dismissNotification(id)
 		}
 	}
 }

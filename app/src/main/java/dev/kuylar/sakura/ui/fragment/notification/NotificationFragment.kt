@@ -10,7 +10,10 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.discord.panels.PanelsChildGestureRegionObserver
 import com.google.android.material.divider.MaterialDividerItemDecoration
 import dagger.hilt.android.AndroidEntryPoint
 import dev.kuylar.sakura.client.Matrix
@@ -52,6 +55,20 @@ class NotificationFragment : Fragment() {
 				(binding.recycler.layoutManager as LinearLayoutManager).orientation
 			)
 		)
+		PanelsChildGestureRegionObserver.Provider.get().register(binding.recycler)
+		val helper = ItemTouchHelper(object :
+			ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
+			override fun onMove(
+				p0: RecyclerView, p1: RecyclerView.ViewHolder, p2: RecyclerView.ViewHolder
+			) = false
+
+			override fun onSwiped(item: RecyclerView.ViewHolder, dir: Int) {
+				viewLifecycleOwner.lifecycleScope.launch {
+					(item as? NotificationsListAdapter.ViewHolder)?.swipe()
+				}
+			}
+		})
+		helper.attachToRecyclerView(binding.recycler)
 		viewLifecycleOwner.lifecycleScope.launch {
 			viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
 				viewModel.notifications.collect { items ->
@@ -61,5 +78,10 @@ class NotificationFragment : Fragment() {
 				}
 			}
 		}
+	}
+
+	override fun onPause() {
+		PanelsChildGestureRegionObserver.Provider.get().unregister(binding.recycler)
+		super.onPause()
 	}
 }
