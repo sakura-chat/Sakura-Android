@@ -27,4 +27,9 @@
 		android:name="dev.kuylar.sakura.ui.fragment.notification.NotificationFragment"
 		android:label="@string/title_notifications"
 		tools:layout="@layout/fragment_notification" />
+	<fragment
+		android:id="@+id/nav_crash_reports"
+		android:name="dev.kuylar.sakura.ui.fragment.settings.SettingsCrashReportsFragment"
+		android:label="@string/title_crash_reports"
+		tools:layout="@layout/fragment_settings_crash_reports" />
 </navigation>

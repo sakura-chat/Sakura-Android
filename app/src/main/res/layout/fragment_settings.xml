@@ -11,12 +11,14 @@
 		android:name="dev.kuylar.sakura.ui.fragment.settings.SettingsItemFragment"
 		android:layout_width="280dp"
 		android:layout_height="match_parent"
-		android:layout_gravity="start" />
+		android:layout_gravity="start"
+		android:layout_marginBottom="80dp" />
 
 	<androidx.fragment.app.FragmentContainerView
 		android:id="@+id/detail_container"
 		android:name="dev.kuylar.sakura.ui.fragment.settings.SettingsDetailFragment"
 		android:layout_width="300dp"
 		android:layout_height="match_parent"
+		android:layout_marginBottom="80dp"
 		android:layout_weight="1" />
 </androidx.slidingpanelayout.widget.SlidingPaneLayout>

@@ -147,4 +147,9 @@
 	<string name="preference_general">General</string>
 	<string name="preference_preferences">Preferences</string>
 	<string name="preference_developer">Developer Settings</string>
+	<string name="preference_developer_crashreporting">Crash Reporting</string>
+	<string name="preference_developer_crashreports">Crash Reports</string>
+	<string name="preference_developer_crash">Crash App</string>
+	<string name="title_crash_reports">Crash Reports</string>
+	<string name="crashreport_upload">Upload to homeserver</string>
 </resources>

@@ -15,5 +15,6 @@ class SakuraApplication : Application() {
 		super.onCreate()
 		//Backend.set(DefaultBackend)
 		DynamicColors.applyToActivitiesIfAvailable(this)
+		CrashHandler.install(this)
 	}
 }

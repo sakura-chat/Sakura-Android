@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+	<PreferenceCategory android:title="@string/preference_developer_crashreporting">
+		<Preference
+			android:key="developer_crashreports"
+			android:title="@string/preference_developer_crashreports" />
+		<Preference
+			android:key="developer_crash"
+			android:title="@string/preference_developer_crash" />
+	</PreferenceCategory>
+</androidx.preference.PreferenceScreen>
