@@ -8,10 +8,12 @@ import androidx.recyclerview.widget.AsyncDifferConfig
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import de.connect2x.trixnity.client.store.membership
 import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.m.Presence
+import de.connect2x.trixnity.core.model.events.m.room.Membership
 import dev.kuylar.sakura.Utils.getIndicatorColor
 import dev.kuylar.sakura.Utils.loadAvatar
 import dev.kuylar.sakura.client.Matrix
@@ -46,7 +48,9 @@ class UserListAdapter(
 					users.remove(id)?.dispose()
 				}
 				addedUsers.forEach { (id, flow) ->
-					val snapshot = flow.first()
+					val snapshot = flow.first() ?: return@forEach
+					if (snapshot.membership == Membership.LEAVE || snapshot.membership == Membership.BAN)
+						return@forEach
 					val model = UserModel(id, flow, client, snapshot) {
 						val lastPos = layoutManager.findFirstCompletelyVisibleItemPosition()
 						submit(users.values) {

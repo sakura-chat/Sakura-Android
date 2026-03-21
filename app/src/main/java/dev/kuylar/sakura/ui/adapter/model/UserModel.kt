@@ -4,9 +4,11 @@ import androidx.recyclerview.widget.DiffUtil
 import de.connect2x.trixnity.client.store.RoomUser
 import de.connect2x.trixnity.client.store.UserPresence
 import de.connect2x.trixnity.client.store.avatarUrl
+import de.connect2x.trixnity.client.store.membership
 import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.m.Presence
+import de.connect2x.trixnity.core.model.events.m.room.Membership
 import dev.kuylar.sakura.client.Matrix
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +30,8 @@ data class UserModel(
 		snapshot?.avatarUrl,
 		snapshot?.name ?: userId.full,
 		presence?.presence ?: Presence.OFFLINE,
-		null
+		null,
+		Membership.LEAVE
 	)
 
 	data class State(
@@ -36,7 +39,8 @@ data class UserModel(
 		val avatar: String?,
 		val username: String,
 		val presence: Presence,
-		val statusMessage: String?
+		val statusMessage: String?,
+		val membership: Membership
 	)
 
 	private var collectJob: Job? = null
@@ -49,7 +53,8 @@ data class UserModel(
 					user?.avatarUrl,
 					user?.name ?: userId.full,
 					presence?.presence ?: Presence.OFFLINE,
-					presence?.statusMessage
+					presence?.statusMessage,
+					user?.membership ?: Membership.LEAVE
 				)
 			}.collect {
 				state = it
