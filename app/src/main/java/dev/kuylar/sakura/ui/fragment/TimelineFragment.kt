@@ -556,7 +556,6 @@ class TimelineFragment : Fragment(), MenuProvider {
 		binding.buttonCancelReply.setOnClickListener {
 			replyingEvent = null
 			binding.replyIndicator.visibility = View.GONE
-			binding.input.editableText?.clear()
 		}
 		suspendThread {
 			client.getEvent(RoomId(roomId), eventId)?.let { event ->
