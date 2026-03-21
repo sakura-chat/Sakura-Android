@@ -35,14 +35,13 @@ class SettingsCrashReportsFragment : Fragment() {
 
 	@Inject
 	lateinit var client: Matrix
-	private val items = emptyMap<String, CrashHandler.CrashReport>().toMutableMap()
 
 	@SuppressLint("SetTextI18n")
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 		super.onViewCreated(view, savedInstanceState)
 
 		adapter = RecyclerViewBuilder(requireContext())
-			.addView<Pair<String, CrashHandler.CrashReport>, ItemCrashReportBinding> { binding, item, context ->
+			.addView<Pair<String, CrashHandler.CrashReport>, ItemCrashReportBinding> { binding, item, _ ->
 				val cause = getDeepestCause(item.second)
 				binding.title.text = cause.exceptionClass + " @ " + item.second.timestamp
 				binding.summary.text = cause.message + "\n\n" + cause.stackTrace

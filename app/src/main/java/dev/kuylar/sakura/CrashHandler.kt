@@ -38,10 +38,10 @@ object CrashHandler {
 	@Suppress("KotlinConstantConditions")
 	private fun writeCrashReport(context: Context, thread: Thread, throwable: Throwable) {
 		executor.execute {
-			val report = CrashReport(
+			@Suppress("DEPRECATION") val report = CrashReport(
 				SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US).format(Date()),
 				thread.name,
-				thread.id,
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) thread.threadId() else thread.id,
 				throwable::class.java.name,
 				throwable.message,
 				throwable.stackTraceToString(),
