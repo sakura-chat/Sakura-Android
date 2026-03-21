@@ -29,8 +29,8 @@ import de.connect2x.trixnity.core.model.events.m.room.RedactionEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import dev.kuylar.sakura.Utils.getOrNull
 import dev.kuylar.sakura.Utils.indexOfFirst
-import dev.kuylar.sakura.Utils.isAtBottom
 import dev.kuylar.sakura.Utils.lastReceipt
+import dev.kuylar.sakura.Utils.scrollToBottom
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
 import dev.kuylar.sakura.databinding.ItemMessageBinding
@@ -70,12 +70,8 @@ class TimelineRecyclerAdapter(
 				}
 
 				if (count > 2 && position == 0) return
-				val scroll = recycler?.isAtBottom(count) ?: false
-				if (scroll) {
-					recycler.post {
-						Log.i("TimelineRecyclerAdapter", "scrollToPosition(0)")
-						recycler.scrollToPosition(0)
-					}
+				recycler?.post {
+					recycler.scrollToBottom(count)
 				}
 			}
 

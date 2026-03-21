@@ -177,6 +177,15 @@ object Utils {
 		}
 	}
 
+	fun RecyclerView.scrollToBottom(offset: Int) {
+		if (isAtBottom(offset)) {
+			post {
+				Log.i("RecyclerView.scrollToBottom", "scrollToPosition(0)")
+				scrollToPosition(0)
+			}
+		}
+	}
+
 	fun getMimeTypeFromExtension(lastPathSegment: String?): String {
 		val extension = lastPathSegment?.substringAfterLast('.')?.substringBefore('?')
 		return when (extension) {
