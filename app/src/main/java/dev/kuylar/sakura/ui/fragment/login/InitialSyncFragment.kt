@@ -11,7 +11,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentInitialSyncBinding
-import dev.kuylar.sakura.ui.activity.InitialSyncCompleteListener
+import dev.kuylar.sakura.ui.InitialSyncCompleteListener
 import javax.inject.Inject
 
 @AndroidEntryPoint

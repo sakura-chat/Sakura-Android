@@ -15,6 +15,7 @@ import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.ActivityLoginBinding
 import de.connect2x.trixnity.clientserverapi.client.MatrixClientServerApiClient
 import de.connect2x.trixnity.clientserverapi.model.authentication.LoginType
+import dev.kuylar.sakura.ui.InitialSyncCompleteListener
 
 @AndroidEntryPoint
 class LoginActivity : AppCompatActivity(), InitialSyncCompleteListener {
