@@ -42,7 +42,7 @@
 				app:avatarViewIndicatorEnabled="false"
 				app:avatarViewIndicatorPosition="bottomRight"
 				app:avatarViewIndicatorSizeCriteria="6"
-				app:avatarViewInitialsBackgroundColor="?colorSecondaryContainer"
+				app:avatarViewInitialsBackgroundColor="?colorTertiaryContainer"
 				app:avatarViewInitialsTextColor="?colorOnSecondaryContainer"
 				app:avatarViewInitialsTextStyle="bold"
 				app:avatarViewShape="circle"
