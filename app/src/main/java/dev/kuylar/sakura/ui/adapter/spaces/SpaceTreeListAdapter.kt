@@ -154,8 +154,6 @@ class SpaceTreeListAdapter(
 					binding.avatar.loadAvatar(room.avatarUrl, it)
 				}
 			}
-			binding.subtitle.visibility = View.VISIBLE
-			binding.subtitle.text = room.lastRelevantEventTimestamp?.toString() ?: "null"
 
 			handleUnread(item.isUnread, item.mentions)
 
