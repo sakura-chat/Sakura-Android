@@ -133,4 +133,18 @@
 	<string name="room_name_template_heroes">%s</string>
 	<string name="room_name_template_heroes_more">%s (and %d more)</string>
 	<string name="room_name_template_empty">Empty room (was %s)</string>
+	<string name="preference_user">User settings</string>
+	<string name="preference_user_displayname">Display Name</string>
+	<string name="preference_user_password">Change password</string>
+	<string name="preference_user_signout">Sign out</string>
+	<string name="preference_texteditor">Text Editor</string>
+	<string name="preference_texteditor_markdown">Enable Markdown</string>
+	<string name="preference_texteditor_markdown_on">Your messages will be formatted with Markdown before being sent</string>
+	<string name="preference_texteditor_markdown_off">Your messages will be sent as-is, without any changes applied</string>
+	<string name="preference_texteditor_typing">Typing Indicator</string>
+	<string name="preference_texteditor_typing_off">Other people won\'t know if you\'re typing or not</string>
+	<string name="preference_texteditor_typing_on">Other people will know if you\'re typing or not</string>
+	<string name="preference_general">General</string>
+	<string name="preference_preferences">Preferences</string>
+	<string name="preference_developer">Developer Settings</string>
 </resources>

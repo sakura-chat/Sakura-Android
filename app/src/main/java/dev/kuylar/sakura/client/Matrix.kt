@@ -421,6 +421,7 @@ class Matrix {
 		context: Context,
 		replyTo: EventId? = null,
 		attachment: AttachmentInfo? = null,
+		useMarkdown: Boolean = true
 	) {
 		if (!this::client.isInitialized) {
 			Log.w("MatrixClient", "sendMessage() called before client was initialized.")
@@ -432,9 +433,9 @@ class Matrix {
 			if (attachmentFlow != null) {
 				when (attachment.contentType.split('/')[0]) {
 					"image" -> image(
-						body = markdown.inputToPlaintext(msg),
-						format = "org.matrix.custom.html",
-						formattedBody = markdown.inputToHtml(msg),
+						body = if (useMarkdown) markdown.inputToPlaintext(msg) else msg,
+						format = if (useMarkdown) "org.matrix.custom.html" else null,
+						formattedBody = if (useMarkdown) markdown.inputToHtml(msg) else null,
 						image = attachmentFlow,
 						fileName = attachment.name,
 						type = ContentType.parse(attachment.contentType),
@@ -442,9 +443,9 @@ class Matrix {
 					)
 
 					"video" -> video(
-						body = markdown.inputToPlaintext(msg),
-						format = "org.matrix.custom.html",
-						formattedBody = markdown.inputToHtml(msg),
+						body = if (useMarkdown) markdown.inputToPlaintext(msg) else msg,
+						format = if (useMarkdown) "org.matrix.custom.html" else null,
+						formattedBody = if (useMarkdown) markdown.inputToHtml(msg) else null,
 						video = attachmentFlow,
 						fileName = attachment.name,
 						type = ContentType.parse(attachment.contentType),
@@ -453,9 +454,9 @@ class Matrix {
 					)
 
 					else -> file(
-						body = markdown.inputToPlaintext(msg),
-						format = "org.matrix.custom.html",
-						formattedBody = markdown.inputToHtml(msg),
+						body = if (useMarkdown) markdown.inputToPlaintext(msg) else msg,
+						format = if (useMarkdown) "org.matrix.custom.html" else null,
+						formattedBody = if (useMarkdown) markdown.inputToHtml(msg) else null,
 						file = attachmentFlow,
 						fileName = attachment.name,
 						type = ContentType.parse(attachment.contentType),
@@ -464,9 +465,9 @@ class Matrix {
 				}
 			} else {
 				text(
-					body = markdown.inputToPlaintext(msg),
-					format = "org.matrix.custom.html",
-					formattedBody = markdown.inputToHtml(msg)
+					body = if (useMarkdown) markdown.inputToPlaintext(msg) else msg,
+					format = if (useMarkdown) "org.matrix.custom.html" else null,
+					formattedBody = if (useMarkdown) markdown.inputToHtml(msg) else null,
 				)
 			}
 		}

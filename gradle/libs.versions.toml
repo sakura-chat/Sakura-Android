@@ -10,6 +10,7 @@ appcompat = "1.7.1"
 material = "1.13.0"
 activity = "1.12.2"
 constraintlayout = "2.2.1"
+preference = "1.2.1"
 trixnity = "5.1.2-sakura.c"
 lognity = "1.2.1"
 ktor = "3.3.3"
@@ -18,6 +19,7 @@ recyclerviewbuilder = "1.0.1"
 navigationRuntimeKtx = "2.9.6"
 navigationFragmentKtx = "2.9.6"
 navigationUiKtx = "2.9.7"
+slidingpanellayout = "1.2.0"
 glide = "4.16.0"
 overlappingpanels = "0.1.5"
 mentionsedittext = "1.0.1"
@@ -38,6 +40,8 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+androidx-preference = { group = "androidx.preference", name = "preference", version.ref = "preference" }
+androidx-preference-ktx = { group = "androidx.preference", name = "preference-ktx", version.ref = "preference" }
 trixnity-client = { group = "de.connect2x.trixnity", name = "trixnity-client", version.ref = "trixnity" }
 trixnity-client-repository-room = { group = "de.connect2x.trixnity", name = "trixnity-client-repository-room", version.ref = "trixnity" }
 trixnity-client-media-okio = { group = "de.connect2x.trixnity", name = "trixnity-client-media-okio", version.ref = "trixnity" }
@@ -53,6 +57,7 @@ recyclerviewbuilder = { group = "com.github.kuylar", name = "RecyclerViewBuilder
 androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
 androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
 androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigationUiKtx" }
+androidx-slidingpanellayout = { group = "androidx.slidingpanelayout", name = "slidingpanelayout", version.ref = "slidingpanellayout" }
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
 glide-compiler = { group = "com.github.bumptech.glide", name = "ksp", version.ref = "glide" }
 overlappingpanels = { group = "com.github.discord", name = "OverlappingPanels", version.ref = "overlappingpanels" }

@@ -61,6 +61,7 @@ import dev.kuylar.sakura.Utils.getName
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.ActivityMainBinding
+import dev.kuylar.sakura.ui.BackButtonListener
 import dev.kuylar.sakura.ui.adapter.spaces.SpaceTreeListAdapter
 import dev.kuylar.sakura.ui.adapter.spaces.TopLevelSpacesRecyclerAdapter
 import dev.kuylar.sakura.ui.fragment.RoomInfoPanelFragment
@@ -490,7 +491,7 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 
 		navHostFragment.childFragmentManager.fragments.forEach { fragment ->
 			if (fragment is TimelineFragment) {
-				fragment.closeKeyboard()
+				fragment.onBackPressed()
 			}
 		}
 	}
@@ -607,14 +608,14 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 	}
 
 	private fun handleBackPressed() {
-		var pickerClosed = false
+		var fragmentHandled = false
 		navHostFragment.childFragmentManager.fragments.forEach { fragment ->
-			if (fragment is TimelineFragment) {
-				if (fragment.closeKeyboard())
-					pickerClosed = true
+			if (fragment is BackButtonListener) {
+				if (fragment.onBackPressed())
+					fragmentHandled = true
 			}
 		}
-		if (pickerClosed) return
+		if (fragmentHandled) return
 		when (navController.currentDestination?.id) {
 			R.id.nav_room -> {
 				binding.overlappingPanels.openStartPanel()

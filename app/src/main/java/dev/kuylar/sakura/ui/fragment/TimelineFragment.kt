@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ClipData
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
@@ -43,6 +44,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -72,6 +74,7 @@ import dev.kuylar.sakura.client.customevent.MatrixEmote
 import dev.kuylar.sakura.databinding.FragmentTimelineBinding
 import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
 import dev.kuylar.sakura.markdown.MarkdownHandler
+import dev.kuylar.sakura.ui.BackButtonListener
 import dev.kuylar.sakura.ui.adapter.PickerPagerAdapter
 import dev.kuylar.sakura.ui.adapter.timeline.TimelineRecyclerAdapter
 import dev.kuylar.sakura.ui.models.AttachmentInfo
@@ -85,7 +88,7 @@ import kotlin.math.max
 
 @Suppress("EmptyMethod")
 @AndroidEntryPoint
-class TimelineFragment : Fragment(), MenuProvider {
+class TimelineFragment : Fragment(), MenuProvider, BackButtonListener {
 	private lateinit var binding: FragmentTimelineBinding
 	private lateinit var roomId: String
 	private var eventId: String? = null
@@ -97,6 +100,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 	lateinit var markdown: MarkdownHandler
 	private lateinit var timelineAdapter: TimelineRecyclerAdapter
 	private lateinit var visualMediaPicker: ActivityResultLauncher<PickVisualMediaRequest>
+	private lateinit var prefs: SharedPreferences
 	private var isLoadingMore = false
 	private var editingEvent: EventId? = null
 	private var replyingEvent: EventId? = null
@@ -119,6 +123,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 				if (uri != null)
 					loadAttachmentFromUri(uri)
 			}
+		prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
 	}
 
 	override fun onCreateView(
@@ -277,7 +282,8 @@ class TimelineFragment : Fragment(), MenuProvider {
 				val typingNew = !it.isNullOrBlank()
 				if (typing != typingNew) {
 					typing = typingNew
-					client.client.api.room.setTyping(RoomId(roomId), client.userId, typing)
+					if (prefs.getBoolean("textedit_typing", true))
+						client.client.api.room.setTyping(RoomId(roomId), client.userId, typing)
 				}
 			}
 		}
@@ -362,7 +368,8 @@ class TimelineFragment : Fragment(), MenuProvider {
 				client.sendMessage(
 					roomId, msg, requireContext(),
 					replyTo = replyingEvent,
-					attachment = attachment
+					attachment = attachment,
+					useMarkdown = prefs.getBoolean("textedit_markdown", true)
 				)
 				activity?.runOnUiThread {
 					if (replyingEvent != null)
@@ -590,7 +597,7 @@ class TimelineFragment : Fragment(), MenuProvider {
 		}
 	}
 
-	fun closeKeyboard(): Boolean {
+	override fun onBackPressed(): Boolean {
 		requireContext().getSystemService<InputMethodManager>()
 			?.hideSoftInputFromWindow(binding.input.windowToken, 0)
 		if (binding.picker.isVisible) {
