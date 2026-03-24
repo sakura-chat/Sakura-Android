@@ -105,7 +105,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
@@ -138,8 +137,6 @@ class Matrix {
 	private var loadedRecentEmoji = false
 	lateinit var pushRules: Flow<PushRuleSet>
 	private val roomCache = HashMap<RoomId, StateFlow<Room?>>()
-	var spaceTree: Flow<List<MatrixSpace>> = emptyFlow()
-		private set
 	val clientScope = MainScope()
 
 	constructor(context: Context, from: String) {
@@ -176,7 +173,6 @@ class Matrix {
 		// Load this beforehand so we always have a list of recent emojis in hand
 		getRecentEmojis()
 		listenForPushRules()
-		//spaceTree = getSpaceTreeFlow()
 	}
 
 	suspend fun login(
@@ -202,7 +198,6 @@ class Matrix {
 		).getOrThrow()
 		getRecentEmojis()
 		listenForPushRules()
-		//spaceTree = getSpaceTreeFlow()
 	}
 
 	suspend fun initializeRoomCache() {
@@ -338,7 +333,9 @@ class Matrix {
 	fun getSpaceChildren(room: Room?): List<Room> {
 		if (room == null) return emptyList()
 		if (room.type != CreateEventContent.RoomType.Space) return emptyList()
-		return (room.childEvents?.keys ?: emptySet()).mapNotNull { roomCache[RoomId(it)]?.value }
+		return (room.childEvents ?: emptyMap())
+			.filterNot { it.value.via.isEmpty() }
+			.mapNotNull { roomCache[RoomId(it.key)]?.value }
 	}
 
 	@OptIn(ExperimentalTime::class)
