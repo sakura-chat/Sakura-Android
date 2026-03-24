@@ -72,7 +72,9 @@
 					android:layout_height="wrap_content"
 					android:ellipsize="end"
 					android:maxLines="1"
-					tools:text="!abcdefghijkl:kuylar.dev" />
+					android:visibility="gone"
+					tools:text="!abcdefghijkl:kuylar.dev"
+					tools:visibility="visible" />
 			</LinearLayout>
 
 			<TextView
