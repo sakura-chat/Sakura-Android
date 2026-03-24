@@ -1,7 +1,6 @@
 package dev.kuylar.sakura.ui.fragment.notification
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,6 +15,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.discord.panels.PanelsChildGestureRegionObserver
 import com.google.android.material.divider.MaterialDividerItemDecoration
 import dagger.hilt.android.AndroidEntryPoint
+import de.connect2x.trixnity.client.notification.Notification
+import de.connect2x.trixnity.client.store.originTimestamp
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentNotificationBinding
 import dev.kuylar.sakura.markdown.MarkdownHandler
@@ -72,9 +73,12 @@ class NotificationFragment : Fragment() {
 		viewLifecycleOwner.lifecycleScope.launch {
 			viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
 				viewModel.notifications.collect { items ->
-					Log.i("NotificationFragment", "Collected ${items.size} items (${items.count { it.dismissed }} dismissed)")
 					if (this@NotificationFragment::adapter.isInitialized)
-						adapter.submitList(items.filterNot { it.dismissed }.sortedBy { it.sortKey })
+						adapter.submitList(items.filterNot { it.dismissed }.sortedWith(compareBy() {
+							(it as? Notification.Message)?.timelineEvent?.originTimestamp
+								?: (it as? Notification.State)?.stateEvent?.originTimestamp
+								?: it.sortKey
+						}))
 				}
 			}
 		}
