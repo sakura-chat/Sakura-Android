@@ -935,13 +935,15 @@ class Matrix {
 		}
 	}
 
-	suspend fun markRead(roomId: RoomId, eventId: EventId) {
+	suspend fun markRead(roomId: RoomId, eventId: EventId? = null) {
 		val markedUnreadEventContent =
 			client.api.room.getAccountData<MarkedUnreadEventContent>(roomId, client.userId)
 				.getOrNull()
 		if (markedUnreadEventContent != null)
 			client.api.room.setAccountData(MarkedUnreadEventContent(false), roomId, client.userId)
-		client.api.room.setReceipt(roomId, eventId)
+		if (eventId != null)
+			client.api.room.setReceipt(roomId, eventId)
+		client.notification.markRead(roomId)
 	}
 
 	fun getNotifications() = client.notification.getAll()

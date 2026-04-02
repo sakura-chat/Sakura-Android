@@ -1,6 +1,7 @@
 package dev.kuylar.sakura.ui.adapter.spaces
 
 import android.graphics.Color
+import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
@@ -147,7 +148,6 @@ class SpaceTreeListAdapter(
 			binding.avatar.indicatorColor =
 				Presence.OFFLINE.getIndicatorColor(binding.avatar.context)
 
-			// TODO: if room.isDirect, show avatar & presence
 			lifecycleScope.launch {
 				room.getName(binding.title.context, client).let {
 					binding.title.text = it
@@ -161,10 +161,16 @@ class SpaceTreeListAdapter(
 				binding.root.setOnClickListener {
 					changeRoom(room)
 				}
+				binding.root.setOnLongClickListener {
+					lifecycleScope.launch {
+						client.markRead(room.roomId)
+					}
+					true
+				}
 				if (room.roomId != selectedRoom) {
 					binding.container.setBackgroundColor(Color.TRANSPARENT)
 				} else {
-					val typedValue = android.util.TypedValue()
+					val typedValue = TypedValue()
 					binding.root.context.theme.resolveAttribute(
 						MaterialR.attr.colorSecondaryContainer, typedValue, true
 					)
