@@ -42,7 +42,8 @@ import javax.inject.Inject
 class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 	private lateinit var binding: FragmentProfileBottomSheetBinding
 	private val userId: UserId by lazy { UserId(arguments?.getString("userId") ?: "") }
-	private val roomId: RoomId by lazy { RoomId(arguments?.getString("roomId") ?: "") }
+	private val roomId: RoomId? by lazy { arguments?.getString("roomId")?.let { RoomId(it) } }
+	private val roomProfile by lazy { roomId != null }
 
 	@Inject
 	lateinit var client: Matrix
@@ -67,7 +68,7 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 		super.onViewCreated(view, savedInstanceState)
 
-		if (userId.full.isBlank() || roomId.full.isBlank()) {
+		if (userId.full.isBlank()) {
 			dismiss()
 			return
 		}
@@ -81,15 +82,6 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 				}
 			}
 		}
-		memberJob = suspendThread {
-			client.client.room.getState<MemberEventContent>(roomId, userId.full).collect {
-				it?.content?.let { user ->
-					activity?.runOnUiThread {
-						updateMember(user)
-					}
-				}
-			}
-		}
 		profileJob = suspendThread {
 			// TODO: Update to the new extensible profile API
 			client.client.api.baseClient.request(ExtendedGetProfile(userId)).getOrNull()
@@ -98,28 +90,39 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 						updateProfile(profile)
 					}
 				}
-			client.client.api.baseClient
 		}
-		memberJob = suspendThread {
-			client.client.user.getPowerLevel(roomId, userId).collect { powerLevel ->
-				activity?.runOnUiThread {
-					updatePowerLevel(powerLevel)
+		if (roomProfile) {
+			memberJob = suspendThread {
+				client.client.room.getState<MemberEventContent>(roomId!!, userId.full).collect {
+					it?.content?.let { user ->
+						activity?.runOnUiThread {
+							updateMember(user)
+						}
+					}
+				}
+			}
+			memberJob = suspendThread {
+				client.client.user.getPowerLevel(roomId!!, userId).collect { powerLevel ->
+					activity?.runOnUiThread {
+						updatePowerLevel(powerLevel)
+					}
+				}
+			}
+			roomJob = suspendThread {
+				client.client.room.getById(roomId!!).collect {
+					it?.let { room ->
+						updateRoom(room)
+					}
 				}
 			}
 		}
+
 		noteJob = suspendThread {
 			client.client.user.getAccountData<UserNoteEventContent>().collect {
 				it?.let { note ->
 					activity?.runOnUiThread {
 						updateUserNote(note)
 					}
-				}
-			}
-		}
-		roomJob = suspendThread {
-			client.client.room.getById(roomId).collect {
-				it?.let { room ->
-					updateRoom(room)
 				}
 			}
 		}
@@ -212,10 +215,21 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 			binding.userAbout.visibility = View.VISIBLE
 			binding.userAbout.text = profile.bio
 		}
+
+		if (!roomProfile) {
+			binding.avatar.loadAvatar(profile.avatarUrl, profile.displayName ?: "")
+			binding.displayname.text = profile.displayName
+			if (profile.displayName == userId.full) {
+				binding.username.visibility = View.GONE
+			} else {
+				binding.username.text = userId.full
+			}
+		}
 	}
 
 	private fun updatePowerLevel(powerLevel: PowerLevel) {
 		binding.roomName.visibility = View.VISIBLE
+		binding.roleChip.visibility = View.VISIBLE
 		binding.roleChip.text = when (powerLevel) {
 			PowerLevel.Creator -> getString(R.string.power_level_creator)
 			is PowerLevel.User -> when {

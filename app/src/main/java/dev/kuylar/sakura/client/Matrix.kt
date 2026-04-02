@@ -227,6 +227,11 @@ class Matrix {
 	fun getRoom(roomId: String) = getRoom(RoomId(roomId))
 	fun getRoomFlow(roomId: RoomId) = roomCache[roomId]
 
+	fun getRoomByAlias(alias: String): Room? {
+		// TODO: Can't get room aliases for now
+		return null
+	}
+
 	fun getTimeline(onStateChange: suspend (TimelineStateChange<TimelineItem.Event>) -> Unit) =
 		client.room.getTimeline(onStateChange) {
 			val snapshot = it.first()

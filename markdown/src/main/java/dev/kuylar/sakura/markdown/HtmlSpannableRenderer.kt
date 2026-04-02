@@ -34,7 +34,7 @@ import org.jsoup.nodes.TextNode
 import com.google.android.material.R as MaterialR
 
 class HtmlSpannableRenderer {
-	private val allowedUrlSchemes = listOf("https", "http", "ftp", "mailto", "magnet")
+	private val allowedUrlSchemes = listOf("https", "http", "ftp", "mailto", "magnet", "dev.kuylar.sakura")
 	private val allowedImageUrlSchemes = listOf("mxc")
 	fun fromHtml(html: String?, textView: TextView): Spannable {
 		if (html == null) return SpannableString("")
@@ -121,7 +121,8 @@ class HtmlSpannableRenderer {
 			"a" -> {
 				visitChildren(state, element.childNodes())
 				val href = element.attr("href").toUri()
-				if (allowedUrlSchemes.contains(href.scheme)) {
+				if (href.scheme == "matrix") handleMatrixHyperlink(state, element, start)
+				else if (allowedUrlSchemes.contains(href.scheme)) {
 					if (href.host == "matrix.to") {
 						val id = href.fragment?.substringAfter('/') ?: ""
 						if (id.firstOrNull() == '@') {
@@ -138,6 +139,13 @@ class HtmlSpannableRenderer {
 								state.builder.length,
 								Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
 							)
+							state.builder.setSpan(
+								URLSpan("matrix:u/${id.trimStart('@')}"),
+								start,
+								state.builder.length,
+								Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+							)
+							return
 						}
 					}
 					state.builder.setSpan(
@@ -391,6 +399,16 @@ class HtmlSpannableRenderer {
 				state.builder.append(element.text())
 			}
 		}
+	}
+
+	private fun handleMatrixHyperlink(state: State, element: Element, start: Int) {
+		val href = element.attr("href").toUri()
+		state.builder.setSpan(
+			URLSpan(href.toString()),
+			start,
+			state.builder.length,
+			Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+		)
 	}
 
 	private fun String.toColorIntSafe(): Int {

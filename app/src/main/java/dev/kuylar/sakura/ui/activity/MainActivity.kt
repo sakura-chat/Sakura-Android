@@ -55,7 +55,9 @@ import dagger.hilt.android.AndroidEntryPoint
 import de.connect2x.trixnity.client.store.Room
 import de.connect2x.trixnity.client.verification.ActiveDeviceVerification
 import de.connect2x.trixnity.clientserverapi.client.SyncState
+import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
+import dev.kuylar.sakura.MatrixUrlParser
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.getName
 import dev.kuylar.sakura.Utils.suspendThread
@@ -66,6 +68,7 @@ import dev.kuylar.sakura.ui.adapter.spaces.SpaceTreeListAdapter
 import dev.kuylar.sakura.ui.adapter.spaces.TopLevelSpacesRecyclerAdapter
 import dev.kuylar.sakura.ui.fragment.RoomInfoPanelFragment
 import dev.kuylar.sakura.ui.fragment.TimelineFragment
+import dev.kuylar.sakura.ui.fragment.bottomsheet.ProfileBottomSheetFragment
 import dev.kuylar.sakura.ui.fragment.verification.VerificationBottomSheetFragment
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -322,16 +325,19 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		(binding.roomsPanel.roomsRecycler.adapter as? SpaceTreeListAdapter)?.changeSpace(id)
 	}
 
-	fun openRoomTimeline(room: Room) = openRoomTimeline(room.roomId)
-	fun openRoomTimeline(roomId: RoomId) = openRoomTimeline(roomId.full)
-	fun openRoomTimeline(roomId: String) {
+	fun openRoomTimeline(room: Room, eventId: EventId? = null) = openRoomTimeline(room.roomId, eventId)
+	fun openRoomTimeline(roomId: RoomId, eventId: EventId? = null) = openRoomTimeline(roomId.full, eventId)
+	fun openRoomTimeline(roomId: String, eventId: EventId? = null) {
 		getSharedPreferences("main", MODE_PRIVATE).edit {
 			putString("selectedRoomId", roomId)
 		}
 		binding.overlappingPanels.closePanels()
 		navController.navigate(
 			R.id.nav_room,
-			bundleOf("roomId" to roomId),
+			bundleOf(
+				"roomId" to roomId,
+				"eventId" to eventId?.full
+			),
 			NavOptions.Builder().apply {
 				setLaunchSingleTop(true)
 			}.build()
@@ -434,6 +440,11 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		return typedValue.data
 	}
 
+	override fun onNewIntent(intent: Intent) {
+		super.onNewIntent(intent)
+		handleIntent(intent)
+	}
+
 	override fun onNewIntent(intent: Intent, caller: ComponentCaller) {
 		super.onNewIntent(intent, caller)
 		handleIntent(intent)
@@ -443,17 +454,67 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		return if (intent.action == Intent.ACTION_VIEW) {
 			val uri = intent.data ?: return false
 
-			when (uri.host) {
-				"room" -> {
-					uri.lastPathSegment?.let { roomId ->
-						openRoomTimeline(roomId)
-						true
-					} ?: false
-				}
+			when (uri.scheme) {
+				"dev.kuylar.sakura" -> {
+					when (uri.host) {
+						"room" -> {
+							uri.lastPathSegment?.let { roomId ->
+								autoNavigate = false
+								openRoomTimeline(roomId)
+								true
+							} ?: false
+						}
 
+						else -> false
+					}
+				}
+				"matrix" -> {
+					when (val res = MatrixUrlParser.parse(uri)) {
+						is MatrixUrlParser.Result.UserResult -> {
+							val f = ProfileBottomSheetFragment()
+							f.arguments = Bundle().apply {
+								putString("userId", res.user.full)
+							}
+							f.show(supportFragmentManager, "profileBottomSheet")
+							true
+						}
+
+						is MatrixUrlParser.Result.RoomAliasResult -> {
+							val room = client.getRoomByAlias(res.alias)
+							if (room == null) {
+								Toast.makeText(
+									this,
+									"room not found, should show join dialog",
+									Toast.LENGTH_LONG
+								).show()
+							} else {
+								openRoomTimeline(room)
+							}
+							true
+						}
+
+						is MatrixUrlParser.Result.RoomIdResult -> {
+							val room = client.getRoom(res.room) ?: return false
+							openRoomTimeline(room)
+							true
+						}
+
+						is MatrixUrlParser.Result.EventIdResult -> {
+							val room = client.getRoom(res.room) ?: return false
+							openRoomTimeline(room, res.event)
+							true
+						}
+
+						null -> false
+
+						else -> {
+							Toast.makeText(this, "Unparseable URL: $uri", Toast.LENGTH_LONG).show()
+							true
+						}
+					}
+				}
 				else -> false
 			}
-
 		} else {
 			intent.getStringExtra("roomId")?.let {
 				autoNavigate = false

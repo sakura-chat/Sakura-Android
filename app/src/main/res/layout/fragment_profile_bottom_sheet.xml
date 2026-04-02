@@ -191,7 +191,9 @@
 			android:layout_height="wrap_content"
 			android:layout_marginHorizontal="16dp"
 			android:layout_marginTop="8dp"
-			tools:text="Room Name" />
+			android:visibility="gone"
+			tools:text="Room Name"
+			tools:visibility="visible" />
 
 		<com.google.android.material.chip.Chip
 			android:id="@+id/roleChip"
@@ -199,7 +201,9 @@
 			android:layout_height="wrap_content"
 			android:layout_marginHorizontal="16dp"
 			android:layout_marginVertical="4dp"
-			tools:text="Admin" />
+			android:visibility="gone"
+			tools:text="Admin"
+			tools:visibility="visible" />
 
 		<com.google.android.material.textfield.TextInputLayout
 			android:id="@+id/note"
