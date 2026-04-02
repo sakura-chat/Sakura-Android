@@ -661,7 +661,8 @@ class TimelineFragment : Fragment(), MenuProvider, BackButtonListener {
 	}
 
 	override fun onDestroy() {
-		timelineAdapter.dispose()
+		if (this::timelineAdapter.isInitialized)
+			timelineAdapter.dispose()
 		typingUsersJob?.cancel()
 		super.onDestroy()
 	}
