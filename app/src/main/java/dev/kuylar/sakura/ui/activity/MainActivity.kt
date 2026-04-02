@@ -162,6 +162,7 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 					OverlappingPanelsLayout.Panel.CENTER -> {
 						handleBackPressed()
 					}
+
 					OverlappingPanelsLayout.Panel.END -> binding.overlappingPanels.closePanels()
 				}
 			}
@@ -176,12 +177,14 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 
 		binding.roomsPanel.spacesRecycler.layoutManager = LinearLayoutManager(this)
 		binding.roomsPanel.roomsRecycler.layoutManager = LinearLayoutManager(this)
-		binding.overlappingPanels.registerStartPanelStateListeners(object: OverlappingPanelsLayout.PanelStateListener {
+		binding.overlappingPanels.registerStartPanelStateListeners(object :
+			OverlappingPanelsLayout.PanelStateListener {
 			override fun onPanelStateChange(panelState: PanelState) {
 				onStartPanelStateChange(panelState)
 			}
 		})
-		binding.overlappingPanels.registerEndPanelStateListeners(object: OverlappingPanelsLayout.PanelStateListener {
+		binding.overlappingPanels.registerEndPanelStateListeners(object :
+			OverlappingPanelsLayout.PanelStateListener {
 			override fun onPanelStateChange(panelState: PanelState) {
 				onEndPanelStateChange(panelState)
 			}
@@ -295,7 +298,9 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 			TopLevelSpacesRecyclerAdapter(this, client, selectedSpace)
 		binding.roomsPanel.roomsRecycler.adapter = SpaceTreeListAdapter(this, client, selectedRoom)
 		if (autoNavigate) {
-			if (!handleIntent(intent) && selectedRoom != null) openRoomTimeline(selectedRoom)
+			if (!handleIntent(intent) && selectedRoom != null
+				&& navController.currentDestination?.id == R.id.nav_empty
+			) openRoomTimeline(selectedRoom)
 		}
 	}
 
