@@ -1026,14 +1026,11 @@ class Matrix {
 		private fun relevantEventFilter(event: ClientEvent.RoomEvent<*>): Boolean {
 			if (event !is ClientEvent.RoomEvent.MessageEvent) return false
 			val content = event.content
-			if (content is RoomMessageEventContent) {
-				// Don't mark edits as unread messages
-				if (content.relatesTo?.relationType == RelationType.Replace) return false
-				// Don't mark reactions as unread messages
-				if (content.relatesTo?.relationType == RelationType.Annotation) return false
-				return true
-			}
-			return false
+			// Don't mark edits as unread messages
+			if (content.relatesTo?.relationType == RelationType.Replace) return false
+			// Don't mark reactions as unread messages
+			if (content.relatesTo?.relationType == RelationType.Annotation) return false
+			return true
 		}
 
 		fun startLoginFlow(homeserver: Uri): MatrixClientServerApiClientImpl {
