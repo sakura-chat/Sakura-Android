@@ -297,6 +297,7 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		binding.roomsPanel.spacesRecycler.adapter =
 			TopLevelSpacesRecyclerAdapter(this, client, selectedSpace)
 		binding.roomsPanel.roomsRecycler.adapter = SpaceTreeListAdapter(this, client, selectedRoom)
+		openSpaceTree(selectedSpace)
 		if (autoNavigate) {
 			if (!handleIntent(intent) && selectedRoom != null
 				&& navController.currentDestination?.id == R.id.nav_empty
