@@ -12,6 +12,8 @@ import android.provider.Settings
 import android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
 import android.util.Log
 import android.util.TypedValue
+import android.view.Menu
+import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
@@ -27,6 +29,7 @@ import androidx.core.content.edit
 import androidx.core.content.getSystemService
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.os.bundleOf
+import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.drawToBitmap
@@ -77,7 +80,7 @@ import com.google.android.material.R as MaterialR
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.GestureRegionsListener,
-	NavigationBarView.OnItemSelectedListener {
+	NavigationBarView.OnItemSelectedListener, MenuProvider {
 	@Inject
 	lateinit var client: Matrix
 	private lateinit var binding: ActivityMainBinding
@@ -142,16 +145,7 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 		binding.toolbar.setNavigationOnClickListener {
 			handleBackPressed()
 		}
-		binding.toolbar.setOnMenuItemClickListener {
-			return@setOnMenuItemClickListener when (it.itemId) {
-				R.id.menu_users -> {
-					binding.overlappingPanels.openEndPanel()
-					true
-				}
-
-				else -> false
-			}
-		}
+		addMenuProvider(this, this, Lifecycle.State.RESUMED)
 
 		binding.bottomNav.setupWithNavController(navController)
 		binding.bottomNav.setOnItemSelectedListener(this)
@@ -278,6 +272,17 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 				}
 			}
 		}
+	}
+
+	override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {}
+
+	override fun onMenuItemSelected(menuItem: MenuItem) = when (menuItem.itemId) {
+		R.id.menu_users -> {
+			binding.overlappingPanels.openEndPanel()
+			true
+		}
+
+		else -> false
 	}
 
 	private fun onClientReady() {
