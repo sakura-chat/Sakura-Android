@@ -630,30 +630,36 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 			layout(parent.left, parent.height - measuredHeight, parent.right, parent.height)
 		}
 
-		val drawable = drawToBitmap().toDrawable(context.resources)
-		drawable.setBounds(left, parent.height, right, parent.height + height)
-		parent.overlay.add(drawable)
-		ValueAnimator.ofInt(parent.height, top).apply {
-			startDelay = 100L
-			duration = 300L
-			interpolator = AnimationUtils.loadInterpolator(
-				context,
-				android.R.interpolator.linear_out_slow_in
-			)
-			addUpdateListener {
-				val newTop = it.animatedValue as Int
-				drawable.setBounds(left, newTop, right, newTop + height)
-			}
-			doOnEnd {
-				parent.overlay.remove(drawable)
-				visibility = View.VISIBLE
-				opening = false
-				if (hideAsSoonAsOpened) {
-					binding.bottomNav.hide()
-					hideAsSoonAsOpened = false
+		// Happened to crash the app once. Putting a safeguard anyway
+		// logs: mxc://kuylar.dev/iqsXFZBfXNdLTCSsCRpiYxjA
+		try {
+			val drawable = drawToBitmap().toDrawable(context.resources)
+			drawable.setBounds(left, parent.height, right, parent.height + height)
+			parent.overlay.add(drawable)
+			ValueAnimator.ofInt(parent.height, top).apply {
+				startDelay = 100L
+				duration = 300L
+				interpolator = AnimationUtils.loadInterpolator(
+					context,
+					android.R.interpolator.linear_out_slow_in
+				)
+				addUpdateListener {
+					val newTop = it.animatedValue as Int
+					drawable.setBounds(left, newTop, right, newTop + height)
 				}
+				doOnEnd {
+					parent.overlay.remove(drawable)
+					visibility = View.VISIBLE
+					opening = false
+					if (hideAsSoonAsOpened) {
+						binding.bottomNav.hide()
+						hideAsSoonAsOpened = false
+					}
+				}
+				start()
 			}
-			start()
+		} catch (_: Exception) {
+
 		}
 	}
 
