@@ -4,6 +4,7 @@
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
 	android:layout_marginBottom="80dp"
-	android:paddingHorizontal="16dp"
+	android:clipToPadding="false"
+	android:paddingVertical="8dp"
 	tools:context=".ui.fragment.settings.SettingsCrashReportsFragment"
 	tools:listitem="@layout/item_crash_report" />
