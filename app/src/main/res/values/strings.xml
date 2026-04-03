@@ -152,4 +152,7 @@
 	<string name="preference_developer_crash">Crash App</string>
 	<string name="title_crash_reports">Crash Reports</string>
 	<string name="crashreport_upload">Upload to homeserver</string>
+	<string name="preference_developer_crashreports_clear_all">Clear all reports</string>
+	<string name="preference_developer_crashreports_export">Export as ZIP file</string>
+	<string name="preference_developer_crashreports_share">Send all crash reports to...</string>
 </resources>

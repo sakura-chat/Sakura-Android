@@ -3,13 +3,22 @@ package dev.kuylar.sakura.ui.fragment.settings
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.getSystemService
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import de.connect2x.trixnity.client.media
@@ -17,6 +26,7 @@ import de.connect2x.trixnity.utils.toByteArrayFlow
 import dev.kuylar.recyclerviewbuilder.ExtensibleRecyclerAdapter
 import dev.kuylar.recyclerviewbuilder.RecyclerViewBuilder
 import dev.kuylar.sakura.CrashHandler
+import dev.kuylar.sakura.R
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentSettingsCrashReportsBinding
 import dev.kuylar.sakura.databinding.ItemCrashReportBinding
@@ -24,17 +34,33 @@ import io.ktor.http.ContentType
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.io.FileInputStream
 import java.nio.file.Files
+import java.nio.file.attribute.FileTime
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import javax.inject.Inject
 import kotlin.io.path.Path
 
 @AndroidEntryPoint
-class SettingsCrashReportsFragment : Fragment() {
+class SettingsCrashReportsFragment : Fragment(), MenuProvider {
 	private lateinit var binding: FragmentSettingsCrashReportsBinding
 	private lateinit var adapter: ExtensibleRecyclerAdapter
 
 	@Inject
 	lateinit var client: Matrix
+
+	private val exportFilePicker = registerForActivityResult(
+		ActivityResultContracts.CreateDocument("application/zip")
+	) { treeUri ->
+		if (treeUri != null) {
+			requireContext().contentResolver.takePersistableUriPermission(
+				treeUri,
+				Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+			)
+			exportCrashReportsToDirectory(treeUri)
+		}
+	}
 
 	@SuppressLint("SetTextI18n")
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -49,14 +75,21 @@ class SettingsCrashReportsFragment : Fragment() {
 				binding.upload.setOnClickListener { upload(item, it) }
 				binding.delete.setOnClickListener { delete(item) }
 			}
+			.setMaterialDivider()
 			.build(binding.root)
 		refreshItems()
+
+		val menuHost: MenuHost = requireActivity()
+		menuHost.addMenuProvider(
+			this,
+			viewLifecycleOwner,
+			Lifecycle.State.RESUMED
+		)
 	}
 
 	private fun refreshItems() {
 		adapter.clearItems()
-		File(requireContext().filesDir, "crashes").apply { mkdirs() }
-			.listFiles { it.nameWithoutExtension.startsWith("crash_") && it.extension == "json" }
+		getAllFiles()
 			?.map {
 				Pair(
 					it.absolutePath,
@@ -125,5 +158,48 @@ class SettingsCrashReportsFragment : Fragment() {
 	): View {
 		binding = FragmentSettingsCrashReportsBinding.inflate(inflater, container, false)
 		return binding.root
+	}
+
+	override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+		menuInflater.inflate(R.menu.crash_logs, menu)
+	}
+
+	private fun getAllFiles() = File(requireContext().filesDir, "crashes").apply { mkdirs() }
+		.listFiles { it.nameWithoutExtension.startsWith("crash_") && it.extension == "json" }
+
+	override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+		return when (menuItem.itemId) {
+			R.id.export -> {
+				val files = getAllFiles()
+				if (!files.isNullOrEmpty()) exportFilePicker.launch("sakura_crashes.zip")
+				true
+			}
+
+			R.id.clear_all -> {
+				getAllFiles()?.forEach { it.delete() }
+				refreshItems()
+				true
+			}
+
+			else -> false
+		}
+	}
+
+	private fun exportCrashReportsToDirectory(uri: Uri) {
+		val files = getAllFiles()
+		if (files.isNullOrEmpty()) return
+
+		context?.contentResolver?.openOutputStream(uri)?.use { output ->
+			ZipOutputStream(output).use { zip ->
+				files.forEach { file ->
+					val entry = ZipEntry(file.name)
+					zip.putNextEntry(entry)
+					FileInputStream(file).use { fileStream -> fileStream.copyTo(zip) }
+					entry.creationTime = FileTime.fromMillis(file.lastModified())
+					entry.lastModifiedTime = FileTime.fromMillis(file.lastModified())
+					zip.closeEntry()
+				}
+			}
+		}
 	}
 }

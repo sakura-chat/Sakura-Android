@@ -1,54 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
 	xmlns:tools="http://schemas.android.com/tools"
 	android:layout_width="match_parent"
 	android:layout_height="wrap_content"
-	android:layout_marginTop="8dp">
+	android:layout_marginTop="8dp"
+	android:orientation="vertical"
+	android:paddingVertical="8dp">
 
-	<LinearLayout
+	<TextView
+		android:id="@+id/title"
+		style="?textAppearanceTitleMedium"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:orientation="vertical"
-		android:paddingHorizontal="16dp"
-		android:paddingVertical="8dp">
+		tools:text="NullReferenceException" />
 
-		<TextView
-			android:id="@+id/title"
-			style="?textAppearanceTitleMedium"
-			android:layout_width="match_parent"
+	<TextView
+		android:id="@+id/summary"
+		style="?textAppearanceBodyMedium"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginVertical="4dp"
+		tools:text="@tools:sample/lorem" />
+
+	<com.google.android.material.button.MaterialButtonGroup
+		style="@style/Widget.Material3.MaterialButtonGroup.Connected"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content">
+
+		<Button
+			android:id="@+id/upload"
+			android:layout_width="0dp"
 			android:layout_height="wrap_content"
-			tools:text="NullReferenceException" />
+			android:layout_weight="1"
+			android:text="@string/crashreport_upload" />
 
-		<TextView
-			android:id="@+id/summary"
-			style="?textAppearanceBodyMedium"
-			android:layout_width="match_parent"
+		<Button
+			android:id="@+id/delete"
+			style="?materialIconButtonFilledTonalStyle"
+			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:layout_marginVertical="4dp"
-			tools:text="@tools:sample/lorem" />
+			android:paddingHorizontal="16dp"
+			app:icon="@drawable/ic_delete" />
+	</com.google.android.material.button.MaterialButtonGroup>
 
-		<com.google.android.material.button.MaterialButtonGroup
-			style="@style/Widget.Material3.MaterialButtonGroup.Connected"
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content">
-
-			<Button
-				android:id="@+id/upload"
-				android:layout_width="0dp"
-				android:layout_height="wrap_content"
-				android:layout_weight="1"
-				android:text="@string/crashreport_upload" />
-
-			<Button
-				android:id="@+id/delete"
-				style="?materialIconButtonFilledTonalStyle"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:paddingHorizontal="16dp"
-				app:icon="@drawable/ic_delete" />
-		</com.google.android.material.button.MaterialButtonGroup>
-
-	</LinearLayout>
-
-</com.google.android.material.card.MaterialCardView>
+</LinearLayout>
