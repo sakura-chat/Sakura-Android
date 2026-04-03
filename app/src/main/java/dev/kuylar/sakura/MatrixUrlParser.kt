@@ -19,6 +19,7 @@ object MatrixUrlParser {
 			.map { Pair(it[0], it[1]) }
 			.groupBy { it.first }
 			.mapValues { it.value.map { e -> e.second } }
+		if (parts.size != 2 && parts.size != 4) return null
 		return when (parts[0]) {
 			"u" -> UserResult(
 				UserId("@${parts[1].trimStart('@')}"),
