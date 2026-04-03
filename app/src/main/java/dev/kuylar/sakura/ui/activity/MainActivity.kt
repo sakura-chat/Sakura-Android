@@ -295,7 +295,11 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 				return@addOnCompleteListener
 			}
 			suspendThread {
-				client.registerFcmPusher(it.result)
+				try {
+					client.registerFcmPusher(it.result)
+				} catch (e: Exception) {
+					Log.e("MainActivity", "Failed to register FCM pusher!", e)
+				}
 			}
 		}
 		val sp = getSharedPreferences("main", MODE_PRIVATE)

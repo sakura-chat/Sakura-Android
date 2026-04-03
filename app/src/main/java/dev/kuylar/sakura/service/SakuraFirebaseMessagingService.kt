@@ -59,7 +59,11 @@ class SakuraFirebaseMessagingService : FirebaseMessagingService() {
 		Log.i("SakuraFirebaseMessagingService", "Refreshed token: $token")
 		Path(applicationContext.filesDir.absolutePath, "fcm_token").writeText("$token\n")
 		suspendThread {
-			client.registerFcmPusher(token)
+			try {
+				client.registerFcmPusher(token)
+			} catch (e: Exception) {
+				Log.e("MainActivity", "Failed to register FCM pusher!", e)
+			}
 		}
 	}
 
