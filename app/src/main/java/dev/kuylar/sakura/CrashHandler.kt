@@ -37,6 +37,9 @@ object CrashHandler {
 
 	@Suppress("KotlinConstantConditions")
 	private fun writeCrashReport(context: Context, thread: Thread, throwable: Throwable) {
+		// Don't log crash reports if we're in debug mode.
+		// We assume the user has access to the Logcat and can find the logs there
+		if (BuildConfig.DEBUG) return
 		executor.execute {
 			@Suppress("DEPRECATION") val report = CrashReport(
 				SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US).format(Date()),
