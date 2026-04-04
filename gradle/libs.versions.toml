@@ -11,8 +11,9 @@ material = "1.13.0"
 activity = "1.12.2"
 constraintlayout = "2.2.1"
 preference = "1.2.1"
-#noinspection NewerVersionAvailable
+work = "2.11.2"
 # AS thinks that x.x.x is newer than x.x.x-sakura
+#noinspection NewerVersionAvailable
 trixnity = "5.4.0-sakura.a"
 lognity = "1.2.1"
 ktor = "3.3.3"
@@ -29,6 +30,7 @@ google-services = "4.4.4"
 firebase-bom = "34.8.0"
 emoji2 = "1.6.0"
 hilt = "2.59.1"
+hilt-work = "1.3.0"
 commonmark = "0.27.1"
 avatarview = "1.0.7"
 jsoup = "1.22.1"
@@ -44,6 +46,8 @@ androidx-activity = { group = "androidx.activity", name = "activity", version.re
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 androidx-preference = { group = "androidx.preference", name = "preference", version.ref = "preference" }
 androidx-preference-ktx = { group = "androidx.preference", name = "preference-ktx", version.ref = "preference" }
+androidx-work = { group = "androidx.work", name = "work-runtime", version.ref = "work" }
+androidx-work-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
 trixnity-client = { group = "de.connect2x.trixnity", name = "trixnity-client", version.ref = "trixnity" }
 trixnity-client-repository-room = { group = "de.connect2x.trixnity", name = "trixnity-client-repository-room", version.ref = "trixnity" }
 trixnity-client-media-okio = { group = "de.connect2x.trixnity", name = "trixnity-client-media-okio", version.ref = "trixnity" }
@@ -69,6 +73,8 @@ firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging
 emoji2 = { group = "androidx.emoji2", name = "emoji2", version.ref = "emoji2" }
 dagger-hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 dagger-hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hilt-work" }
+androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hilt-work" }
 commonmark = { group = "org.commonmark", name = "commonmark", version.ref = "commonmark" }
 commonmark-ext-gfm-strikethrough = { group = "org.commonmark", name = "commonmark-ext-gfm-strikethrough", version.ref = "commonmark" }
 commonmark-ext-autolink = { group = "org.commonmark", name = "commonmark-ext-autolink", version.ref = "commonmark" }
@@ -79,7 +85,6 @@ kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", vers
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version = "2.3.10" }
 google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
 android-library = { id = "com.android.library", version.ref = "agp" }

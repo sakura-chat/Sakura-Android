@@ -122,15 +122,19 @@ object Utils {
 	}
 
 	fun Presence.toLocalized(context: Context): String = context.getString(toLocalized())
-	fun getEventBodyText(event: TimelineEvent): CharSequence {
+	fun getEventBodyText(event: TimelineEvent, context: Context): CharSequence {
 		val content = event.content?.getOrNull() ?: return event.javaClass.name
 		return when (content) {
-			// TODO: Fill every single one of these
-			is RoomMessageEventContent.TextBased -> content.formattedBodyWithoutFallback
-				?: content.bodyWithoutFallback
+			is RoomMessageEventContent.TextBased -> content.bodyWithoutFallback
 
-			else -> content.javaClass.name
-		}
+			is RoomMessageEventContent.FileBased.Image -> if (content.body != content.fileName) "🖼 " + content.bodyWithoutFallback else context.getString(R.string.notification_attachment_photo)
+			is RoomMessageEventContent.FileBased.Video -> if (content.body != content.fileName) "🎞 " + content.bodyWithoutFallback else context.getString(R.string.notification_attachment_video)
+			is RoomMessageEventContent.FileBased.Audio -> if (content.body != content.fileName) "🎙 " + content.bodyWithoutFallback else context.getString(R.string.notification_attachment_audio)
+			is RoomMessageEventContent.FileBased.File -> if (content.body != content.fileName) "\uD83D\uDCCE " + content.bodyWithoutFallback else context.getString(R.string.notification_attachment)
+
+			is RoomMessageEventContent.Location -> context.getString(R.string.notification_attachment_location)
+			else -> null
+		} ?: content.javaClass.name
 	}
 
 	fun Presence.getIndicatorColor(context: Context): Int = context.getColor(

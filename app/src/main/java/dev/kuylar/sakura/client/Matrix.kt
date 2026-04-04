@@ -130,7 +130,6 @@ class Matrix {
 	@Inject
 	lateinit var markdown: MarkdownHandler
 	private val context: Context
-	private val from: String
 	lateinit var client: MatrixClient
 	private val activeVerifications = HashMap<String, ActiveVerification>()
 	private var recentEmojiCache: List<RecentEmoji> = emptyList()
@@ -139,15 +138,9 @@ class Matrix {
 	private val roomCache = HashMap<RoomId, StateFlow<Room?>>()
 	val clientScope = MainScope()
 
-	constructor(context: Context, from: String) {
-		this.context = context
-		this.from = from
-	}
-
 	@Inject
 	constructor(application: Application) {
 		this.context = application
-		this.from = "Hilt"
 	}
 
 	val initialized: Boolean
@@ -158,7 +151,7 @@ class Matrix {
 			Log.w("MatrixClient", "initialize() called after client was already initialized.")
 			return
 		}
-		Log.i("MatrixClient", "MatrixClient initialized from $from")
+		Log.i("MatrixClient", "MatrixClient initialized")
 		val (repo, media) = getModules(context, type)
 		client = MatrixClient.create(
 			repositoriesModule = repo,
@@ -226,6 +219,10 @@ class Matrix {
 
 	fun getRoom(roomId: String) = getRoom(RoomId(roomId))
 	fun getRoomFlow(roomId: RoomId) = roomCache[roomId]
+
+	fun getRoomBypassCache(roomId: RoomId): Flow<Room?> {
+		return client.room.getById(roomId);
+	}
 
 	fun getRoomByAlias(alias: String): Room? {
 		// TODO: Can't get room aliases for now
@@ -561,7 +558,7 @@ class Matrix {
 			return
 		}
 		client.startSync()
-		Log.i("MatrixClient", "Sync started from $from")
+		Log.i("MatrixClient", "Sync started")
 	}
 
 	suspend fun addSyncStateListener(listener: ((SyncState) -> Unit)) {
@@ -590,11 +587,9 @@ class Matrix {
 				Build.MANUFACTURER + " " + Build.MODEL,
 				"en", // TODO: Get from context or smth
 				PusherData(
-					// TODO: Make sure event_id_only doesn't break everything
-					//format = "event_id_only",
-					url = "https://sakurapush.kuylar.dev/_matrix/push/v1/notify"
+					format = "event_id_only",
+					url = "https://backend.sakurachat.app/_matrix/push/v1/notify"
 				)
-				// TODO: Look into append and profileTag
 			)
 		).getOrThrow()
 	}
