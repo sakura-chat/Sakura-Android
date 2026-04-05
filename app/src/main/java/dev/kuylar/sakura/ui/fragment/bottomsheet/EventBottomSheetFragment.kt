@@ -24,6 +24,7 @@ import de.connect2x.trixnity.client.room
 import de.connect2x.trixnity.client.room.getTimelineEventReactionAggregation
 import de.connect2x.trixnity.client.room.getTimelineEventReplaceAggregation
 import de.connect2x.trixnity.client.store.TimelineEvent
+import de.connect2x.trixnity.client.store.eventId
 import de.connect2x.trixnity.client.store.sender
 import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.EventId
@@ -160,8 +161,9 @@ class EventBottomSheetFragment : BottomSheetDialogFragment() {
 			binding.root.postDelayed(50) { dismiss() }
 		}
 		binding.reactions.setOnClickListener {
-			// TODO: EventReactionsBottomSheetFragment
-			Toast.makeText(requireContext(), "not yet implemented", Toast.LENGTH_LONG).show()
+			val f = EventReactionsBottomSheetFragment()
+			f.arguments = bundleOf("roomId" to roomId?.full, "eventId" to event.eventId.full)
+			f.show(parentFragmentManager, "reactionsBottomSheet")
 			binding.root.postDelayed(50) { dismiss() }
 		}
 		binding.share.setOnClickListener {

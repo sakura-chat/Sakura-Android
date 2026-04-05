@@ -56,6 +56,7 @@ import dev.kuylar.sakura.markdown.MarkdownHandler
 import dev.kuylar.sakura.ui.activity.ViewAttachmentActivity
 import dev.kuylar.sakura.ui.fragment.TimelineFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.EventBottomSheetFragment
+import dev.kuylar.sakura.ui.fragment.bottomsheet.EventReactionsBottomSheetFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.ProfileBottomSheetFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.ReactionBottomSheetFragment
 import io.getstream.avatarview.glide.loadImage
@@ -369,6 +370,15 @@ class TimelineEventViewHolder(
 						} else {
 							client.redactEvent(userReaction.roomId, userReaction.eventId)
 						}
+					}
+				}
+				fragment?.let {
+					reactionBinding.root.setOnLongClickListener { _ ->
+						val f = EventReactionsBottomSheetFragment()
+						f.arguments =
+							bundleOf("roomId" to event.roomId.full, "eventId" to event.eventId.full)
+						f.show(it.parentFragmentManager, "reactionsBottomSheet")
+						true
 					}
 				}
 

@@ -1008,6 +1008,10 @@ class Matrix {
 		}
 	}
 
+	suspend fun getReactions(roomId: RoomId, eventId: EventId): TimelineEventAggregation.Reaction {
+		return client.room.getTimelineEventReactionAggregation(roomId, eventId).first()
+	}
+
 	companion object {
 		@SuppressLint("StaticFieldLeak")
 		private lateinit var instance: Matrix
