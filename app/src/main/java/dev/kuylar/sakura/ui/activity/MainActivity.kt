@@ -581,6 +581,12 @@ class MainActivity : AppCompatActivity(), PanelsChildGestureRegionObserver.Gestu
 				(it as? RoomInfoPanelFragment)?.load()
 			}
 		}
+
+		navHostFragment.childFragmentManager.fragments.forEach { fragment ->
+			if (fragment is TimelineFragment) {
+				fragment.onBackPressed()
+			}
+		}
 	}
 
 	override fun onNavigationItemSelected(item: MenuItem): Boolean {
