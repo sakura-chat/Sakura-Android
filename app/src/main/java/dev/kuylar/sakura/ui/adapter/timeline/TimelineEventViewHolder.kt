@@ -433,8 +433,7 @@ class TimelineEventViewHolder(
 	}
 
 	private fun setAttachment(content: RoomMessageEventContent.FileBased.Image) {
-		val attachmentBinding =
-			setImageAttachment(content.getThumbnailUrl() ?: content.getImageUrl()) ?: return
+		val attachmentBinding = setImageAttachment(content.getImageUrl()) ?: return
 		binding.attachment.removeAllViews()
 		binding.attachment.visibility = View.VISIBLE
 		binding.attachment.addView(attachmentBinding.root)
