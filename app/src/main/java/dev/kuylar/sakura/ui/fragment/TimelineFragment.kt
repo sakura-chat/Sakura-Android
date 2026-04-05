@@ -200,8 +200,15 @@ class TimelineFragment : Fragment(), MenuProvider, BackButtonListener {
 		binding.buttonEmoji.setOnClickListener {
 			requireContext().getSystemService<InputMethodManager>()
 				?.hideSoftInputFromWindow(binding.input.windowToken, 0)
-			binding.picker.visibility =
-				if (binding.picker.isVisible) View.GONE else View.VISIBLE
+			if (binding.picker.isVisible) {
+				PanelsChildGestureRegionObserver.Provider.get().unregister(binding.picker)
+				binding.picker.visibility = View.GONE
+			} else {
+				binding.picker.visibility = View.VISIBLE
+				binding.picker.post {
+					PanelsChildGestureRegionObserver.Provider.get().register(binding.picker)
+				}
+			}
 		}
 
 		binding.attachment.buttonRemove.setOnClickListener {
@@ -602,6 +609,7 @@ class TimelineFragment : Fragment(), MenuProvider, BackButtonListener {
 			?.hideSoftInputFromWindow(binding.input.windowToken, 0)
 		if (binding.picker.isVisible) {
 			binding.picker.visibility = View.GONE
+			PanelsChildGestureRegionObserver.Provider.get().unregister(binding.picker)
 			return true
 		}
 		return false
@@ -658,6 +666,7 @@ class TimelineFragment : Fragment(), MenuProvider, BackButtonListener {
 	private fun onKeyboardOpened() {
 		if (binding.picker.isVisible && binding.pickerTabs.selectedTabPosition == 1) return
 		binding.picker.visibility = View.GONE
+		PanelsChildGestureRegionObserver.Provider.get().unregister(binding.picker)
 	}
 
 	override fun onDestroy() {
