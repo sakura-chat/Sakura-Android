@@ -72,7 +72,6 @@ import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.room.CreateEventContent
 import de.connect2x.trixnity.core.model.events.m.room.EncryptedFile
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
-import de.connect2x.trixnity.core.model.events.m.room.ThumbnailInfo
 import de.connect2x.trixnity.core.model.push.PushRuleSet
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappingsBuilder
@@ -436,7 +435,7 @@ class Matrix {
 			replyTo?.let { reply(it, null) }
 			val attachmentFlow = attachment?.getAsFlow(context)
 			if (attachmentFlow != null) {
-				val thumbnail = attachment.getThumbnail(256, 256)
+				val thumbnail = attachment.getThumbnail(512, 512)
 				val size = attachment.getSize()
 				when (attachment.contentType.split('/')[0]) {
 					"image" -> image(
@@ -447,10 +446,8 @@ class Matrix {
 						fileName = attachment.name,
 						type = ContentType.parse(attachment.contentType),
 						size = attachment.size,
-						thumbnail = thumbnail,
-						thumbnailInfo = thumbnail?.let {
-							ThumbnailInfo(256, 256, "image/jpeg")
-						},
+						thumbnail = thumbnail?.data,
+						thumbnailInfo = thumbnail?.toThumbnailInfo(),
 						width = size?.first,
 						height = size?.second
 					)
@@ -463,10 +460,8 @@ class Matrix {
 						fileName = attachment.name,
 						type = ContentType.parse(attachment.contentType),
 						size = attachment.size,
-						thumbnail = thumbnail,
-						thumbnailInfo = thumbnail?.let {
-							ThumbnailInfo(256, 256, "image/jpeg")
-						},
+						thumbnail = thumbnail?.data,
+						thumbnailInfo = thumbnail?.toThumbnailInfo(),
 						width = size?.first,
 						height = size?.second
 					)
@@ -479,10 +474,8 @@ class Matrix {
 						fileName = attachment.name,
 						type = ContentType.parse(attachment.contentType),
 						size = attachment.size,
-						thumbnail = thumbnail,
-						thumbnailInfo = thumbnail?.let {
-							ThumbnailInfo(256, 256, "image/jpeg")
-						}
+						thumbnail = thumbnail?.data,
+						thumbnailInfo = thumbnail?.toThumbnailInfo(),
 					)
 				}
 			} else {

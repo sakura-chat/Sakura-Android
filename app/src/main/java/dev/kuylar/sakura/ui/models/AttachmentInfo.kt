@@ -11,6 +11,7 @@ import android.net.Uri
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import androidx.core.net.toUri
+import de.connect2x.trixnity.core.model.events.m.room.ThumbnailInfo
 import de.connect2x.trixnity.utils.toByteArrayFlow
 import dev.kuylar.sakura.Utils
 import dev.kuylar.sakura.Utils.asFlow
@@ -37,7 +38,7 @@ open class AttachmentInfo {
 		return null
 	}
 
-	open fun getThumbnail(width: Int, height: Int): Flow<ByteArray>? {
+	open fun getThumbnail(width: Int, height: Int): Thumbnail? {
 		return null
 	}
 
@@ -77,7 +78,16 @@ open class AttachmentInfo {
 		override suspend fun getAsFlow(context: Context) =
 			context.contentResolver?.openInputStream(contentUri)?.asFlow()
 
-		override fun getThumbnail(width: Int, height: Int): Flow<ByteArray>? {
+		override fun getThumbnail(width: Int, height: Int): Thumbnail? {
+			val size = getSize()
+
+			val scaledSize = if (size != null) {
+				val aspectRatio = size.first.toFloat() / size.second.toFloat()
+				if (aspectRatio > width.toFloat() / height.toFloat())
+					Pair(height, (height * aspectRatio).toInt())
+				else Pair(width, (width / aspectRatio).toInt())
+			} else Pair(width, height)
+
 			return when (contentType.substringBefore("/")) {
 				"image" -> {
 					context.contentResolver.openInputStream(contentUri)?.use { input ->
@@ -97,13 +107,23 @@ open class AttachmentInfo {
 				else -> null
 			}?.let { bitmap ->
 				val stream = ByteArrayOutputStream()
-				ThumbnailUtils.extractThumbnail(bitmap, width, height).compress(Bitmap.CompressFormat.JPEG, 75, stream)
-				stream.toByteArray().toByteArrayFlow()
+				ThumbnailUtils.extractThumbnail(bitmap, scaledSize.first, scaledSize.second)
+					.compress(Bitmap.CompressFormat.JPEG, 75, stream)
+				val ba = stream.toByteArray()
+				Thumbnail(
+					ba.toByteArrayFlow(),
+					scaledSize.first,
+					scaledSize.second,
+					"image/jpeg",
+					ba.size.toLong()
+				)
 			}
 		}
 
+		private lateinit var cachedSize: Pair<Int, Int>
 		override fun getSize(): Pair<Int, Int>? {
-			return when (contentType.substringBefore("/")) {
+			if (this::cachedSize.isInitialized) return cachedSize
+			val size = when (contentType.substringBefore("/")) {
 				"image" -> {
 					val options = BitmapFactory.Options().apply {
 						inJustDecodeBounds = true
@@ -125,6 +145,8 @@ open class AttachmentInfo {
 
 				else -> null
 			}
+			if (size != null) cachedSize = size
+			return size
 		}
 	}
 
@@ -144,5 +166,15 @@ open class AttachmentInfo {
 		}
 
 		override suspend fun getAsFlow(context: Context) = bodyAsBytes?.toByteArrayFlow()
+	}
+
+	data class Thumbnail(
+		val data: Flow<ByteArray>,
+		val width: Int,
+		val height: Int,
+		val mime: String,
+		val size: Long? = null
+	) {
+		fun toThumbnailInfo() = ThumbnailInfo(width, height, mime, size)
 	}
 }
