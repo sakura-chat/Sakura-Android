@@ -245,7 +245,7 @@ class TimelineRecyclerAdapter(
 	}
 
 	companion object {
-		private const val PAGINATION_MAX_SIZE = 20L
+		private const val PAGINATION_MAX_SIZE = 50L
 		private const val PAGINATION_FETCH_SIZE = 20L
 
 		private val configStart: GetTimelineEventConfig.() -> Unit = {
@@ -268,6 +268,7 @@ class TimelineRecyclerAdapter(
 
 		private fun shouldDisplayEvent(event: RoomEventContent?, relatesTo: RelatesTo?): Boolean {
 			return (relatesTo?.relationType == RelationType.Replace ||
+					relatesTo?.relationType == RelationType.Annotation ||
 					event is RedactionEventContent ||
 					event is RedactedEventContent ||
 					event is ReactionEventContent ||
