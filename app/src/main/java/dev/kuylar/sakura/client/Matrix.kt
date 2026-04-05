@@ -72,6 +72,7 @@ import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.room.CreateEventContent
 import de.connect2x.trixnity.core.model.events.m.room.EncryptedFile
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import de.connect2x.trixnity.core.model.events.m.room.ThumbnailInfo
 import de.connect2x.trixnity.core.model.push.PushRuleSet
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappingsBuilder
@@ -435,6 +436,7 @@ class Matrix {
 			replyTo?.let { reply(it, null) }
 			val attachmentFlow = attachment?.getAsFlow(context)
 			if (attachmentFlow != null) {
+				val thumbnail = attachment.getThumbnail(256, 256)
 				when (attachment.contentType.split('/')[0]) {
 					"image" -> image(
 						body = if (useMarkdown) markdown.inputToPlaintext(msg) else msg,
@@ -443,7 +445,11 @@ class Matrix {
 						image = attachmentFlow,
 						fileName = attachment.name,
 						type = ContentType.parse(attachment.contentType),
-						size = attachment.size
+						size = attachment.size,
+						thumbnail = thumbnail,
+						thumbnailInfo = thumbnail?.let {
+							ThumbnailInfo(256, 256, "image/jpeg")
+						}
 					)
 
 					"video" -> video(
@@ -453,8 +459,11 @@ class Matrix {
 						video = attachmentFlow,
 						fileName = attachment.name,
 						type = ContentType.parse(attachment.contentType),
-						size = attachment.size
-						// TODO: Thumbnail
+						size = attachment.size,
+						thumbnail = thumbnail,
+						thumbnailInfo = thumbnail?.let {
+							ThumbnailInfo(256, 256, "image/jpeg")
+						}
 					)
 
 					else -> file(
@@ -464,7 +473,11 @@ class Matrix {
 						file = attachmentFlow,
 						fileName = attachment.name,
 						type = ContentType.parse(attachment.contentType),
-						size = attachment.size
+						size = attachment.size,
+						thumbnail = thumbnail,
+						thumbnailInfo = thumbnail?.let {
+							ThumbnailInfo(256, 256, "image/jpeg")
+						}
 					)
 				}
 			} else {

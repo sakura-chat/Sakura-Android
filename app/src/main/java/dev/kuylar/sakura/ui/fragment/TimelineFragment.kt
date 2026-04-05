@@ -694,7 +694,7 @@ class TimelineFragment : Fragment(), MenuProvider, BackButtonListener {
 	}
 
 	private fun pickImage() {
-		visualMediaPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+		visualMediaPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
 	}
 
 	private fun loadAttachmentFromUri(uri: Uri) {

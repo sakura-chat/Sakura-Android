@@ -3,6 +3,10 @@ package dev.kuylar.sakura.ui.models
 import android.annotation.SuppressLint
 import android.content.Context
 import android.database.Cursor
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
+import android.media.ThumbnailUtils
 import android.net.Uri
 import android.provider.MediaStore
 import android.provider.OpenableColumns
@@ -17,6 +21,9 @@ import io.ktor.client.statement.bodyAsBytes
 import io.ktor.http.contentLength
 import io.ktor.http.contentType
 import kotlinx.coroutines.flow.Flow
+import java.io.ByteArrayOutputStream
+
+
 
 open class AttachmentInfo {
 	open var contentUri = "about:blank".toUri()
@@ -30,10 +37,14 @@ open class AttachmentInfo {
 		return null
 	}
 
+	open fun getThumbnail(width: Int, height: Int): Flow<ByteArray>? {
+		return null
+	}
+
 	@SuppressLint("Range")
 	class ContentUri(
 		override var contentUri: Uri,
-		context: Context
+		private val context: Context
 	) : AttachmentInfo() {
 		init {
 			context.contentResolver.query(contentUri, null, null, null, null)?.use { cursor ->
@@ -61,6 +72,31 @@ open class AttachmentInfo {
 
 		override suspend fun getAsFlow(context: Context) =
 			context.contentResolver?.openInputStream(contentUri)?.asFlow()
+
+		override fun getThumbnail(width: Int, height: Int): Flow<ByteArray>? {
+			return when (contentType.substringBefore("/")) {
+				"image" -> {
+					context.contentResolver.openInputStream(contentUri)?.use { input ->
+						BitmapFactory.decodeStream(input)
+					}
+				}
+
+				"video" -> {
+					val retriever = MediaMetadataRetriever()
+					retriever.setDataSource(context, contentUri)
+					val thumbnail =
+						retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+					retriever.release()
+					thumbnail
+				}
+
+				else -> null
+			}?.let { bitmap ->
+				val stream = ByteArrayOutputStream()
+				ThumbnailUtils.extractThumbnail(bitmap, width, height).compress(Bitmap.CompressFormat.JPEG, 75, stream)
+				stream.toByteArray().toByteArrayFlow()
+			}
+		}
 	}
 
 	class HttpUri(override var contentUri: Uri) : AttachmentInfo() {
