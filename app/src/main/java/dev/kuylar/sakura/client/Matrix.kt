@@ -437,6 +437,7 @@ class Matrix {
 			val attachmentFlow = attachment?.getAsFlow(context)
 			if (attachmentFlow != null) {
 				val thumbnail = attachment.getThumbnail(256, 256)
+				val size = attachment.getSize()
 				when (attachment.contentType.split('/')[0]) {
 					"image" -> image(
 						body = if (useMarkdown) markdown.inputToPlaintext(msg) else msg,
@@ -449,7 +450,9 @@ class Matrix {
 						thumbnail = thumbnail,
 						thumbnailInfo = thumbnail?.let {
 							ThumbnailInfo(256, 256, "image/jpeg")
-						}
+						},
+						width = size?.first,
+						height = size?.second
 					)
 
 					"video" -> video(
@@ -463,7 +466,9 @@ class Matrix {
 						thumbnail = thumbnail,
 						thumbnailInfo = thumbnail?.let {
 							ThumbnailInfo(256, 256, "image/jpeg")
-						}
+						},
+						width = size?.first,
+						height = size?.second
 					)
 
 					else -> file(

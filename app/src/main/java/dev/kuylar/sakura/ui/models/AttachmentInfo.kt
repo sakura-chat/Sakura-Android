@@ -41,6 +41,10 @@ open class AttachmentInfo {
 		return null
 	}
 
+	open fun getSize(): Pair<Int, Int>? {
+		return null
+	}
+
 	@SuppressLint("Range")
 	class ContentUri(
 		override var contentUri: Uri,
@@ -95,6 +99,31 @@ open class AttachmentInfo {
 				val stream = ByteArrayOutputStream()
 				ThumbnailUtils.extractThumbnail(bitmap, width, height).compress(Bitmap.CompressFormat.JPEG, 75, stream)
 				stream.toByteArray().toByteArrayFlow()
+			}
+		}
+
+		override fun getSize(): Pair<Int, Int>? {
+			return when (contentType.substringBefore("/")) {
+				"image" -> {
+					val options = BitmapFactory.Options().apply {
+						inJustDecodeBounds = true
+					}
+					context.contentResolver.openInputStream(contentUri)?.use { input ->
+						BitmapFactory.decodeStream(input, null, options)
+					}
+					Pair(options.outWidth, options.outHeight)
+				}
+
+				"video" -> {
+					val retriever = MediaMetadataRetriever()
+					retriever.setDataSource(context, contentUri)
+					val width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toIntOrNull() ?: 0
+					val height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toIntOrNull() ?: 0
+					retriever.release()
+					Pair(width, height)
+				}
+
+				else -> null
 			}
 		}
 	}
