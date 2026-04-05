@@ -87,6 +87,7 @@ dependencies {
 	implementation(libs.androidx.hilt.work)
 	ksp(libs.androidx.hilt.compiler)
 	implementation(libs.avatarview)
+	implementation(libs.photoview)
 	implementation(libs.kotlin.reflect)
 	implementation(project(":emojipicker"))
 	implementation(project(":markdown"))

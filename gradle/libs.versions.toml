@@ -33,6 +33,7 @@ hilt = "2.59.1"
 hilt-work = "1.3.0"
 commonmark = "0.27.1"
 avatarview = "1.0.7"
+photoview = "1.0.3"
 jsoup = "1.22.1"
 
 [libraries]
@@ -80,6 +81,7 @@ commonmark-ext-gfm-strikethrough = { group = "org.commonmark", name = "commonmar
 commonmark-ext-autolink = { group = "org.commonmark", name = "commonmark-ext-autolink", version.ref = "commonmark" }
 commonmark-ext-ins = { group = "org.commonmark", name = "commonmark-ext-ins", version.ref = "commonmark" }
 avatarview = { group = "io.getstream", name = "avatarview-glide", version.ref = "avatarview" }
+photoview = { group = "io.getstream", name = "photoview", version.ref = "photoview" }
 jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
 kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
 

@@ -1,5 +1,6 @@
 package dev.kuylar.sakura.ui.adapter.timeline
 
+import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
@@ -30,6 +31,7 @@ import de.connect2x.trixnity.core.model.events.RoomEventContent
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
 import dev.kuylar.sakura.BuildConfig
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils
@@ -50,6 +52,7 @@ import dev.kuylar.sakura.databinding.AttachmentImageBinding
 import dev.kuylar.sakura.databinding.ItemMessageBinding
 import dev.kuylar.sakura.databinding.ItemReactionBinding
 import dev.kuylar.sakura.markdown.MarkdownHandler
+import dev.kuylar.sakura.ui.activity.ViewAttachmentActivity
 import dev.kuylar.sakura.ui.fragment.TimelineFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.EventBottomSheetFragment
 import dev.kuylar.sakura.ui.fragment.bottomsheet.ProfileBottomSheetFragment
@@ -430,10 +433,20 @@ class TimelineEventViewHolder(
 		binding.attachment.removeAllViews()
 		binding.attachment.visibility = View.VISIBLE
 		binding.attachment.addView(attachmentBinding.root)
+		attachmentBinding.root.setOnClickListener {
+			val i = Intent(
+				binding.attachment.context,
+				ViewAttachmentActivity::class.java
+			)
+			i.putExtra("uri", content.getImageUrl(false))
+			i.putExtra("mime", content.info?.mimeType)
+			i.putExtra("name", content.fileName ?: content.bodyWithoutFallback)
+			i.putExtra("size", content.info?.size)
+			binding.attachment.context.startActivity(i)
+		}
 	}
 
 	private fun setAttachment(content: RoomMessageEventContent.FileBased) {
-		// TODO: File downloads
 		if (fragment == null) return
 		val attachmentBinding =
 			AttachmentFileBinding.inflate(fragment!!.layoutInflater, binding.attachment, false)
@@ -441,6 +454,17 @@ class TimelineEventViewHolder(
 		attachmentBinding.subtitle.text = content.info?.size.toFileSize()
 		binding.attachment.addView(attachmentBinding.root)
 		binding.attachment.visibility = View.VISIBLE
+		attachmentBinding.root.setOnClickListener {
+			val i = Intent(
+				binding.attachment.context,
+				ViewAttachmentActivity::class.java
+			)
+			i.putExtra("uri", content.getImageUrl(false))
+			i.putExtra("mime", content.info?.mimeType)
+			i.putExtra("name", content.fileName ?: content.bodyWithoutFallback)
+			i.putExtra("size", content.info?.size)
+			binding.attachment.context.startActivity(i)
+		}
 	}
 
 	private fun setAttachment(content: StickerMessageEventContent) {

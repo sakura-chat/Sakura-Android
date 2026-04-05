@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:id="@+id/main"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:background="#ff000000"
+	android:orientation="vertical"
+	tools:context=".ui.activity.ViewAttachmentActivity">
+
+	<com.google.android.material.appbar.MaterialToolbar
+		android:id="@+id/toolbar"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:background="#ff000000"
+		android:minHeight="?attr/actionBarSize"
+		app:menu="@menu/attachment_view_menu"
+		app:navigationIcon="@drawable/ic_back"
+		app:navigationIconTint="@color/white"
+		app:subtitleTextColor="#ffdddddd"
+		app:title="@string/view_attachment"
+		app:titleTextColor="@color/white" />
+
+	<FrameLayout
+		android:layout_width="match_parent"
+		android:layout_height="0dp"
+		android:layout_weight="1">
+
+		<io.getstream.photoview.PhotoView
+			android:id="@+id/image"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:visibility="gone"
+			tools:src="@tools:sample/backgrounds/scenic" />
+
+		<LinearLayout
+			android:id="@+id/unk"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:gravity="center_vertical"
+			android:orientation="vertical">
+
+			<TextView
+				android:id="@+id/filename"
+				style="?textAppearanceTitleMediumEmphasized"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:textAlignment="center"
+				android:textColor="@color/white"
+				tools:text="File name.jpeg" />
+
+			<TextView
+				android:id="@+id/meta"
+				style="?textAppearanceBodyMedium"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:textAlignment="center"
+				android:textColor="@color/white"
+				tools:text="image/jpeg \u2022 3.25 MB" />
+		</LinearLayout>
+	</FrameLayout>
+</LinearLayout>

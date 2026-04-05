@@ -201,25 +201,27 @@ object Utils {
 		}
 	}
 
-	fun RoomMessageEventContent.FileBased.getImageUrl(): String? {
+	fun RoomMessageEventContent.FileBased.getImageUrl(thumbnail: Boolean = true): String? {
 		if (this.file != null) {
 			return "mxc://sakuraNative/encrypted?data=" + URLEncoder.encode(
 				Json.encodeToString(this.file),
 				Charset.defaultCharset()
 			)
 		}
-		return if (listOfNotNull(
-				this.info?.mimeType,
-				this.fileName,
-				this.body
-			).any { it.contains(".gif") }
-		) this.url?.let {
-			URLBuilder(it).apply {
-				// TODO: Make this toggleable in settings
-				parameters.append("thumbnail", "false")
+		return this.url?.let { url ->
+			URLBuilder(url).apply {
+				if (listOfNotNull(
+						this@getImageUrl.info?.mimeType,
+						this@getImageUrl.fileName,
+						this@getImageUrl.body
+					).any { it.contains(".gif") } && thumbnail
+				) {
+					// Make it so that gifs aren't received through the thumbnail endpoint
+					// TODO: Make this toggleable in settings
+					parameters.append("thumbnail", "false")
+				} else parameters.append("thumbnail", thumbnail.toString())
 			}.build().toString()
 		}
-		else this.url
 	}
 
 	fun String.getInitials(uppercase: Boolean = false): String {

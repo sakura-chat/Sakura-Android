@@ -16,6 +16,8 @@ import de.connect2x.trixnity.client.RepositoriesModule
 import de.connect2x.trixnity.client.create
 import de.connect2x.trixnity.client.cryptodriver.vodozemac.vodozemac
 import de.connect2x.trixnity.client.flattenValues
+import de.connect2x.trixnity.client.media
+import de.connect2x.trixnity.client.media.PlatformMedia
 import de.connect2x.trixnity.client.media.okio.okio
 import de.connect2x.trixnity.client.notification
 import de.connect2x.trixnity.client.room
@@ -55,6 +57,7 @@ import de.connect2x.trixnity.clientserverapi.client.classicLogin
 import de.connect2x.trixnity.clientserverapi.client.getAccountData
 import de.connect2x.trixnity.clientserverapi.model.authentication.IdentifierType
 import de.connect2x.trixnity.clientserverapi.model.authentication.LoginType
+import de.connect2x.trixnity.clientserverapi.model.media.ThumbnailResizingMethod
 import de.connect2x.trixnity.clientserverapi.model.push.PusherData
 import de.connect2x.trixnity.clientserverapi.model.push.SetPushers
 import de.connect2x.trixnity.core.model.EventId
@@ -67,6 +70,7 @@ import de.connect2x.trixnity.core.model.events.m.PushRulesEventContent
 import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.RelationType
 import de.connect2x.trixnity.core.model.events.m.room.CreateEventContent
+import de.connect2x.trixnity.core.model.events.m.room.EncryptedFile
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
 import de.connect2x.trixnity.core.model.push.PushRuleSet
 import de.connect2x.trixnity.core.serialization.events.EventContentSerializerMappings
@@ -111,6 +115,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import okio.Path.Companion.toPath
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -964,6 +969,32 @@ class Matrix {
 			return client.user.getPresence(userId)
 		}
 		return null
+	}
+
+	suspend fun getMedia(uri: Uri, width: Int? = null, height: Int? = null): Result<PlatformMedia> {
+		val isFullMedia = !uri.getBooleanQueryParameter("thumbnail", true)
+		val isEncrypted = uri.host == "sakuraNative" && uri.path == "/encrypted"
+		return if (isEncrypted) {
+			Log.i("Matrix", "Loading encrypted attachment")
+			client.media.getEncryptedMedia(
+				Json.decodeFromString<EncryptedFile>(
+					uri.getQueryParameter("data")!!
+				)
+			)
+		} else if (!isFullMedia && width != null && height != null) {
+			Log.i("Matrix", "Loading thumbnail attachment")
+			client.media.getThumbnail(
+				uri.toString().split("?")[0],
+				uri.getQueryParameter("width")?.toLongOrNull() ?: width.toLong(),
+				uri.getQueryParameter("height")?.toLongOrNull() ?: height.toLong(),
+				ThumbnailResizingMethod.SCALE,
+				// TODO: Get default animated previews from settings
+				uri.getQueryParameter("animated")?.toBooleanStrictOrNull() ?: true
+			)
+		} else {
+			Log.i("Matrix", "Loading full attachment")
+			client.media.getMedia(uri.toString().split("?")[0])
+		}
 	}
 
 	companion object {
