@@ -37,6 +37,7 @@ import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils
 import dev.kuylar.sakura.Utils.content
 import dev.kuylar.sakura.Utils.getImageUrl
+import dev.kuylar.sakura.Utils.getThumbnailUrl
 import dev.kuylar.sakura.Utils.lastReceipt
 import dev.kuylar.sakura.Utils.loadUser
 import dev.kuylar.sakura.Utils.suspendThread
@@ -218,13 +219,11 @@ class TimelineEventViewHolder(
 				}
 				binding.attachment.visibility = View.VISIBLE
 				when (content) {
-					is RoomMessageEventContent.FileBased.Image -> {
-						setAttachment(content)
-					}
+					is RoomMessageEventContent.FileBased.Image -> setAttachment(content)
 
-					else -> {
-						setAttachment(content)
-					}
+					is RoomMessageEventContent.FileBased.Video -> setAttachment(content)
+
+					else -> setAttachment(content)
 				}
 			}
 
@@ -377,8 +376,8 @@ class TimelineEventViewHolder(
 			}
 	}
 
-	private fun setAttachment(content: RoomMessageEventContent.FileBased.Image) {
-		if (fragment == null) return
+	private fun setImageAttachment(uri: String?): AttachmentImageBinding? {
+		if (fragment == null) return null
 		val attachmentBinding = AttachmentImageBinding.inflate(
 			fragment!!.layoutInflater,
 			binding.attachment,
@@ -395,7 +394,7 @@ class TimelineEventViewHolder(
 		).toInt()
 
 		Glide.with(attachmentBinding.root)
-			.load(content.getImageUrl())
+			.load(uri)
 			.listener(object : RequestListener<Drawable> {
 				override fun onLoadFailed(
 					e: GlideException?,
@@ -430,14 +429,33 @@ class TimelineEventViewHolder(
 				}
 			})
 			.into(attachmentBinding.imageAttachment)
+		return attachmentBinding
+	}
+
+	private fun setAttachment(content: RoomMessageEventContent.FileBased.Image) {
+		val attachmentBinding =
+			setImageAttachment(content.getThumbnailUrl() ?: content.getImageUrl()) ?: return
 		binding.attachment.removeAllViews()
 		binding.attachment.visibility = View.VISIBLE
 		binding.attachment.addView(attachmentBinding.root)
 		attachmentBinding.root.setOnClickListener {
-			val i = Intent(
-				binding.attachment.context,
-				ViewAttachmentActivity::class.java
-			)
+			val i = Intent(binding.attachment.context, ViewAttachmentActivity::class.java)
+			i.putExtra("uri", content.getImageUrl(false))
+			i.putExtra("mime", content.info?.mimeType)
+			i.putExtra("name", content.fileName ?: content.bodyWithoutFallback)
+			i.putExtra("size", content.info?.size)
+			binding.attachment.context.startActivity(i)
+		}
+	}
+
+	private fun setAttachment(content: RoomMessageEventContent.FileBased.Video) {
+		val attachmentBinding = setImageAttachment(content.getThumbnailUrl()) ?: return
+		attachmentBinding.play.visibility = View.VISIBLE
+		binding.attachment.removeAllViews()
+		binding.attachment.visibility = View.VISIBLE
+		binding.attachment.addView(attachmentBinding.root)
+		attachmentBinding.root.setOnClickListener {
+			val i = Intent(binding.attachment.context, ViewAttachmentActivity::class.java)
 			i.putExtra("uri", content.getImageUrl(false))
 			i.putExtra("mime", content.info?.mimeType)
 			i.putExtra("name", content.fileName ?: content.bodyWithoutFallback)
@@ -455,10 +473,7 @@ class TimelineEventViewHolder(
 		binding.attachment.addView(attachmentBinding.root)
 		binding.attachment.visibility = View.VISIBLE
 		attachmentBinding.root.setOnClickListener {
-			val i = Intent(
-				binding.attachment.context,
-				ViewAttachmentActivity::class.java
-			)
+			val i = Intent(binding.attachment.context, ViewAttachmentActivity::class.java)
 			i.putExtra("uri", content.getImageUrl(false))
 			i.putExtra("mime", content.info?.mimeType)
 			i.putExtra("name", content.fileName ?: content.bodyWithoutFallback)

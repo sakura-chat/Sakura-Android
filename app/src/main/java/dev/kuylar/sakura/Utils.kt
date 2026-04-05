@@ -224,6 +224,27 @@ object Utils {
 		}
 	}
 
+	fun RoomMessageEventContent.FileBased.getThumbnailUrl(): String? {
+		val thumbUrl = when (this) {
+			is RoomMessageEventContent.FileBased.Image -> info?.thumbnailUrl
+			is RoomMessageEventContent.FileBased.Video -> info?.thumbnailUrl
+			else -> null
+		}
+		val thumbFile = when (this) {
+			is RoomMessageEventContent.FileBased.Image -> info?.thumbnailFile
+			is RoomMessageEventContent.FileBased.Video -> info?.thumbnailFile
+			else -> null
+		}
+
+		if (thumbFile != null) {
+			return "mxc://sakuraNative/encrypted?data=" + URLEncoder.encode(
+				Json.encodeToString(this),
+				Charset.defaultCharset()
+			)
+		}
+		return thumbUrl
+	}
+
 	fun String.getInitials(uppercase: Boolean = false): String {
 		return this
 			.split(" ")
