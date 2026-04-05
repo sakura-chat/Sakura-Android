@@ -24,17 +24,21 @@ import de.connect2x.trixnity.core.model.events.RoomEventContent
 import de.connect2x.trixnity.core.model.events.m.ReactionEventContent
 import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.RelationType
+import de.connect2x.trixnity.core.model.events.m.room.CreateEventContent
+import de.connect2x.trixnity.core.model.events.m.room.EncryptionEventContent
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
+import de.connect2x.trixnity.core.model.events.m.room.NameEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RedactionEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import de.connect2x.trixnity.core.model.events.m.room.TopicEventContent
 import dev.kuylar.sakura.Utils.getOrNull
 import dev.kuylar.sakura.Utils.indexOfFirst
 import dev.kuylar.sakura.Utils.lastReceipt
 import dev.kuylar.sakura.Utils.scrollToBottom
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
+import dev.kuylar.sakura.databinding.ItemMessageActionBinding
 import dev.kuylar.sakura.databinding.ItemMessageBinding
-import dev.kuylar.sakura.databinding.ItemMessageMemberBinding
 import dev.kuylar.sakura.databinding.ItemMessageMiniBinding
 import dev.kuylar.sakura.markdown.MarkdownHandler
 import kotlinx.coroutines.Job
@@ -132,6 +136,10 @@ class TimelineRecyclerAdapter(
 	override fun getItemViewType(position: Int): Int {
 		return when (items.get(position).content) {
 			is MemberEventContent -> 2
+			is CreateEventContent -> 2
+			is EncryptionEventContent -> 2
+			is NameEventContent -> 2
+			is TopicEventContent -> 2
 			is RoomMessageEventContent.TextBased.Emote -> 1
 			else -> 0
 		}
@@ -153,7 +161,7 @@ class TimelineRecyclerAdapter(
 				).root
 			)
 			2 -> ItemMessageBinding.bind(
-				ItemMessageMemberBinding.inflate(
+				ItemMessageActionBinding.inflate(
 					layoutInflater,
 					parent,
 					false

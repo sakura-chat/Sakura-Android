@@ -165,4 +165,8 @@
 	<string name="attachment_viewer_share">Share</string>
 	<string name="attachment_viewer_download_success">File \'%s\' downloaded</string>
 	<string name="attachment_viewer_download_fail">Failed to download attachment</string>
+	<string name="event_create"><![CDATA[<b>%s</b> created the room.]]></string>
+	<string name="event_encryption"><![CDATA[<b>%s</b> has enabled encryption for this room.]]></string>
+	<string name="event_name"><![CDATA[<b>%s</b> has changed the room\'s name to <b>%s</b>.]]></string>
+	<string name="event_topic"><![CDATA[<b>%s</b> has changed the room\'s topic to <b>%s</b>.]]></string>
 </resources>

@@ -28,9 +28,13 @@ import de.connect2x.trixnity.core.model.events.ClientEvent
 import de.connect2x.trixnity.core.model.events.MessageEventContent
 import de.connect2x.trixnity.core.model.events.RedactedEventContent
 import de.connect2x.trixnity.core.model.events.RoomEventContent
+import de.connect2x.trixnity.core.model.events.m.room.CreateEventContent
+import de.connect2x.trixnity.core.model.events.m.room.EncryptionEventContent
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
 import de.connect2x.trixnity.core.model.events.m.room.Membership
+import de.connect2x.trixnity.core.model.events.m.room.NameEventContent
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
+import de.connect2x.trixnity.core.model.events.m.room.TopicEventContent
 import de.connect2x.trixnity.core.model.events.m.room.bodyWithoutFallback
 import dev.kuylar.sakura.BuildConfig
 import dev.kuylar.sakura.R
@@ -244,6 +248,42 @@ class TimelineEventViewHolder(
 				)?.let { id ->
 					binding.replyingAvatar.setImageDrawable(ContextCompat.getDrawable(context, id))
 				}
+			}
+
+			is CreateEventContent -> {
+				Glide.with(binding.root).load(user?.avatarUrl).into(binding.replyingAvatar)
+				markdown.setTextView(
+					binding.body,
+					binding.body.context.getString(R.string.event_create, user?.name ?: rawEvent?.sender?.full ?: ""),
+					false
+				)
+			}
+
+			is EncryptionEventContent -> {
+				Glide.with(binding.root).load(user?.avatarUrl).into(binding.replyingAvatar)
+				markdown.setTextView(
+					binding.body,
+					binding.body.context.getString(R.string.event_encryption, user?.name ?: rawEvent?.sender?.full ?: ""),
+					false
+				)
+			}
+
+			is NameEventContent -> {
+				Glide.with(binding.root).load(user?.avatarUrl).into(binding.replyingAvatar)
+				markdown.setTextView(
+					binding.body,
+					binding.body.context.getString(R.string.event_name, user?.name ?: rawEvent?.sender?.full ?: "", content.name),
+					false
+				)
+			}
+
+			is TopicEventContent -> {
+				Glide.with(binding.root).load(user?.avatarUrl).into(binding.replyingAvatar)
+				markdown.setTextView(
+					binding.body,
+					binding.body.context.getString(R.string.event_topic, user?.name ?: rawEvent?.sender?.full ?: "", content.topic?.text?.plain),
+					false
+				)
 			}
 
 			is StickerMessageEventContent -> {
