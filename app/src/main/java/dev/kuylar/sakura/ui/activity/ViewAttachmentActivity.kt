@@ -1,5 +1,6 @@
 package dev.kuylar.sakura.ui.activity
 
+import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.net.Uri
 import android.os.Bundle
@@ -10,20 +11,32 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.bumptech.glide.Glide
 import dagger.hilt.android.AndroidEntryPoint
+import de.connect2x.trixnity.client.store.AuthenticationStore
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.toFileSize
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.ActivityViewAttachmentBinding
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -63,6 +76,7 @@ class ViewAttachmentActivity : AppCompatActivity(), Toolbar.OnMenuItemClickListe
 
 		when (mime.substringBefore("/")) {
 			"image" -> handleImage(uri)
+			"video", "audio" -> handleVideo(uri)
 			else -> handleOthers(name, mime, size)
 		}
 
@@ -132,9 +146,47 @@ class ViewAttachmentActivity : AppCompatActivity(), Toolbar.OnMenuItemClickListe
 			.into(binding.image)
 	}
 
+	@OptIn(UnstableApi::class)
+	private fun handleVideo(uri: Uri) {
+		binding.video.visibility = View.VISIBLE
+		lifecycleScope.launch {
+			val (serverName, mediaId) = uri.toString().removePrefix("mxc://")
+				.let { it.substringBefore("/") to it.substringAfter("/") }
+			val uri = "${client.client.api.baseUrl}/_matrix/client/v1/media/download/$serverName/$mediaId"
+			val auth = Json.decodeFromString<JsonObject>(
+				client.client.di.get<AuthenticationStore>().getAuthentication()?.providerData
+					?: "{}"
+			)
+			val token = auth["accessToken"]?.jsonPrimitive?.content ?: return@launch
+			Log.i("ViewAttachmentActivity", uri)
+			Log.i("ViewAttachmentActivity", token)
+			runOnUiThread {
+				val item = MediaItem.Builder().apply {
+					this.setMimeType(mime)
+					this.setUri(uri)
+				}.build()
+
+				val dataSourceFactory = DefaultHttpDataSource.Factory()
+					.setDefaultRequestProperties(mapOf("Authorization" to "Bearer $token"))
+
+				val mediaSourceFactory = DefaultMediaSourceFactory(this@ViewAttachmentActivity)
+					.setDataSourceFactory(dataSourceFactory)
+
+				val player = ExoPlayer.Builder(this@ViewAttachmentActivity)
+					.setMediaSourceFactory(mediaSourceFactory)
+					.build()
+				binding.video.player = player
+				player.setMediaItem(item)
+				player.prepare()
+				player.play()
+			}
+		}
+	}
+
 	private fun handleOthers(name: String, mime: String, size: Long) {
 		binding.unk.visibility = View.VISIBLE
 		binding.filename.text = name
+		@SuppressLint("SetTextI18n")
 		binding.meta.text = "$mime \u2022 ${size.toFileSize()}"
 	}
 }

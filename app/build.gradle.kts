@@ -89,6 +89,8 @@ dependencies {
 	implementation(libs.avatarview)
 	implementation(libs.photoview)
 	implementation(libs.kotlin.reflect)
+	implementation(libs.media3.exoplayer)
+	implementation(libs.media3.ui)
 	implementation(project(":emojipicker"))
 	implementation(project(":markdown"))
 }

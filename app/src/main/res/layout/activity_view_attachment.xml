@@ -34,12 +34,24 @@
 			android:visibility="gone"
 			tools:src="@tools:sample/backgrounds/scenic" />
 
+		<androidx.media3.ui.PlayerView
+			android:id="@+id/video"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:keepScreenOn="true"
+			android:visibility="gone"
+			app:show_shuffle_button="false"
+			app:show_subtitle_button="false"
+			app:show_vr_button="false"
+			tools:visibility="visible" />
+
 		<LinearLayout
 			android:id="@+id/unk"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
 			android:gravity="center_vertical"
-			android:orientation="vertical">
+			android:orientation="vertical"
+			android:visibility="gone">
 
 			<TextView
 				android:id="@+id/filename"
