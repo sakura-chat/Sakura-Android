@@ -8,17 +8,16 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.bundleOf
 import androidx.core.view.postDelayed
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import dagger.hilt.android.AndroidEntryPoint
-import de.connect2x.trixnity.client.verification.ActiveDeviceVerification
 import de.connect2x.trixnity.clientserverapi.client.SyncState
 import dev.kuylar.sakura.R
-import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.ActivityBubbleBinding
-import dev.kuylar.sakura.ui.fragment.verification.VerificationBottomSheetFragment
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import com.google.android.material.R as MaterialR
@@ -52,39 +51,36 @@ class BubbleActivity : AppCompatActivity() {
 		}
 
 		handleStateChange(SyncState.STOPPED)
-		suspendThread {
-			try {
-				client.initialize("main")
-			} catch (_: Exception) {
-				// Failed to load client. Give up, since we're in a bubble
-				this@BubbleActivity.runOnUiThread {
-					finish()
+		lifecycleScope.launch {
+			lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+				try {
+					client.initialize("main")
+				} catch (_: Exception) {
+					// Failed to load client. Give up, since we're in a bubble
+					this@BubbleActivity.runOnUiThread {
+						finish()
+					}
+					return@repeatOnLifecycle
 				}
-				return@suspendThread
-			}
-			client.startSync()
-			intent.extras?.keySet()?.forEach {
-				Log.i("BubbleActivity", "[$it] ${intent.extras?.get(it)}")
-			}
-			intent.getStringExtra("roomId")?.let {
-				runOnUiThread {
-					navController.navigate(R.id.nav_room, bundleOf("roomId" to it))
+				client.startSync()
+				lifecycleScope.launch {
+					client.initializeRoomCache()
 				}
-			}
-			lifecycleScope.launch {
-				client.addSyncStateListener {
-					Log.i("BubbleActivity", "Sync state: $it")
+				intent.extras?.keySet()?.forEach {
+					Log.i("BubbleActivity", "[$it] ${intent.extras?.get(it)}")
+				}
+				intent.getStringExtra("roomId")?.let {
 					runOnUiThread {
-						handleStateChange(it)
+						navController.navigate(R.id.nav_room, bundleOf("roomId" to it))
 					}
 				}
-			}
-			lifecycleScope.launch {
-				client.addOnDeviceVerificationRequestListener { it: ActiveDeviceVerification ->
-					Log.i("BubbleActivity", "Got device verification request: ${it.transactionId}")
-					val bottomSheet = VerificationBottomSheetFragment()
-					bottomSheet.arguments = bundleOf("verification" to it.transactionId)
-					bottomSheet.show(supportFragmentManager, "verification")
+				lifecycleScope.launch {
+					client.addSyncStateListener {
+						Log.i("BubbleActivity", "Sync state: $it")
+						runOnUiThread {
+							handleStateChange(it)
+						}
+					}
 				}
 			}
 		}
