@@ -238,7 +238,7 @@ object Utils {
 
 		if (thumbFile != null) {
 			return "mxc://sakuraNative/encrypted?data=" + URLEncoder.encode(
-				Json.encodeToString(this),
+				Json.encodeToString(thumbFile),
 				Charset.defaultCharset()
 			)
 		}
