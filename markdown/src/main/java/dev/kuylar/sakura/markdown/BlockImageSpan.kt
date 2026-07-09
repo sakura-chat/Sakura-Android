@@ -68,14 +68,11 @@ class BlockImageSpan(
     private fun ensureLoading() {
         if (isLoadingStarted) return
 
-        Log.i("BlockImageSpan", "loading image: $imageUrl")
         val targetWidth = (maxWidthPx?.invoke() ?: fallbackHeightPx).coerceAtLeast(0)
-        Log.i("BlockImageSpan", "width: $targetWidth")
         if (targetWidth <= 0) return
 
         isLoadingStarted = true
 
-        Log.i("BlockImageSpan", "load start")
         glide
             ?.load(imageUrl)
             ?.into(object : CustomTarget<Drawable>() {
@@ -83,7 +80,6 @@ class BlockImageSpan(
                     resource: Drawable,
                     transition: Transition<in Drawable>?
                 ) {
-                    Log.i("BlockImageSpan", "load end")
                     val intrinsicWidth = resource.intrinsicWidth.takeIf { it > 0 } ?: targetWidth
                     val intrinsicHeight = resource.intrinsicHeight.takeIf { it > 0 } ?: fallbackHeightPx
 
