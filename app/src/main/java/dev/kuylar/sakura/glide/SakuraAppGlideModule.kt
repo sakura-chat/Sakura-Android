@@ -1,7 +1,7 @@
 package dev.kuylar.sakura.glide
 
 import android.content.Context
-import android.util.Log
+import android.net.Uri
 import com.bumptech.glide.Glide
 import com.bumptech.glide.Registry
 import com.bumptech.glide.annotation.GlideModule
@@ -16,5 +16,6 @@ class SakuraAppGlideModule: AppGlideModule() {
 		registry: Registry
 	) {
 		registry.append(String::class.java, ByteBuffer::class.java, MxcModelLoaderFactory())
+		registry.append(Uri::class.java, ByteBuffer::class.java, MxcModelLoaderFactory())
 	}
 }

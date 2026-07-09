@@ -158,8 +158,6 @@ class ViewAttachmentActivity : AppCompatActivity(), Toolbar.OnMenuItemClickListe
 					?: "{}"
 			)
 			val token = auth["accessToken"]?.jsonPrimitive?.content ?: return@launch
-			Log.i("ViewAttachmentActivity", uri)
-			Log.i("ViewAttachmentActivity", token)
 			runOnUiThread {
 				val item = MediaItem.Builder().apply {
 					this.setMimeType(mime)

@@ -5,8 +5,8 @@ import com.bumptech.glide.load.model.ModelLoaderFactory
 import com.bumptech.glide.load.model.MultiModelLoaderFactory
 import java.nio.ByteBuffer
 
-class MxcModelLoaderFactory : ModelLoaderFactory<String, ByteBuffer> {
-	override fun build(multiFactory: MultiModelLoaderFactory): ModelLoader<String, ByteBuffer> {
+class MxcModelLoaderFactory<T : Any> : ModelLoaderFactory<T, ByteBuffer> {
+	override fun build(multiFactory: MultiModelLoaderFactory): ModelLoader<T, ByteBuffer> {
 		return MxcModelLoader()
 	}
 
