@@ -16,7 +16,7 @@ class MxcDataFetcher(val model: Uri, val width: Int, val height: Int) : DataFetc
 		@Suppress("DEPRECATION")
 		val client = Matrix.getClient()
 		runBlocking {
-			val res = client.getMedia(model, width, height)
+			val res = client.getMedia(model, width.ensurePositive(), height.ensurePositive())
 			try {
 				val image = res.getOrThrow()
 				callback.onDataReady(ByteBuffer.wrap(image.toByteArray() ?: ByteArray(0)))
@@ -25,6 +25,10 @@ class MxcDataFetcher(val model: Uri, val width: Int, val height: Int) : DataFetc
 			}
 		}
 	}
+
+	// Inside a TextView, both width and height are -2,147,483,648.
+	// Obviously, the API doesn't like receiving that.
+	private fun Int.ensurePositive() = if (this < 0) 32 else this
 
 	override fun cleanup() {}
 

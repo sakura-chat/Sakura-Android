@@ -384,7 +384,7 @@ class HtmlSpannableRenderer {
 					if (allowedImageUrlSchemes.contains(src.scheme))
 						state.builder.setSpan(
 							BlockImageSpan(
-								src.toString(),
+								src.buildUpon().appendQueryParameter("thumbnail", "false").build().toString(),
 								maxWidthPx = state.getWidth,
 								glide = Glide.with(state.context)
 							),
