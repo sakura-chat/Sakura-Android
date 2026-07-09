@@ -13,5 +13,12 @@
 			android:summaryOff="@string/preference_texteditor_typing_off"
 			android:summaryOn="@string/preference_texteditor_typing_on"
 			android:title="@string/preference_texteditor_typing" />
+		<ListPreference
+			android:defaultValue="klipy"
+			android:entryValues="@array/preference_texteditor_gifpicker_keys"
+			android:entries="@array/preference_texteditor_gifpicker_values"
+			android:key="textedit_gifpicker"
+			android:summary="@string/preference_texteditor_gifpicker_summary"
+			android:title="@string/preference_texteditor_gifpicker" />
 	</PreferenceCategory>
 </androidx.preference.PreferenceScreen>

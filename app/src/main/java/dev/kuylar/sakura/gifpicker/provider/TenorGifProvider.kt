@@ -12,18 +12,18 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-class TenorGifProvider : IGifProvider {
+class TenorGifProvider(private val host: String = "tenor.googelapis.com", private val name: String = "Tenor", private val apiKey: String = "") : IGifProvider {
 	private val client = HttpClient {
 		install(ContentNegotiation) {
 			json()
 		}
 	}
 
-	override fun getName() = "Tenor"
+	override fun getName() = name
 
 	override suspend fun getTrendingCategories(): List<GifCategory> {
 		val resp =
-			client.get("https://tenor.googleapis.com/v2/categories?type=trending&key=$API_KEY")
+			client.get("https://$host/v2/categories?type=trending&key=$apiKey")
 				.body<TrendingResponse>()
 		return resp.tags.map {
 			GifCategory(
@@ -39,11 +39,11 @@ class TenorGifProvider : IGifProvider {
 	}
 
 	override suspend fun searchGifs(query: String, cursor: String?): GifPage {
-		val url = URLBuilder("https://tenor.googleapis.com/v2/search")
+		val url = URLBuilder("https://$host/v2/search")
 		url.parameters.append("q", query)
 		url.parameters.append("media_filter", "gif")
 		cursor?.let { url.parameters.append("q", it) }
-		url.parameters.append("key", API_KEY)
+		url.parameters.append("key", apiKey)
 		val resp = client.get(url.build()).body<ResultPage>()
 		return GifPage(
 			resp.results.map {
@@ -101,8 +101,4 @@ class TenorGifProvider : IGifProvider {
 		val dims: List<Int>,
 		val size: Long
 	)
-
-	companion object {
-		const val API_KEY = "AIzaSyAPIbDRq5UQxGeiOSbBa5fBlliM8jxDfqU"
-	}
 }

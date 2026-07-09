@@ -169,4 +169,14 @@
 	<string name="event_encryption"><![CDATA[<b>%s</b> has enabled encryption for this room.]]></string>
 	<string name="event_name"><![CDATA[<b>%s</b> has changed the room\'s name to <b>%s</b>.]]></string>
 	<string name="event_topic"><![CDATA[<b>%s</b> has changed the room\'s topic to <b>%s</b>.]]></string>
+	<string name="preference_texteditor_gifpicker">GIF Picker</string>
+	<string name="preference_texteditor_gifpicker_summary">Select your preferred GIF picker source</string>
+	<string-array name="preference_texteditor_gifpicker_keys">
+		<item>tenor</item>
+		<item>klipy</item>
+	</string-array>
+	<string-array name="preference_texteditor_gifpicker_values">
+		<item>Tenor (discontinued)</item>
+		<item>KLIPY</item>
+	</string-array>
 </resources>
