@@ -123,9 +123,8 @@ class NotificationWorker @AssistedInject constructor(
 			val person = sender.toNotificationPerson(context, client)
 
 			val shortcut = room.toShortcut(context, client)
-			val shortcuts = ShortcutManagerCompat.getDynamicShortcuts(context)
-			if (ShortcutManagerCompat.getMaxShortcutCountPerActivity(context) > shortcuts.size)
-				ShortcutManagerCompat.addDynamicShortcuts(context, listOf(shortcut))
+			val success = ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
+			if (!success) Log.e("NotificationWorker", "Failed to create shortcut")
 
 			val style = NotificationCompat.MessagingStyle(person)
 			style.isGroupConversation = !room.isDirect
