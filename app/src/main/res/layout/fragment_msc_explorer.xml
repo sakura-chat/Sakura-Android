@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.slidingpanelayout.widget.SlidingPaneLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:layout_marginBottom="80dp"
+	tools:context=".ui.fragment.mscexplorer.MscExplorerFragment">
+
+	<androidx.fragment.app.FragmentContainerView
+		android:id="@+id/list_pane"
+		android:name="dev.kuylar.sakura.ui.fragment.mscexplorer.MscExplorerItemFragment"
+		android:layout_width="280dp"
+		android:layout_height="match_parent"
+		android:layout_gravity="start"
+		android:layout_marginBottom="80dp" />
+
+	<androidx.fragment.app.FragmentContainerView
+		android:id="@+id/detail_container"
+		android:name="dev.kuylar.sakura.ui.fragment.mscexplorer.MscExplorerDetailFragment"
+		android:layout_width="300dp"
+		android:layout_height="match_parent"
+		android:layout_marginBottom="80dp"
+		android:layout_weight="1" />
+</androidx.slidingpanelayout.widget.SlidingPaneLayout>

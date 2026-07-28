@@ -8,4 +8,12 @@
 			android:key="developer_crash"
 			android:title="@string/preference_developer_crash" />
 	</PreferenceCategory>
+	<PreferenceCategory android:title="@string/preference_developer_experimental">
+		<Preference
+			android:key="developer_msc_browser"
+			android:title="@string/preference_developer_msc_browser" />
+		<!--Preference
+			android:key="developer_msc_flags"
+			android:title="@string/preference_developer_msc_flags" /-->
+	</PreferenceCategory>
 </androidx.preference.PreferenceScreen>

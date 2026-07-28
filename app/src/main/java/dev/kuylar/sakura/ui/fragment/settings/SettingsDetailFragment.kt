@@ -30,5 +30,9 @@ class SettingsDetailFragment : PreferenceFragmentCompat() {
 		findPreference<Preference>("developer_crash")?.setOnPreferenceClickListener {
 			throw Exception("whoopsies!")
 		}
+		findPreference<Preference>("developer_msc_browser")?.setOnPreferenceClickListener {
+			findNavController().navigate(R.id.nav_msc_browser)
+			true
+		}
 	}
 }

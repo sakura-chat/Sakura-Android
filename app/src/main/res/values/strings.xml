@@ -171,6 +171,9 @@
 	<string name="event_topic"><![CDATA[<b>%s</b> has changed the room\'s topic to <b>%s</b>.]]></string>
 	<string name="preference_texteditor_gifpicker">GIF Picker</string>
 	<string name="preference_texteditor_gifpicker_summary">Select your preferred GIF picker source</string>
+	<string name="preference_developer_experimental">Experimental Features</string>
+	<string name="preference_developer_msc_browser">MSC Browser</string>
+	<string name="title_msc_browser">MSC Browser</string>
 	<string-array name="preference_texteditor_gifpicker_keys">
 		<item>tenor</item>
 		<item>klipy</item>
