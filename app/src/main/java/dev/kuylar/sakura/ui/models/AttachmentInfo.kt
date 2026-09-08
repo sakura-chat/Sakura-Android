@@ -84,7 +84,7 @@ open class AttachmentInfo {
 			val scaledSize = if (size != null) {
 				val aspectRatio = size.first.toFloat() / size.second.toFloat()
 				if (aspectRatio > width.toFloat() / height.toFloat())
-					Pair(height, (height * aspectRatio).toInt())
+					Pair((height * aspectRatio).toInt(), height)
 				else Pair(width, (width / aspectRatio).toInt())
 			} else Pair(width, height)
 
