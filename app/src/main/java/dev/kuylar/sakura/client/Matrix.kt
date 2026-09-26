@@ -135,7 +135,7 @@ class Matrix {
 	@Inject
 	lateinit var markdown: MarkdownHandler
 	private val context: Context
-	lateinit var client: MatrixClient
+	private lateinit var client: MatrixClient
 	private val activeVerifications = HashMap<String, ActiveVerification>()
 	private var recentEmojiCache: List<RecentEmoji> = emptyList()
 	private var loadedRecentEmoji = false
