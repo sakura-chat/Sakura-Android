@@ -61,7 +61,7 @@ class EventReactionsBottomSheetFragment : BottomSheetDialogFragment() {
 			return
 		}
 		lifecycleScope.launch {
-			val reactions = client.getReactions(roomId!!, eventId!!)
+			val reactions = client.getEventReactions(roomId!!, eventId!!)
 			activity?.runOnUiThread {
 				val reactionsList = reactions.reactions
 					.map { Pair(it.key, it.value) }

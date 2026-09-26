@@ -44,7 +44,7 @@ class InitialSyncFragment : Fragment() {
 			client.startSync()
 			val end = System.currentTimeMillis()
 			Log.i("InitialSyncFragment", "Initial sync took ${end - start}ms")
-			client.client.initialSyncDone.collect { complete ->
+			client.trixnityInitialSyncFlow().collect { complete ->
 				if (complete) {
 					activity?.runOnUiThread {
 						(activity as? InitialSyncCompleteListener)?.onInitialSyncComplete()

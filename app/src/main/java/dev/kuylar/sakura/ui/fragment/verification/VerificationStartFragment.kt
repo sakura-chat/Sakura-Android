@@ -1,18 +1,18 @@
 package dev.kuylar.sakura.ui.fragment.verification
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.Fragment
 import dagger.hilt.android.AndroidEntryPoint
+import de.connect2x.trixnity.client.verification.ActiveDeviceVerification
+import de.connect2x.trixnity.client.verification.ActiveVerificationState
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.databinding.FragmentVerificationStartBinding
 import kotlinx.coroutines.flow.first
-import de.connect2x.trixnity.client.verification.ActiveDeviceVerification
-import de.connect2x.trixnity.client.verification.ActiveVerificationState
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -47,7 +47,7 @@ class VerificationStartFragment : Fragment() {
 			activity?.runOnUiThread {
 				binding.text.text = getString(
 					R.string.verification_start,
-					if (verification.theirUserId == client.client.userId) verification.theirDeviceId else verification.theirUserId
+					if (verification.theirUserId == client.userId) verification.theirDeviceId else verification.theirUserId
 				)
 				binding.emojiVerification.setOnClickListener {
 					binding.emojiVerification.isEnabled = false

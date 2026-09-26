@@ -48,12 +48,9 @@ class ReplyReceiver : BroadcastReceiver() {
 		}
 		Log.i("ReplyReceiver", "Received reply @ $roomId: $replyMessage")
 		suspendThread {
-			val room = matrix.client.room.getById(roomId).firstOrNull()
+			val room = matrix.getRoom(roomId)
 			Log.i("ReplyReceiver", "Sending reply...")
-			matrix.client.api.room.sendMessageEvent(
-				roomId,
-				RoomMessageEventContent.TextBased.Text(replyMessage)
-			).getOrNull() ?: return@suspendThread
+			matrix.sendMessage(roomId.full, replyMessage, context)
 			Log.i("ReplyReceiver", "Getting required items to build a notification update")
 			val replyUser = matrix.getUser(matrix.userId, roomId)
 			Log.i(

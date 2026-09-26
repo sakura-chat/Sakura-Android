@@ -9,7 +9,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import de.connect2x.trixnity.client.store.membership
-import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.m.Presence
@@ -21,7 +20,7 @@ import dev.kuylar.sakura.databinding.ItemUserBinding
 import dev.kuylar.sakura.ui.adapter.model.UserModel
 import dev.kuylar.sakura.ui.fragment.bottomsheet.ProfileBottomSheetFragment
 import io.getstream.avatarview.glide.loadImage
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlin.time.ExperimentalTime
 
 class UserListAdapter(
@@ -41,28 +40,26 @@ class UserListAdapter(
 		if (isLoaded) return
 		isLoaded = true
 		client.getRoom(roomId)?.let {
-			client.client.user.getAll(RoomId(roomId)).collect { newUsers ->
-				val addedUsers = newUsers.filter { it.key !in users.keys }
-				val removedUsers = users.filter { it.key !in newUsers.keys }
-				removedUsers.forEach { (id, _) ->
-					users.remove(id)?.dispose()
-				}
-				addedUsers.forEach { (id, flow) ->
-					val snapshot = flow.first() ?: return@forEach
-					if (snapshot.membership == Membership.LEAVE || snapshot.membership == Membership.BAN)
-						return@forEach
-					val model = UserModel(id, flow, client, snapshot) {
-						val lastPos = layoutManager.findFirstCompletelyVisibleItemPosition()
-						submit(users.values) {
-							recycler.post {
-								recycler.scrollToPosition(lastPos)
-							}
+			val newUsers = client.getAllRoomUsers(RoomId(roomId)).associateBy { it.userId }
+			val addedUsers = newUsers.filter { it.key !in users.keys }
+			val removedUsers = users.filter { it.key !in newUsers.keys }
+			removedUsers.forEach { (id, _) ->
+				users.remove(id)?.dispose()
+			}
+			addedUsers.forEach { (id, snapshot) ->
+				if (snapshot.membership == Membership.LEAVE || snapshot.membership == Membership.BAN)
+					return@forEach
+				val model = UserModel(id, flowOf(snapshot), client, snapshot) {
+					val lastPos = layoutManager.findFirstCompletelyVisibleItemPosition()
+					submit(users.values) {
+						recycler.post {
+							recycler.scrollToPosition(lastPos)
 						}
 					}
-					users[id] = model
 				}
-				submit(users.values)
+				users[id] = model
 			}
+			submit(users.values)
 		}
 	}
 

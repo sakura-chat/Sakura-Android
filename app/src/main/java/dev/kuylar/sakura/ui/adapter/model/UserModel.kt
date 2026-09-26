@@ -5,7 +5,6 @@ import de.connect2x.trixnity.client.store.RoomUser
 import de.connect2x.trixnity.client.store.UserPresence
 import de.connect2x.trixnity.client.store.avatarUrl
 import de.connect2x.trixnity.client.store.membership
-import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.m.Presence
 import de.connect2x.trixnity.core.model.events.m.room.Membership
@@ -47,7 +46,7 @@ data class UserModel(
 
 	init {
 		collectJob = CoroutineScope(Dispatchers.Main).launch {
-			combine(flow, client.client.user.getPresence(userId)) { user, presence ->
+			combine(flow, client.getUserPresenceFlow(userId)) { user, presence ->
 				State(
 					userId,
 					user?.avatarUrl,

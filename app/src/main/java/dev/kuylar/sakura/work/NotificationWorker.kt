@@ -23,7 +23,6 @@ import androidx.work.Worker
 import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import de.connect2x.trixnity.client.notification
 import de.connect2x.trixnity.client.store.Room
 import de.connect2x.trixnity.client.store.RoomUser
 import de.connect2x.trixnity.client.store.TimelineEvent
@@ -31,10 +30,8 @@ import de.connect2x.trixnity.client.store.eventId
 import de.connect2x.trixnity.client.store.originTimestamp
 import de.connect2x.trixnity.client.store.roomId
 import de.connect2x.trixnity.client.store.sender
-import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
-import de.connect2x.trixnity.core.model.events.m.Presence
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils
 import dev.kuylar.sakura.Utils.getBubbleMetadata
@@ -77,19 +74,18 @@ class NotificationWorker @AssistedInject constructor(
 
 		if (eventId != null && roomId != null) {
 			suspendThread {
-				val onPush = client.client.notification.onPush(roomId, eventId)
+				val onPush = client.trixnityOnPush(roomId, eventId)
 				if (isAppInForeground()) return@suspendThread
 				Log.d("NotificationWorker", "Loading event")
-				val notificationEvent =
-					if (onPush) {
-						client.getEvent(roomId, eventId) ?: return@suspendThread
-					} else {
-						client.client.syncOnce(presence = Presence.OFFLINE)
-						client.getEvent(roomId, eventId, retryCount = 3) ?: return@suspendThread
-					}
+				val notificationEvent = if (onPush) {
+					client.getEvent(roomId, eventId) ?: return@suspendThread
+				} else {
+					client.trixnitySyncOnce()
+					client.getEvent(roomId, eventId, retryCount = 3) ?: return@suspendThread
+				}
 				Log.d("NotificationWorker", "Loading user")
 				val senderUser = notificationEvent.sender.let {
-					client.client.user.getById(roomId, it).firstOrNull()
+					client.getUser(it, roomId)
 				} ?: return@suspendThread
 				Log.d("NotificationWorker", "Loading room")
 				val room = client.getRoomBypassCache(roomId).firstOrNull() ?: return@suspendThread

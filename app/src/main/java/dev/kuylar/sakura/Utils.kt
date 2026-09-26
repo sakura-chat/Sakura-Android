@@ -440,7 +440,7 @@ object Utils {
 		Log.d("IconDownloader", "shouldDownload: [$key] $mxcId: $shouldUpdate")
 		if (!shouldUpdate) return uri
 
-		val icon = client.client.media.getThumbnail(mxcId, 128, 128, ThumbnailResizingMethod.SCALE)
+		val icon = client.getMediaThumbnail(mxcId, 128, 128, ThumbnailResizingMethod.SCALE)
 		val data = icon.getOrNull() ?: return uri
 		data.toByteArray()?.let { bytes ->
 			val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)

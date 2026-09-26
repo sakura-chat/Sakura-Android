@@ -11,13 +11,8 @@ import android.view.ViewGroup
 import androidx.core.widget.addTextChangedListener
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import dagger.hilt.android.AndroidEntryPoint
-import de.connect2x.trixnity.client.room
-import de.connect2x.trixnity.client.room.getState
 import de.connect2x.trixnity.client.store.Room
 import de.connect2x.trixnity.client.store.UserPresence
-import de.connect2x.trixnity.client.user
-import de.connect2x.trixnity.client.user.PowerLevel
-import de.connect2x.trixnity.client.user.getAccountData
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.m.room.MemberEventContent
@@ -74,7 +69,7 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 		}
 
 		presenceJob = suspendThread {
-			client.client.user.getPresence(userId).collect {
+			client.getUserPresenceFlow(userId).collect {
 				it?.let { user ->
 					activity?.runOnUiThread {
 						updatePresence(user)
@@ -83,9 +78,7 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 			}
 		}
 		profileJob = suspendThread {
-			// TODO: Update to the new extensible profile API
-			client.client.api.baseClient.request(ExtendedGetProfile(userId)).getOrNull()
-				?.let { profile ->
+			client.getUserProfile(userId)?.let { profile ->
 					activity?.runOnUiThread {
 						updateProfile(profile)
 					}
@@ -93,36 +86,30 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 		}
 		if (roomProfile) {
 			memberJob = suspendThread {
-				client.client.room.getState<MemberEventContent>(roomId!!, userId.full).collect {
-					it?.content?.let { user ->
-						activity?.runOnUiThread {
-							updateMember(user)
-						}
+				client.getRoomState(roomId!!, MemberEventContent::class, userId.full)?.let {
+					activity?.runOnUiThread {
+						updateMember(it)
 					}
 				}
 			}
 			memberJob = suspendThread {
-				client.client.user.getPowerLevel(roomId!!, userId).collect { powerLevel ->
+				client.getUserPowerLevel(roomId!!, userId).let { powerLevel ->
 					activity?.runOnUiThread {
 						updatePowerLevel(powerLevel)
 					}
 				}
 			}
 			roomJob = suspendThread {
-				client.client.room.getById(roomId!!).collect {
-					it?.let { room ->
-						updateRoom(room)
-					}
+				client.getRoom(roomId!!)?.let {
+					updateRoom(it)
 				}
 			}
 		}
 
 		noteJob = suspendThread {
-			client.client.user.getAccountData<UserNoteEventContent>().collect {
-				it?.let { note ->
-					activity?.runOnUiThread {
-						updateUserNote(note)
-					}
+			client.getUserNote(userId)?.let {
+				activity?.runOnUiThread {
+					updateUserNote(it)
 				}
 			}
 		}
@@ -157,10 +144,7 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 				changeNoteJob?.cancel()
 				changeNoteJob = suspendThread {
 					delay(1000)
-					client.client.api.user.setAccountData(
-						noteEvent!!.copyWith(userId, it?.toString() ?: ""),
-						client.userId
-					)
+					client.updateUserNote(userId, it?.toString() ?: "")
 				}
 			}
 		}
@@ -227,25 +211,24 @@ class ProfileBottomSheetFragment : BottomSheetDialogFragment() {
 		}
 	}
 
-	private fun updatePowerLevel(powerLevel: PowerLevel) {
+	private fun updatePowerLevel(powerLevel: Long) {
 		binding.roomName.visibility = View.VISIBLE
 		binding.roleChip.visibility = View.VISIBLE
 		binding.roleChip.text = when (powerLevel) {
-			PowerLevel.Creator -> getString(R.string.power_level_creator)
-			is PowerLevel.User -> when {
-				powerLevel.level == 100L -> getString(R.string.power_level_administrator)
-				powerLevel.level > 50L -> getString(R.string.power_level_moderator)
-				else -> getString(R.string.power_level_user)
+			Long.MAX_VALUE -> getString(R.string.power_level_creator)
+			100L -> getString(R.string.power_level_administrator)
+			else -> {
+				if (powerLevel >= 50L) getString(R.string.power_level_moderator)
+				else getString(R.string.power_level_user)
 			}
 		}
 	}
 
-	private fun updateUserNote(note: UserNoteEventContent) {
-		noteEvent = note
+	private fun updateUserNote(note: String) {
 		binding.note.editText?.editableText?.replace(
 			0,
 			binding.note.editText?.editableText?.length ?: 0,
-			note.notes?.get(userId) ?: ""
+			note
 		)
 	}
 

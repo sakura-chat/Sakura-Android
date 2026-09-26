@@ -21,7 +21,6 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
-import de.connect2x.trixnity.client.media
 import de.connect2x.trixnity.utils.toByteArrayFlow
 import dev.kuylar.recyclerviewbuilder.ExtensibleRecyclerAdapter
 import dev.kuylar.recyclerviewbuilder.RecyclerViewBuilder
@@ -107,9 +106,7 @@ class SettingsCrashReportsFragment : Fragment(), MenuProvider {
 		lifecycleScope.launch {
 			val uri = if (report.mxcUri != null) report.mxcUri else {
 				val json = Json.encodeToString(report).toByteArray().toByteArrayFlow()
-				val cacheUrl =
-					client.client.media.prepareUploadMedia(json, ContentType.Application.Json)
-				val mxcUri = client.client.media.uploadMedia(cacheUrl).getOrThrow()
+				val mxcUri = client.uploadMedia(json, ContentType.Application.Json)
 				update(item.first, report.copy(mxcUri = mxcUri))
 				mxcUri
 			}

@@ -25,7 +25,6 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.bumptech.glide.Glide
 import dagger.hilt.android.AndroidEntryPoint
-import de.connect2x.trixnity.client.store.AuthenticationStore
 import dev.kuylar.sakura.R
 import dev.kuylar.sakura.Utils.toFileSize
 import dev.kuylar.sakura.client.Matrix
@@ -34,9 +33,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -152,12 +148,8 @@ class ViewAttachmentActivity : AppCompatActivity(), Toolbar.OnMenuItemClickListe
 		lifecycleScope.launch {
 			val (serverName, mediaId) = uri.toString().removePrefix("mxc://")
 				.let { it.substringBefore("/") to it.substringAfter("/") }
-			val uri = "${client.client.api.baseUrl}/_matrix/client/v1/media/download/$serverName/$mediaId"
-			val auth = Json.decodeFromString<JsonObject>(
-				client.client.di.get<AuthenticationStore>().getAuthentication()?.providerData
-					?: "{}"
-			)
-			val token = auth["accessToken"]?.jsonPrimitive?.content ?: return@launch
+			val uri = "${client.baseUrl}/_matrix/client/v1/media/download/$serverName/$mediaId"
+			val token = client.getAccessToken() ?: return@launch
 			runOnUiThread {
 				val item = MediaItem.Builder().apply {
 					this.setMimeType(mime)

@@ -32,6 +32,7 @@ import de.connect2x.trixnity.client.room.message.reply
 import de.connect2x.trixnity.client.room.message.text
 import de.connect2x.trixnity.client.room.message.video
 import de.connect2x.trixnity.client.store.AccountStore
+import de.connect2x.trixnity.client.store.AuthenticationStore
 import de.connect2x.trixnity.client.store.Room
 import de.connect2x.trixnity.client.store.RoomUser
 import de.connect2x.trixnity.client.store.TimelineEvent
@@ -44,6 +45,8 @@ import de.connect2x.trixnity.client.store.roomId
 import de.connect2x.trixnity.client.store.sender
 import de.connect2x.trixnity.client.store.type
 import de.connect2x.trixnity.client.user
+import de.connect2x.trixnity.client.user.PowerLevel
+import de.connect2x.trixnity.client.user.canSendEvent
 import de.connect2x.trixnity.client.user.getAccountData
 import de.connect2x.trixnity.client.verification
 import de.connect2x.trixnity.client.verification.ActiveDeviceVerification
@@ -64,8 +67,10 @@ import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.UserId
 import de.connect2x.trixnity.core.model.events.ClientEvent
+import de.connect2x.trixnity.core.model.events.StateEventContent
 import de.connect2x.trixnity.core.model.events.m.DirectEventContent
 import de.connect2x.trixnity.core.model.events.m.MarkedUnreadEventContent
+import de.connect2x.trixnity.core.model.events.m.Presence
 import de.connect2x.trixnity.core.model.events.m.PushRulesEventContent
 import de.connect2x.trixnity.core.model.events.m.RelatesTo
 import de.connect2x.trixnity.core.model.events.m.RelationType
@@ -79,6 +84,7 @@ import de.connect2x.trixnity.core.serialization.events.default
 import de.connect2x.trixnity.core.serialization.events.globalAccountDataOf
 import de.connect2x.trixnity.core.serialization.events.messageOf
 import de.connect2x.trixnity.core.serialization.events.stateOf
+import de.connect2x.trixnity.utils.ByteArrayFlow
 import dev.kuylar.sakura.Utils.compareRoomsByTimestamp
 import dev.kuylar.sakura.Utils.suspendThread
 import dev.kuylar.sakura.client.customevent.ElementRecentEmojiEventContent
@@ -90,6 +96,7 @@ import dev.kuylar.sakura.client.customevent.ShortcodeReactionEventContent
 import dev.kuylar.sakura.client.customevent.StickerMessageEventContent
 import dev.kuylar.sakura.client.customevent.UserImagePackEventContent
 import dev.kuylar.sakura.client.customevent.UserNoteEventContent
+import dev.kuylar.sakura.client.request.ExtendedGetProfile
 import dev.kuylar.sakura.emoji.CustomEmojiCategoryModel
 import dev.kuylar.sakura.emoji.CustomEmojiModel
 import dev.kuylar.sakura.emoji.RoomCustomEmojiModel
@@ -116,6 +123,8 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okio.Path.Companion.toPath
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -124,6 +133,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.io.path.Path
 import kotlin.io.path.absolutePathString
+import kotlin.reflect.KClass
 import kotlin.time.ExperimentalTime
 import androidx.room.Room as AndroidRoom
 
@@ -131,6 +141,8 @@ import androidx.room.Room as AndroidRoom
 class Matrix {
 	val userId: UserId
 		get() = client.userId
+	val baseUrl: Url
+		get() = client.api.baseUrl
 
 	@Inject
 	lateinit var markdown: MarkdownHandler
@@ -233,6 +245,8 @@ class Matrix {
 		// TODO: Can't get room aliases for now
 		return null
 	}
+
+	suspend fun getAllRoomUsers(roomId: RoomId) = client.user.getAll(roomId).flattenValues().first()
 
 	fun getTimeline(onStateChange: suspend (TimelineStateChange<TimelineItem.Event>) -> Unit) =
 		client.room.getTimeline(onStateChange) {
@@ -418,6 +432,13 @@ class Matrix {
 
 	suspend fun getEvent(roomId: String, eventId: String) =
 		getEvent(RoomId(roomId), EventId(eventId))
+
+	suspend fun getEventReplacements(roomId: RoomId, eventId: EventId) =
+		client.room.getTimelineEventReplaceAggregation(roomId, eventId)
+			.firstOrNull()?.history?.mapNotNull { getEvent(roomId, it) } ?: emptyList()
+
+	suspend fun getEventReactions(roomId: RoomId, eventId: EventId) =
+		client.room.getTimelineEventReactionAggregation(roomId, eventId).first()
 
 	suspend fun sendMessage(
 		roomId: String,
@@ -1008,9 +1029,77 @@ class Matrix {
 		}
 	}
 
-	suspend fun getReactions(roomId: RoomId, eventId: EventId): TimelineEventAggregation.Reaction {
-		return client.room.getTimelineEventReactionAggregation(roomId, eventId).first()
+	suspend fun getMediaThumbnail(
+		mxcId: String,
+		width: Long,
+		height: Long,
+		resizingMethod: ThumbnailResizingMethod
+	) = client.media.getThumbnail(mxcId, width, height, resizingMethod)
+
+	suspend fun getAccessToken(): String? {
+		return Json.decodeFromString<JsonObject>(
+			client.di.get<AuthenticationStore>().getAuthentication()?.providerData
+				?: "{}"
+		)["accessToken"]?.jsonPrimitive?.content
 	}
+
+	suspend fun setTyping(roomId: RoomId, typing: Boolean) = client.api.room.setTyping(roomId, client.userId, typing)
+
+	suspend fun canSendEvent(roomId: RoomId) =
+		client.user.canSendEvent<RoomMessageEventContent>(roomId).first()
+
+	suspend fun canRedactEvent(roomId: RoomId, eventId: EventId) =
+		client.user.canRedactEvent(roomId, eventId).first()
+
+	suspend fun forceInitialSync() = client.clearCache()
+
+	suspend fun getUserProfile(userId: UserId) =
+		client.api.baseClient.request(ExtendedGetProfile(userId)).getOrNull()
+
+	suspend fun getUserNote(userId: UserId): String? {
+		val noteEvent = client.user.getAccountData<UserNoteEventContent>().firstOrNull()
+		return noteEvent?.notes?.get(userId)
+	}
+
+	suspend fun updateUserNote(userId: UserId, note: String) {
+		val noteEvent = client.user.getAccountData<UserNoteEventContent>().firstOrNull()
+		client.api.user.setAccountData(
+			noteEvent!!.copyWith(userId, note),
+			client.userId
+		)
+	}
+
+	suspend fun getUserPowerLevel(roomId: RoomId, userId: UserId) =
+		when (val pl = client.user.getPowerLevel(roomId, userId).first()) {
+			is PowerLevel.Creator -> Long.MAX_VALUE
+			is PowerLevel.User -> pl.level
+		}
+
+	suspend fun <T : StateEventContent> getRoomState(roomId: RoomId, eventContentClass: KClass<T>, stateKey: String = ""): T? {
+		return client.room.getState(roomId, eventContentClass, stateKey).firstOrNull()?.content
+	}
+
+	suspend fun uploadMedia(byteArrayFlow: ByteArrayFlow, mimeType: ContentType): String {
+		val cacheUrl = client.media.prepareUploadMedia(byteArrayFlow, mimeType)
+		return client.media.uploadMedia(cacheUrl).getOrThrow()
+	}
+
+	// TO DELETE
+	fun getUserPresenceFlow(userId: UserId) = client.user.getPresence(userId)
+	fun getReceiptsByIdFlow(roomId: RoomId, userId: UserId) = client.user.getReceiptsById(roomId, userId)
+	fun getUsersTypingFlow(roomId: RoomId) = flow {
+		client.room.usersTyping.collect {
+			val thisRoom = it[roomId] ?: return@collect
+			val users = thisRoom.users
+				.filterNot { uid -> uid == client.userId }
+				.mapNotNull { uid -> getUser(uid, roomId) }
+			emit(users)
+		}
+	}
+	fun trixnityInitialSyncFlow() = client.initialSyncDone
+	suspend fun trixnityOnPush(roomId: RoomId, eventId: EventId) = client.notification.onPush(roomId, eventId)
+	suspend fun trixnitySyncOnce() = client.syncOnce(presence = Presence.OFFLINE)
+	// =========
 
 	companion object {
 		@SuppressLint("StaticFieldLeak")

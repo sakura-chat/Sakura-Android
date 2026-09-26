@@ -290,7 +290,7 @@ class TimelineFragment : Fragment(), MenuProvider, BackButtonListener {
 				if (typing != typingNew) {
 					typing = typingNew
 					if (prefs.getBoolean("textedit_typing", true))
-						client.client.api.room.setTyping(RoomId(roomId), client.userId, typing)
+						client.setTyping(RoomId(roomId), typing)
 				}
 			}
 		}
@@ -300,11 +300,7 @@ class TimelineFragment : Fragment(), MenuProvider, BackButtonListener {
 			AttachmentReceiver(::loadAttachmentFromUri)
 		)
 		typingUsersJob = CoroutineScope(Dispatchers.Main).launch {
-			client.client.room.usersTyping.collect {
-				val thisRoom = it[RoomId(roomId)] ?: return@collect
-				val users = thisRoom.users
-					.filterNot { uid -> uid == client.userId }
-					.mapNotNull { uid -> client.getUser(uid, RoomId(roomId)) }
+			client.getUsersTypingFlow(RoomId(roomId)).collect { users ->
 				val text = when (users.size) {
 					0 -> ""
 					1 -> getString(R.string.typing_indicator_1, users[0].name)
@@ -327,19 +323,18 @@ class TimelineFragment : Fragment(), MenuProvider, BackButtonListener {
 		}
 		lifecycleScope.launch {
 			lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-				client.client.user.canSendEvent<RoomMessageEventContent>(RoomId(roomId)).collect { canSend ->
-					activity?.runOnUiThread {
-						binding.input.hint = getString(
-							if (!canSend) R.string.room_hint_no_permission
-							else if (room.encrypted) R.string.room_hint_encrypted
-							else R.string.room_hint_unencrypted
-						)
-						val vis = if (canSend) View.VISIBLE else View.GONE
-						binding.input.isEnabled = canSend
-						binding.buttonSend.visibility = vis
-						binding.buttonEmoji.visibility = vis
-						binding.buttonAttachment.visibility = vis
-					}
+				val canSend = client.canSendEvent(RoomId(roomId))
+				activity?.runOnUiThread {
+					binding.input.hint = getString(
+						if (!canSend) R.string.room_hint_no_permission
+						else if (room.encrypted) R.string.room_hint_encrypted
+						else R.string.room_hint_unencrypted
+					)
+					val vis = if (canSend) View.VISIBLE else View.GONE
+					binding.input.isEnabled = canSend
+					binding.buttonSend.visibility = vis
+					binding.buttonEmoji.visibility = vis
+					binding.buttonAttachment.visibility = vis
 				}
 			}
 		}
@@ -517,7 +512,7 @@ class TimelineFragment : Fragment(), MenuProvider, BackButtonListener {
 				clearCacheUnlocked = false
 				suspendThread {
 					client.updateFilters(true)
-					client.client.clearCache()
+					client.forceInitialSync()
 				}
 				true
 			}

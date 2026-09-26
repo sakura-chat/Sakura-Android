@@ -109,7 +109,7 @@ class TimelineRecyclerAdapter(
 		setHasStableIds(true)
 		fragment.lifecycleScope.launch {
 			val room = client.getRoom(roomId)
-			val receiptsFlow = client.client.user.getReceiptsById(roomId, client.userId)
+			val receiptsFlow = client.getReceiptsByIdFlow(roomId, client.userId)
 			selfReceipts = receiptsFlow.first()
 			val lastReceipt = selfReceipts?.lastReceipt
 			timeline = client.getTimeline(::onStateChange)

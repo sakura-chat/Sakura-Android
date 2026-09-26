@@ -20,13 +20,9 @@ import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import dagger.hilt.android.AndroidEntryPoint
-import de.connect2x.trixnity.client.room
-import de.connect2x.trixnity.client.room.getTimelineEventReactionAggregation
-import de.connect2x.trixnity.client.room.getTimelineEventReplaceAggregation
 import de.connect2x.trixnity.client.store.TimelineEvent
 import de.connect2x.trixnity.client.store.eventId
 import de.connect2x.trixnity.client.store.sender
-import de.connect2x.trixnity.client.user
 import de.connect2x.trixnity.core.model.EventId
 import de.connect2x.trixnity.core.model.RoomId
 import de.connect2x.trixnity.core.model.events.m.room.RoomMessageEventContent
@@ -37,13 +33,13 @@ import dev.kuylar.sakura.client.Matrix
 import dev.kuylar.sakura.client.customevent.RecentEmoji
 import dev.kuylar.sakura.databinding.FragmentEventBottomSheetBinding
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class EventBottomSheetFragment : BottomSheetDialogFragment() {
 	private lateinit var binding: FragmentEventBottomSheetBinding
 	private lateinit var event: TimelineEvent
+
 	@Inject
 	lateinit var client: Matrix
 	private var eventType: String? = null
@@ -76,14 +72,10 @@ class EventBottomSheetFragment : BottomSheetDialogFragment() {
 			return
 		}
 		collectJob = suspendThread {
-			val isEdited =
-				client.client.room.getTimelineEventReplaceAggregation(roomId!!, eventId!!)
-					.firstOrNull()?.history?.isNotEmpty() ?: false
-			val hasReactions =
-				client.client.room.getTimelineEventReactionAggregation(roomId!!, eventId!!)
-					.firstOrNull()?.reactions?.isNotEmpty() ?: false
-			client.client.room.getTimelineEvent(roomId!!, eventId!!).collect {
-				val recentEmojis = client.getRecentEmojis().take(5)
+			val isEdited = client.getEventReplacements(roomId!!, eventId!!).isNotEmpty()
+			val hasReactions = client.getEventReactions(roomId!!, eventId!!).reactions.isNotEmpty()
+			val recentEmojis = client.getRecentEmojis().take(5)
+			client.getEvent(roomId!!, eventId!!).let {
 				if (it == null) {
 					activity?.runOnUiThread {
 						binding.root.postDelayed(50) { dismiss() }
@@ -97,10 +89,9 @@ class EventBottomSheetFragment : BottomSheetDialogFragment() {
 			}
 		}
 		suspendThread {
-			client.client.user.canRedactEvent(roomId!!, eventId!!).collect {
-				activity?.runOnUiThread {
-					binding.delete.visibility = if (it) View.VISIBLE else View.GONE
-				}
+			val canRedact = client.canRedactEvent(roomId!!, eventId!!)
+			activity?.runOnUiThread {
+				binding.delete.visibility = if (canRedact) View.VISIBLE else View.GONE
 			}
 		}
 	}
@@ -145,7 +136,7 @@ class EventBottomSheetFragment : BottomSheetDialogFragment() {
 		// TODO: Show an AlertDialog to ask for a reason (only when long pressed)
 		binding.delete.setOnClickListener {
 			suspendThread {
-				client.client.api.room.redactEvent(roomId!!, eventId!!)
+				client.redactEvent(roomId!!, eventId!!)
 			}
 			binding.root.postDelayed(50) { dismiss() }
 		}
